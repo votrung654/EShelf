@@ -5,6 +5,7 @@ import AddBookModal from '../components/AddBookModal';
 import EditBookModal from '../components/EditBookModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import Toast from '../components/Toast';
+import api from '../../utils/api';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -24,8 +25,19 @@ export default function AdminBooks() {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   useEffect(() => {
-    setBooks(bookDetailsData || []);
+    loadBooks();
   }, []);
+
+  const loadBooks = async () => {
+    try {
+      const response = await api.admin.getBooks({ limit: 1000 });
+      setBooks(response?.books || bookDetailsData || []);
+    } catch (error) {
+      console.error('Failed to load books:', error);
+      // Fallback to local data
+      setBooks(bookDetailsData || []);
+    }
+  };
 
   // Get unique genres
   const genres = useMemo(() => {
@@ -64,27 +76,48 @@ export default function AdminBooks() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
-  const handleAddBook = (newBook) => {
-    const bookWithId = { ...newBook, isbn: `NEW-${Date.now()}` };
-    setBooks(prev => [bookWithId, ...prev]);
-    setShowAddModal(false);
-    showToast('Thêm sách thành công!');
+  const handleAddBook = async (newBook) => {
+    try {
+      const created = await api.admin.createBook(newBook);
+      setBooks(prev => [created, ...prev]);
+      setShowAddModal(false);
+      showToast('Thêm sách thành công!');
+    } catch (error) {
+      console.error('Failed to add book:', error);
+      showToast('Không thể thêm sách. Vui lòng thử lại.', 'error');
+    }
   };
 
-  const handleEditBook = (updatedBook) => {
-    setBooks(prev => prev.map(book => 
-      book.isbn === updatedBook.isbn ? updatedBook : book
-    ));
-    setShowEditModal(false);
-    setSelectedBook(null);
-    showToast('Cập nhật sách thành công!');
+  const handleEditBook = async (updatedBook) => {
+    try {
+      const bookId = updatedBook.isbn || updatedBook.id;
+      const updated = await api.admin.updateBook(bookId, updatedBook);
+      setBooks(prev => prev.map(book => 
+        (book.isbn === bookId || book.id === bookId) ? updated : book
+      ));
+      setShowEditModal(false);
+      setSelectedBook(null);
+      showToast('Cập nhật sách thành công!');
+    } catch (error) {
+      console.error('Failed to update book:', error);
+      showToast('Không thể cập nhật sách. Vui lòng thử lại.', 'error');
+    }
   };
 
-  const handleDeleteBook = () => {
-    setBooks(prev => prev.filter(book => book.isbn !== selectedBook.isbn));
-    setShowDeleteModal(false);
-    setSelectedBook(null);
-    showToast('Xóa sách thành công!', 'warning');
+  const handleDeleteBook = async () => {
+    try {
+      const bookId = selectedBook.isbn || selectedBook.id;
+      await api.admin.deleteBook(bookId);
+      setBooks(prev => prev.filter(book => 
+        book.isbn !== bookId && book.id !== bookId
+      ));
+      setShowDeleteModal(false);
+      setSelectedBook(null);
+      showToast('Xóa sách thành công!', 'warning');
+    } catch (error) {
+      console.error('Failed to delete book:', error);
+      showToast('Không thể xóa sách. Vui lòng thử lại.', 'error');
+    }
   };
 
   const openEditModal = (book) => {

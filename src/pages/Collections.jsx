@@ -4,8 +4,7 @@ import { Plus, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CollectionCard from '../components/collection/CollectionCard';
 import CreateCollectionModal from '../components/collection/CreateCollectionModal';
-
-const COLLECTIONS_BASE_KEY = 'eshelf_collections';
+import api from '../utils/api';
 
 export default function Collections() {
   const navigate = useNavigate();
@@ -21,59 +20,63 @@ export default function Collections() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Load collections for current user
+  // Load collections for current user from backend
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !isAuthenticated) return;
 
-    const storageKey = `${COLLECTIONS_BASE_KEY}_${user.id}`;
-    const saved = localStorage.getItem(storageKey);
-    
-    if (saved) {
+    const loadCollections = async () => {
       try {
-        setCollections(JSON.parse(saved));
-      } catch {
-        initializeCollections();
+        const data = await api.collections.getAll(user.id);
+        if (data && data.length > 0) {
+          setCollections(data);
+        } else {
+          // Initialize with default favorites collection
+          await initializeCollections();
+        }
+      } catch (error) {
+        console.error('Failed to load collections:', error);
+        // Fallback to empty array on error
+        setCollections([]);
       }
-    } else {
-      initializeCollections();
+    };
+
+    loadCollections();
+  }, [user?.id, isAuthenticated]);
+
+  const initializeCollections = async () => {
+    try {
+      const defaultCollection = {
+        name: 'Yêu thích',
+        description: 'Những cuốn sách bạn yêu thích',
+      };
+      const created = await api.collections.create(defaultCollection);
+      setCollections([created]);
+    } catch (error) {
+      console.error('Failed to initialize collections:', error);
     }
-  }, [user?.id]);
-
-  const initializeCollections = () => {
-    const defaultCollections = [{
-      id: 'favorites',
-      name: 'Yêu thích',
-      description: 'Những cuốn sách bạn yêu thích',
-      books: [],
-      createdAt: new Date().toISOString(),
-    }];
-    setCollections(defaultCollections);
-    saveCollections(defaultCollections);
   };
 
-  const saveCollections = (data) => {
-    if (!user?.id) return;
-    const storageKey = `${COLLECTIONS_BASE_KEY}_${user.id}`;
-    localStorage.setItem(storageKey, JSON.stringify(data));
+  const handleCreate = async (newCollection) => {
+    try {
+      const created = await api.collections.create(newCollection);
+      setCollections(prev => [...prev, created]);
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error('Failed to create collection:', error);
+      alert('Không thể tạo bộ sưu tập. Vui lòng thử lại.');
+    }
   };
 
-  const handleCreate = (newCollection) => {
-    const updated = [...collections, {
-      ...newCollection,
-      id: `collection-${Date.now()}`,
-      books: [],
-      createdAt: new Date().toISOString(),
-    }];
-    setCollections(updated);
-    saveCollections(updated);
-    setShowCreateModal(false);
-  };
-
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (id === 'favorites') return;
-    const updated = collections.filter(c => c.id !== id);
-    setCollections(updated);
-    saveCollections(updated);
+    
+    try {
+      await api.collections.delete(id);
+      setCollections(prev => prev.filter(c => c.id !== id));
+    } catch (error) {
+      console.error('Failed to delete collection:', error);
+      alert('Không thể xóa bộ sưu tập. Vui lòng thử lại.');
+    }
   };
 
   const filteredCollections = collections.filter(c =>

@@ -1,36 +1,29 @@
 import { Link } from 'react-router-dom';
+import api from '../../utils/api';
 
-const PROGRESS_BASE_KEY = 'eshelf_reading_progress';
-
-export function getReadingProgress(bookIsbn, userId) {
-  if (!userId) return null;
+// Get reading progress from backend API
+export async function getReadingProgress(bookIsbn, userId) {
+  if (!userId || !bookIsbn) return null;
   
   try {
-    const storageKey = `${PROGRESS_BASE_KEY}_${userId}`;
-    const saved = localStorage.getItem(storageKey);
-    if (saved) {
-      const allProgress = JSON.parse(saved);
-      return allProgress[bookIsbn] || null;
-    }
+    const progress = await api.readingProgress.get(bookIsbn, userId);
+    return progress;
   } catch (e) {
     console.error('Failed to get reading progress:', e);
+    return null;
   }
-  return null;
 }
 
-export function saveReadingProgress(bookIsbn, userId, data) {
-  if (!userId) return;
+// Save reading progress to backend API
+export async function saveReadingProgress(bookIsbn, userId, data) {
+  if (!userId || !bookIsbn) return;
   
   try {
-    const storageKey = `${PROGRESS_BASE_KEY}_${userId}`;
-    const saved = localStorage.getItem(storageKey);
-    const allProgress = saved ? JSON.parse(saved) : {};
-    allProgress[bookIsbn] = {
-      ...allProgress[bookIsbn],
-      ...data,
+    await api.readingProgress.update(bookIsbn, {
+      page: data.currentPage || data.page,
+      percentage: data.percentage,
       lastReadAt: new Date().toISOString(),
-    };
-    localStorage.setItem(storageKey, JSON.stringify(allProgress));
+    });
   } catch (e) {
     console.error('Failed to save reading progress:', e);
   }

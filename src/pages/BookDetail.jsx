@@ -13,8 +13,7 @@ import { useState, useEffect, useCallback } from "react";
 import AddToCollectionModal from "../components/collection/AddToCollectionModal";
 import ReadingProgress, { getReadingProgress } from "../components/book/ReadingProgress";
 import { useAuth } from "../context/AuthContext";
-
-const STORAGE_KEY = "eshelf_collections";
+import api from "../utils/api";
 
 const BookDetail = () => {
   const navigate = useNavigate();
@@ -31,7 +30,7 @@ const BookDetail = () => {
   const [isBookSaved, setIsBookSaved] = useState(false);
   const [readingProgress, setReadingProgress] = useState(null);
 
-  // Load collections cho user hiện tại
+  // Load collections cho user hiện tại từ backend
   useEffect(() => {
     if (!user?.id) {
       setCollections([]);
@@ -39,113 +38,100 @@ const BookDetail = () => {
       return;
     }
 
-    const storageKey = `${STORAGE_KEY}_${user.id}`;
-    const saved = localStorage.getItem(storageKey);
-    
-    if (saved) {
+    const loadCollections = async () => {
       try {
-        const parsed = JSON.parse(saved);
-        setCollections(parsed);
+        const data = await api.collections.getAll(user.id);
+        setCollections(data || []);
 
-        if (book) {
+        if (book && data) {
           const bookId = book.isbn || book.id;
-          const isSaved = parsed.some((c) =>
-            c.books.some((b) => (b.isbn || b.id) === bookId)
+          const isSaved = data.some((c) =>
+            c.books?.some((b) => (b.isbn || b.id || b.bookId) === bookId)
           );
           setIsBookSaved(isSaved);
         }
-      } catch (e) {
-        console.error("Failed to parse collections:", e);
+      } catch (error) {
+        console.error("Failed to load collections:", error);
         setCollections([]);
       }
-    } else if (user?.id) {
-      const defaultCollections = [{
-        id: "favorites",
-        name: "Yêu thích",
-        description: "Những cuốn sách bạn yêu thích",
-        books: [],
-        createdAt: new Date().toISOString(),
-      }];
-      const storageKey = `${STORAGE_KEY}_${user.id}`;
-      localStorage.setItem(storageKey, JSON.stringify(defaultCollections));
-      setCollections(defaultCollections);
+    };
+
+    loadCollections();
+  }, [book, user?.id]);
+
+  // Load reading progress từ backend
+  useEffect(() => {
+    if (book && user?.id) {
+      const loadProgress = async () => {
+        try {
+          const progress = await getReadingProgress(book.isbn, user.id);
+          setReadingProgress(progress);
+        } catch (error) {
+          console.error("Failed to load reading progress:", error);
+        }
+      };
+      loadProgress();
     }
   }, [book, user?.id]);
 
-  // Load reading progress
-  useEffect(() => {
-    if (book) {
-      const progress = getReadingProgress(book.isbn);
-      setReadingProgress(progress);
-    }
-  }, [book]);
-
-  const saveCollectionsToStorage = (data) => {
-    if (!user?.id) return;
-    const storageKey = `${STORAGE_KEY}_${user.id}`;
-    localStorage.setItem(storageKey, JSON.stringify(data));
-  };
-
   const handleAddToCollection = useCallback(
-    (collectionId, bookData) => {
+    async (collectionId, bookData) => {
       if (!user?.id) {
         navigate('/login');
         return;
       }
       
-      setCollections((prevCollections) => {
-        const updated = prevCollections.map((c) => {
-          if (c.id === collectionId) {
-            const bookId = bookData.isbn || bookData.id;
-            const bookExists = c.books.some((b) => (b.isbn || b.id) === bookId);
-            if (!bookExists) {
-              return { ...c, books: [...c.books, bookData] };
-            }
-          }
-          return c;
-        });
-        saveCollectionsToStorage(updated);
+      try {
+        const bookId = bookData.isbn || bookData.id;
+        await api.collections.addBook(collectionId, bookId);
+        
+        // Reload collections
+        const updated = await api.collections.getAll(user.id);
+        setCollections(updated || []);
         setIsBookSaved(true);
-        return updated;
-      });
-      setShowCollectionModal(false);
+        setShowCollectionModal(false);
+      } catch (error) {
+        console.error("Failed to add book to collection:", error);
+        alert("Không thể thêm sách vào bộ sưu tập. Vui lòng thử lại.");
+      }
     },
     [user?.id, navigate]
   );
 
   const handleCreateNewCollection = useCallback(
-    (newCollection) => {
-      setCollections((prevCollections) => {
-        const updated = [...prevCollections, newCollection];
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    async (newCollection) => {
+      try {
+        const created = await api.collections.create(newCollection);
+        setCollections(prev => [...prev, created]);
         setIsBookSaved(true);
-        return updated;
-      });
-      setShowCollectionModal(false);
+        setShowCollectionModal(false);
+      } catch (error) {
+        console.error("Failed to create collection:", error);
+        alert("Không thể tạo bộ sưu tập. Vui lòng thử lại.");
+      }
     },
-    [setShowCollectionModal]
+    []
   );
 
-  const handleRemoveFromCollection = useCallback((collectionId, bookData) => {
-    setCollections((prevCollections) => {
-      const updated = prevCollections.map((c) => {
-        if (c.id === collectionId) {
-          const bookId = bookData.isbn || bookData.id;
-          return { ...c, books: c.books.filter((b) => (b.isbn || b.id) !== bookId) };
-        }
-        return c;
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  const handleRemoveFromCollection = useCallback(async (collectionId, bookData) => {
+    try {
+      const bookId = bookData.isbn || bookData.id;
+      await api.collections.removeBook(collectionId, bookId);
+      
+      // Reload collections
+      const updated = await api.collections.getAll(user.id);
+      setCollections(updated || []);
       
       // Check if book is still in any collection
-      const stillSaved = updated.some(c => 
-        c.books.some(b => (b.isbn || b.id) === (bookData.isbn || bookData.id))
-      );
+      const stillSaved = updated?.some(c => 
+        c.books?.some(b => (b.isbn || b.id || b.bookId) === bookId)
+      ) || false;
       setIsBookSaved(stillSaved);
-      
-      return updated;
-    });
-  }, []);
+    } catch (error) {
+      console.error("Failed to remove book from collection:", error);
+      alert("Không thể xóa sách khỏi bộ sưu tập. Vui lòng thử lại.");
+    }
+  }, [user?.id]);
 
   const openCollectionModal = useCallback(() => {
     setShowCollectionModal(true);

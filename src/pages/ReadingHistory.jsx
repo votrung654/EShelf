@@ -3,8 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import bookDetails from '../data/book-details.json';
 import { formatTimeAgo } from '../components/book/ReadingProgress';
-
-const PROGRESS_BASE_KEY = 'eshelf_reading_progress';
+import api from '../utils/api';
 
 export default function ReadingHistory() {
   const navigate = useNavigate();
@@ -19,33 +18,42 @@ export default function ReadingHistory() {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || !isAuthenticated) return;
 
-    const storageKey = `${PROGRESS_BASE_KEY}_${user.id}`;
-    const saved = localStorage.getItem(storageKey);
-    
-    if (!saved) {
-      setHistoryItems([]);
-      return;
-    }
+    const loadHistory = async () => {
+      try {
+        const history = await api.readingProgress.getHistory(user.id);
+        
+        // Map progress to books
+        const items = await Promise.all(
+          history.map(async (progress) => {
+            try {
+              // Try to get book from API first
+              const book = await api.books.getById(progress.bookId);
+              return { ...book, progress };
+            } catch {
+              // Fallback to local book data
+              const book = bookDetails.find(b => 
+                b.isbn === progress.bookId || b.id === progress.bookId
+              );
+              return book ? { ...book, progress } : null;
+            }
+          })
+        );
+        
+        const validItems = items
+          .filter(Boolean)
+          .sort((a, b) => new Date(b.progress.lastReadAt) - new Date(a.progress.lastReadAt));
+        
+        setHistoryItems(validItems);
+      } catch (error) {
+        console.error('Failed to load reading history:', error);
+        setHistoryItems([]);
+      }
+    };
 
-    try {
-      const allProgress = JSON.parse(saved);
-      
-      const items = Object.entries(allProgress)
-        .map(([isbn, progress]) => {
-          const book = bookDetails.find(b => b.isbn === isbn);
-          if (!book) return null;
-          return { ...book, progress };
-        })
-        .filter(Boolean)
-        .sort((a, b) => new Date(b.progress.lastReadAt) - new Date(a.progress.lastReadAt));
-      
-      setHistoryItems(items);
-    } catch {
-      setHistoryItems([]);
-    }
-  }, [user?.id]);
+    loadHistory();
+  }, [user?.id, isAuthenticated]);
 
   if (!isAuthenticated) {
     return null;

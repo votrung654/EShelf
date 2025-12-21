@@ -6,8 +6,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import bookDetailsData from '../../data/book-details.json';
-
-const USERS_KEY = 'eshelf_users';
+import api from '../../utils/api';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -22,46 +21,67 @@ export default function Dashboard() {
     loadRealData();
   }, []);
 
-  const loadRealData = () => {
-    // Real books data
-    const books = bookDetailsData || [];
-    
-    // Real users data from localStorage
-    const usersData = localStorage.getItem(USERS_KEY);
-    const users = usersData ? JSON.parse(usersData) : [];
-    
-    // Calculate real genre distribution
-    const genreCounts = {};
-    books.forEach(book => {
-      book.genres?.forEach(genre => {
-        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+  const loadRealData = async () => {
+    try {
+      // Load stats from backend API
+      const statsData = await api.admin.getStats();
+      
+      // Load books from backend API
+      const booksResponse = await api.admin.getBooks({ limit: 1000 });
+      const books = booksResponse?.books || bookDetailsData || [];
+      
+      // Load users from backend API
+      const usersResponse = await api.admin.getUsers({ limit: 100 });
+      const users = usersResponse?.users || [];
+      
+      // Calculate real genre distribution
+      const genreCounts = {};
+      books.forEach(book => {
+        book.genres?.forEach(genre => {
+          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        });
       });
-    });
-    
-    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#EC4899', '#06B6D4'];
-    const genreChartData = Object.entries(genreCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 7)
-      .map(([name, value], idx) => ({
-        name: name.length > 15 ? name.substring(0, 15) + '...' : name,
-        fullName: name,
-        value,
-        color: colors[idx % colors.length],
-      }));
+      
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#EC4899', '#06B6D4'];
+      const genreChartData = Object.entries(genreCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 7)
+        .map(([name, value], idx) => ({
+          name: name.length > 15 ? name.substring(0, 15) + '...' : name,
+          fullName: name,
+          value,
+          color: colors[idx % colors.length],
+        }));
 
-    setGenreData(genreChartData);
-    
-    setStats({
-      totalBooks: books.length,
-      totalUsers: users.length,
-      totalGenres: Object.keys(genreCounts).length,
-    });
+      setGenreData(genreChartData);
+      
+      setStats({
+        totalBooks: statsData?.totalBooks || books.length,
+        totalUsers: statsData?.totalUsers || users.length,
+        totalGenres: Object.keys(genreCounts).length,
+      });
 
-    // Recent registered users
-    const sortedUsers = [...users]
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .slice(0, 5);
-    setRecentUsers(sortedUsers);
+      // Recent registered users
+      const sortedUsers = [...users]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 5);
+      setRecentUsers(sortedUsers);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+      // Fallback to local data
+      const books = bookDetailsData || [];
+      const genreCounts = {};
+      books.forEach(book => {
+        book.genres?.forEach(genre => {
+          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        });
+      });
+      setStats({
+        totalBooks: books.length,
+        totalUsers: 0,
+        totalGenres: Object.keys(genreCounts).length,
+      });
+    }
   };
 
   const formatTimeAgo = (dateStr) => {

@@ -3,13 +3,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import Logo from "../components/common/Logo.jsx";
-
-const USERS_KEY = "eshelf_users";
+import api from "../utils/api";
 
 const LoginRegister = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isAuthenticated } = useAuth();
+  const { login, register, isAuthenticated } = useAuth();
 
   const [isLogin, setIsLogin] = useState(searchParams.get("tab") !== "register");
   const [showPassword, setShowPassword] = useState(false);
@@ -34,20 +33,6 @@ const LoginRegister = () => {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
-
-  // Get registered users from localStorage
-  const getUsers = () => {
-    try {
-      return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    } catch {
-      return [];
-    }
-  };
-
-  // Save users to localStorage
-  const saveUsers = (users) => {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  };
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -112,69 +97,44 @@ const LoginRegister = () => {
   };
 
   const handleLogin = async () => {
-    const users = getUsers();
-    const user = users.find((u) => u.email.toLowerCase() === form.email.toLowerCase());
-
-    if (!user) {
-      setErrors({ email: "Email không tồn tại trong hệ thống" });
-      return;
+    try {
+      const result = await login(form.email, form.password);
+      if (result.success) {
+        navigate("/");
+      } else {
+        setErrors({ 
+          general: result.error || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin." 
+        });
+      }
+    } catch (error) {
+      setErrors({ general: error.message || "Có lỗi xảy ra. Vui lòng thử lại." });
     }
-
-    if (user.password !== form.password) {
-      setErrors({ password: "Mật khẩu không đúng" });
-      return;
-    }
-
-    // Login successful
-    const userData = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      name: user.name || user.username,
-      role: user.role || "user",
-      avatar: user.avatar || null,
-      bio: user.bio || "",
-      createdAt: user.createdAt,
-    };
-
-    login(userData);
-    navigate("/");
   };
 
   const handleRegister = async () => {
-    const users = getUsers();
-    
-    // Check if email exists (case insensitive)
-    if (users.find((u) => u.email.toLowerCase() === form.email.toLowerCase())) {
-      setErrors({ email: "Email đã được sử dụng" });
-      return;
+    try {
+      const result = await register({
+        email: form.email.toLowerCase(),
+        username: form.username,
+        password: form.password,
+      });
+
+      if (result.success) {
+        setSuccessMessage("Đăng ký thành công! Đang chuyển hướng...");
+        setTimeout(() => {
+          navigate("/");
+        }, 1500);
+      } else {
+        // Handle specific error messages
+        if (result.error.includes("already exists") || result.error.includes("đã được sử dụng")) {
+          setErrors({ email: "Email đã được sử dụng" });
+        } else {
+          setErrors({ general: result.error || "Đăng ký thất bại. Vui lòng thử lại." });
+        }
+      }
+    } catch (error) {
+      setErrors({ general: error.message || "Có lỗi xảy ra. Vui lòng thử lại." });
     }
-
-    // Check if username exists (case insensitive)
-    if (users.find((u) => u.username.toLowerCase() === form.username.toLowerCase())) {
-      setErrors({ username: "Tên người dùng đã được sử dụng" });
-      return;
-    }
-
-    // Create new user
-    const newUser = {
-      id: `user_${Date.now()}`,
-      email: form.email.toLowerCase(),
-      username: form.username,
-      name: form.username,
-      password: form.password,
-      role: "user",
-      avatar: null,
-      bio: "",
-      createdAt: new Date().toISOString(),
-    };
-
-    users.push(newUser);
-    saveUsers(users);
-
-    setSuccessMessage("Đăng ký thành công! Vui lòng đăng nhập.");
-    setIsLogin(true);
-    setForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -183,18 +143,16 @@ const LoginRegister = () => {
 
     setIsLoading(true);
     setSuccessMessage("");
+    setErrors({});
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       if (isLogin) {
         await handleLogin();
       } else {
         await handleRegister();
       }
     } catch (error) {
-      setErrors({ general: "Có lỗi xảy ra. Vui lòng thử lại." });
+      setErrors({ general: error.message || "Có lỗi xảy ra. Vui lòng thử lại." });
     } finally {
       setIsLoading(false);
     }
@@ -211,15 +169,8 @@ const LoginRegister = () => {
       return;
     }
 
-    const users = getUsers();
-    const user = users.find((u) => u.email === form.email);
-
-    if (!user) {
-      setErrors({ email: "Email không tồn tại trong hệ thống" });
-      return;
-    }
-
-    // In real app, send reset email
+    // TODO: Implement forgot password API endpoint
+    // For now, just show success message
     setSuccessMessage(`Hướng dẫn đặt lại mật khẩu đã được gửi đến ${form.email}`);
     setShowForgotPassword(false);
   };

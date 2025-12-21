@@ -3,6 +3,14 @@ const { notFoundHandler } = require('../middleware/errorHandler');
 
 const router = express.Router();
 
+// Import route modules
+const authRoutes = require('./auth');
+const userRoutes = require('./users');
+const bookRoutes = require('./books');
+const collectionRoutes = require('./collections');
+const readingProgressRoutes = require('./readingProgress');
+const adminRoutes = require('./admin');
+
 // Health check endpoints
 router.get('/health', (req, res) => {
   res.json({
@@ -40,15 +48,21 @@ router.get('/', (req, res) => {
       ready: '/ready',
       auth: '/api/auth',
       users: '/api/users',
-      books: '/api/books'
+      books: '/api/books',
+      collections: '/api/collections',
+      readingProgress: '/api/reading-progress',
+      admin: '/api/admin'
     }
   });
 });
 
-// TODO: Add service routes
-// router.use('/api/auth', authRoutes);
-// router.use('/api/users', userRoutes);
-// router.use('/api/books', bookRoutes);
+// Service routes
+router.use('/api/auth', authRoutes);
+router.use('/api/users', userRoutes);
+router.use('/api/books', bookRoutes);
+router.use('/api/collections', collectionRoutes);
+router.use('/api/reading-progress', readingProgressRoutes);
+router.use('/api/admin', adminRoutes);
 
 // 404 handler (must be last)
 router.use(notFoundHandler);
