@@ -1,33 +1,20 @@
-const { v4: uuidv4 } = require('uuid');
-const bookController = require('./bookController');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// Get all genres from books
-const getGenresFromBooks = () => {
-  const books = bookController.getBooks();
-  const genreMap = new Map();
-
-  books.forEach(book => {
-    (book.genres || []).forEach(genre => {
-      if (!genreMap.has(genre)) {
-        genreMap.set(genre, {
-          id: uuidv4(),
-          name: genre,
-          slug: genre.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
-          bookCount: 1
-        });
-      } else {
-        genreMap.get(genre).bookCount++;
-      }
-    });
-  });
-
-  return Array.from(genreMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'vi'));
-};
-
-// Get all genres
+// Lấy danh sách tất cả thể loại
 exports.getAllGenres = async (req, res) => {
   try {
-    const genres = getGenresFromBooks();
+    const genres = await prisma.genre.findMany({
+      orderBy: { name: 'asc' },
+      // (Tùy chọn) Đếm số lượng sách trong mỗi thể loại nếu muốn
+      /*
+      include: {
+        _count: {
+          select: { books: true }
+        }
+      }
+      */
+    });
 
     res.json({
       success: true,
@@ -35,16 +22,23 @@ exports.getAllGenres = async (req, res) => {
     });
   } catch (error) {
     console.error('Get all genres error:', error);
-    res.status(500).json({ success: false, message: 'Lỗi server' });
+    res.status(500).json({ success: false, message: 'Lỗi server khi lấy danh sách thể loại' });
   }
 };
 
-// Get genre by slug
+// Lấy chi tiết thể loại theo slug
 exports.getGenreBySlug = async (req, res) => {
   try {
     const { slug } = req.params;
-    const genres = getGenresFromBooks();
-    const genre = genres.find(g => g.slug === slug);
+
+    const genre = await prisma.genre.findFirst({
+      where: {
+        OR: [
+          { slug: slug },
+          { name: { equals: slug, mode: 'insensitive' } }
+        ]
+      }
+    });
 
     if (!genre) {
       return res.status(404).json({
@@ -63,15 +57,23 @@ exports.getGenreBySlug = async (req, res) => {
   }
 };
 
-// Get books by genre
+// Lấy danh sách sách thuộc thể loại
 exports.getBooksByGenre = async (req, res) => {
   try {
     const { slug } = req.params;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
+    const skip = (page - 1) * limit;
 
-    const genres = getGenresFromBooks();
-    const genre = genres.find(g => g.slug === slug);
+    // 1. Tìm Genre trước
+    const genre = await prisma.genre.findFirst({
+      where: {
+        OR: [
+          { slug: slug },
+          { name: { equals: slug, mode: 'insensitive' } }
+        ]
+      }
+    });
 
     if (!genre) {
       return res.status(404).json({
@@ -80,25 +82,45 @@ exports.getBooksByGenre = async (req, res) => {
       });
     }
 
-    const books = bookController.getBooks();
-    const genreBooks = books.filter(book => 
-      book.genres?.some(g => g.toLowerCase() === genre.name.toLowerCase())
-    );
+    // 2. Tìm Sách thuộc Genre đó
+    // Sử dụng quan hệ many-to-many của Prisma (some)
+    const books = await prisma.book.findMany({
+      where: {
+        genres: {
+          some: {
+            genreId: genre.id
+          }
+        }
+      },
+      skip,
+      take: limit,
+      include: {
+        genres: {
+            include: { genre: true } // Kèm thông tin genre để hiển thị
+        }
+      }
+    });
 
-    const start = (page - 1) * limit;
-    const paginatedBooks = genreBooks.slice(start, start + limit);
+    // 3. Đếm tổng số sách để phân trang
+    const totalBooks = await prisma.book.count({
+      where: {
+        genres: {
+          some: { genreId: genre.id }
+        }
+      }
+    });
 
     res.json({
       success: true,
       data: {
         genre,
-        books: paginatedBooks
+        books: books
       },
       pagination: {
         page,
         limit,
-        total: genreBooks.length,
-        totalPages: Math.ceil(genreBooks.length / limit)
+        total: totalBooks,
+        totalPages: Math.ceil(totalBooks / limit)
       }
     });
   } catch (error) {
@@ -111,23 +133,27 @@ exports.getBooksByGenre = async (req, res) => {
 exports.createGenre = async (req, res) => {
   try {
     const { name, description } = req.body;
+    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
 
-    const genre = {
-      id: uuidv4(),
-      name,
-      slug: name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''),
-      description,
-      bookCount: 0,
-      createdAt: new Date().toISOString()
-    };
+    const newGenre = await prisma.genre.create({
+      data: {
+        name,
+        slug,
+        description
+      }
+    });
 
     res.status(201).json({
       success: true,
       message: 'Tạo thể loại thành công',
-      data: genre
+      data: newGenre
     });
   } catch (error) {
     console.error('Create genre error:', error);
+    // Handle duplicate error (P2002)
+    if (error.code === 'P2002') {
+        return res.status(400).json({ success: false, message: 'Thể loại này đã tồn tại' });
+    }
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
@@ -137,11 +163,23 @@ exports.updateGenre = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description } = req.body;
+    
+    // Nếu đổi tên thì update cả slug
+    const dataToUpdate = { description };
+    if (name) {
+        dataToUpdate.name = name;
+        dataToUpdate.slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '');
+    }
+
+    const updatedGenre = await prisma.genre.update({
+      where: { id },
+      data: dataToUpdate
+    });
 
     res.json({
       success: true,
       message: 'Cập nhật thể loại thành công',
-      data: { id, name, description }
+      data: updatedGenre
     });
   } catch (error) {
     console.error('Update genre error:', error);
@@ -154,6 +192,10 @@ exports.deleteGenre = async (req, res) => {
   try {
     const { id } = req.params;
 
+    await prisma.genre.delete({
+      where: { id }
+    });
+
     res.json({
       success: true,
       message: 'Xóa thể loại thành công'
@@ -163,5 +205,3 @@ exports.deleteGenre = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
-
-
