@@ -1,0 +1,237 @@
+// Jenkins Pipeline for eShelf - Lab 2
+// Multi-stage pipeline with security scanning
+
+pipeline {
+    agent any
+    
+    environment {
+        DOCKER_REGISTRY = 'harbor.yourdomain.com'  // Change to your Harbor URL
+        PROJECT_NAME = 'eshelf'
+        SONARQUBE_URL = 'http://sonarqube:9000'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                script {
+                    env.GIT_COMMIT_SHORT = sh(
+                        script: "git rev-parse --short HEAD",
+                        returnStdout: true
+                    ).trim()
+                }
+            }
+        }
+        
+        stage('Lint & Test') {
+            parallel {
+                stage('Frontend Lint & Test') {
+                    steps {
+                        dir('.') {
+                            sh 'npm ci'
+                            sh 'npm run lint || true'
+                            sh 'npm run build'
+                        }
+                    }
+                }
+                
+                stage('Backend Services Lint & Test') {
+                    steps {
+                        script {
+                            def services = ['api-gateway', 'auth-service', 'book-service', 'user-service']
+                            services.each { service ->
+                                dir("backend/services/${service}") {
+                                    sh 'npm ci'
+                                    sh 'npm run lint || true'
+                                    sh 'npm test || true'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    withSonarQubeEnv('SonarQube') {
+                        sh """
+                            sonar-scanner \
+                              -Dsonar.projectKey=${PROJECT_NAME} \
+                              -Dsonar.sources=. \
+                              -Dsonar.host.url=${SONARQUBE_URL}
+                        """
+                    }
+                }
+            }
+        }
+        
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build API Gateway') {
+                    steps {
+                        dir('backend/services/api-gateway') {
+                            sh "docker build -t ${DOCKER_REGISTRY}/${PROJECT_NAME}/api-gateway:${env.GIT_COMMIT_SHORT} ."
+                        }
+                    }
+                }
+                
+                stage('Build Auth Service') {
+                    steps {
+                        dir('backend/services/auth-service') {
+                            sh "docker build -t ${DOCKER_REGISTRY}/${PROJECT_NAME}/auth-service:${env.GIT_COMMIT_SHORT} ."
+                        }
+                    }
+                }
+                
+                stage('Build Book Service') {
+                    steps {
+                        dir('backend/services/book-service') {
+                            sh "docker build -t ${DOCKER_REGISTRY}/${PROJECT_NAME}/book-service:${env.GIT_COMMIT_SHORT} ."
+                        }
+                    }
+                }
+                
+                stage('Build User Service') {
+                    steps {
+                        dir('backend/services/user-service') {
+                            sh "docker build -t ${DOCKER_REGISTRY}/${PROJECT_NAME}/user-service:${env.GIT_COMMIT_SHORT} ."
+                        }
+                    }
+                }
+                
+                stage('Build ML Service') {
+                    steps {
+                        dir('backend/services/ml-service') {
+                            sh "docker build -t ${DOCKER_REGISTRY}/${PROJECT_NAME}/ml-service:${env.GIT_COMMIT_SHORT} ."
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Security Scan') {
+            parallel {
+                stage('Trivy Scan') {
+                    steps {
+                        script {
+                            def services = ['api-gateway', 'auth-service', 'book-service', 'user-service', 'ml-service']
+                            services.each { service ->
+                                sh """
+                                    trivy image \
+                                      --severity HIGH,CRITICAL \
+                                      --exit-code 0 \
+                                      ${DOCKER_REGISTRY}/${PROJECT_NAME}/${service}:${env.GIT_COMMIT_SHORT}
+                                """
+                            }
+                        }
+                    }
+                }
+                
+                stage('OWASP Dependency Check') {
+                    steps {
+                        sh 'npm audit --audit-level=high || true'
+                    }
+                }
+            }
+        }
+        
+        stage('Push to Registry') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    withCredentials([usernamePassword(
+                        credentialsId: 'harbor-credentials',
+                        usernameVariable: 'HARBOR_USER',
+                        passwordVariable: 'HARBOR_PASS'
+                    )]) {
+                        sh "docker login ${DOCKER_REGISTRY} -u ${HARBOR_USER} -p ${HARBOR_PASS}"
+                        
+                        def services = ['api-gateway', 'auth-service', 'book-service', 'user-service', 'ml-service']
+                        services.each { service ->
+                            sh "docker push ${DOCKER_REGISTRY}/${PROJECT_NAME}/${service}:${env.GIT_COMMIT_SHORT}"
+                            sh "docker tag ${DOCKER_REGISTRY}/${PROJECT_NAME}/${service}:${env.GIT_COMMIT_SHORT} ${DOCKER_REGISTRY}/${PROJECT_NAME}/${service}:latest"
+                            sh "docker push ${DOCKER_REGISTRY}/${PROJECT_NAME}/${service}:latest"
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Deploy to Staging') {
+            when {
+                branch 'main'
+            }
+            steps {
+                script {
+                    // Update Kubernetes manifests with new image tags
+                    sh """
+                        cd infrastructure/kubernetes/overlays/staging
+                        kustomize edit set image \\
+                          api-gateway=${DOCKER_REGISTRY}/${PROJECT_NAME}/api-gateway:${env.GIT_COMMIT_SHORT} \\
+                          auth-service=${DOCKER_REGISTRY}/${PROJECT_NAME}/auth-service:${env.GIT_COMMIT_SHORT} \\
+                          book-service=${DOCKER_REGISTRY}/${PROJECT_NAME}/book-service:${env.GIT_COMMIT_SHORT} \\
+                          user-service=${DOCKER_REGISTRY}/${PROJECT_NAME}/user-service:${env.GIT_COMMIT_SHORT} \\
+                          ml-service=${DOCKER_REGISTRY}/${PROJECT_NAME}/ml-service:${env.GIT_COMMIT_SHORT}
+                    """
+                    
+                    // Apply to Kubernetes
+                    sh 'kubectl apply -k infrastructure/kubernetes/overlays/staging'
+                    
+                    // Wait for rollout
+                    sh 'kubectl rollout status deployment/api-gateway -n eshelf-staging'
+                }
+            }
+        }
+        
+        stage('Integration Tests') {
+            when {
+                branch 'main'
+            }
+            steps {
+                sh 'npm run test:integration || true'
+            }
+        }
+        
+        stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
+            steps {
+                input message: 'Deploy to Production?', ok: 'Deploy'
+                
+                script {
+                    sh """
+                        cd infrastructure/kubernetes/overlays/prod
+                        kustomize edit set image \\
+                          api-gateway=${DOCKER_REGISTRY}/${PROJECT_NAME}/api-gateway:${env.GIT_COMMIT_SHORT}
+                    """
+                    
+                    sh 'kubectl apply -k infrastructure/kubernetes/overlays/prod'
+                    sh 'kubectl rollout status deployment/api-gateway -n eshelf-prod'
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            cleanWs()
+        }
+        
+        success {
+            echo 'Pipeline succeeded!'
+            // Send Slack notification
+        }
+        
+        failure {
+            echo 'Pipeline failed!'
+            // Send Slack notification
+            // Rollback if needed
+        }
+    }
+}
+

@@ -1,0 +1,44 @@
+name: Update Kubernetes Manifests
+
+on:
+  workflow_run:
+    workflows: ["Smart Build Pipeline"]
+    types:
+      - completed
+    branches: [main]
+
+jobs:
+  update-manifests:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install yq
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+      
+      - name: Update image tags
+        run: |
+          IMAGE_TAG="${{ github.sha }}"
+          
+          # Update staging manifests
+          yq eval ".spec.template.spec.containers[0].image = \"eshelf/api-gateway:${IMAGE_TAG}\"" \
+            -i infrastructure/kubernetes/overlays/staging/api-gateway-deployment.yaml
+          
+          # Update production manifests (if needed)
+          # yq eval ".spec.template.spec.containers[0].image = \"eshelf/api-gateway:${IMAGE_TAG}\"" \
+          #   -i infrastructure/kubernetes/overlays/prod/api-gateway-deployment.yaml
+      
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add infrastructure/kubernetes/
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore: update image tags to ${{ github.sha }}"
+          git push
+

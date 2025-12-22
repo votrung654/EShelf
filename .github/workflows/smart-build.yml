@@ -1,0 +1,157 @@
+name: Smart Build Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # Detect changes
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      api-gateway: ${{ steps.filter.outputs.api-gateway }}
+      auth-service: ${{ steps.filter.outputs.auth-service }}
+      book-service: ${{ steps.filter.outputs.book-service }}
+      user-service: ${{ steps.filter.outputs.user-service }}
+      ml-service: ${{ steps.filter.outputs.ml-service }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'src/**'
+              - 'public/**'
+              - 'index.html'
+              - 'package.json'
+              - 'vite.config.js'
+            api-gateway:
+              - 'backend/services/api-gateway/**'
+            auth-service:
+              - 'backend/services/auth-service/**'
+            book-service:
+              - 'backend/services/book-service/**'
+            user-service:
+              - 'backend/services/user-service/**'
+            ml-service:
+              - 'backend/services/ml-service/**'
+
+  # Build Frontend (only if changed)
+  build-frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build
+        run: npm run build
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-dist
+          path: dist/
+
+  # Build API Gateway (only if changed)
+  build-api-gateway:
+    needs: changes
+    if: needs.changes.outputs.api-gateway == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        working-directory: backend/services/api-gateway
+        run: |
+          docker build -t eshelf/api-gateway:${{ github.sha }} .
+          docker tag eshelf/api-gateway:${{ github.sha }} eshelf/api-gateway:latest
+
+  # Build Auth Service (only if changed)
+  build-auth-service:
+    needs: changes
+    if: needs.changes.outputs.auth-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        working-directory: backend/services/auth-service
+        run: |
+          docker build -t eshelf/auth-service:${{ github.sha }} .
+          docker tag eshelf/auth-service:${{ github.sha }} eshelf/auth-service:latest
+
+  # Build Book Service (only if changed)
+  build-book-service:
+    needs: changes
+    if: needs.changes.outputs.book-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        working-directory: backend/services/book-service
+        run: |
+          docker build -t eshelf/book-service:${{ github.sha }} .
+          docker tag eshelf/book-service:${{ github.sha }} eshelf/book-service:latest
+
+  # Build User Service (only if changed)
+  build-user-service:
+    needs: changes
+    if: needs.changes.outputs.user-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        working-directory: backend/services/user-service
+        run: |
+          docker build -t eshelf/user-service:${{ github.sha }} .
+          docker tag eshelf/user-service:${{ github.sha }} eshelf/user-service:latest
+
+  # Build ML Service (only if changed)
+  build-ml-service:
+    needs: changes
+    if: needs.changes.outputs.ml-service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Build Docker image
+        working-directory: backend/services/ml-service
+        run: |
+          docker build -t eshelf/ml-service:${{ github.sha }} .
+          docker tag eshelf/ml-service:${{ github.sha }} eshelf/ml-service:latest
+
+  # Summary
+  summary:
+    needs: [changes, build-frontend, build-api-gateway, build-auth-service, build-book-service, build-user-service, build-ml-service]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build Summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Changed Components:" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: ${{ needs.changes.outputs.frontend }}" >> $GITHUB_STEP_SUMMARY
+          echo "- API Gateway: ${{ needs.changes.outputs.api-gateway }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Auth Service: ${{ needs.changes.outputs.auth-service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Book Service: ${{ needs.changes.outputs.book-service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- User Service: ${{ needs.changes.outputs.user-service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ML Service: ${{ needs.changes.outputs.ml-service }}" >> $GITHUB_STEP_SUMMARY
+

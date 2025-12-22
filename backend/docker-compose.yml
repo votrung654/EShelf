@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build: ./services/api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - BOOK_SERVICE_URL=http://book-service:3002
+      - USER_SERVICE_URL=http://user-service:3003
+      - ML_SERVICE_URL=http://ml-service:8000
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+    depends_on:
+      - auth-service
+      - book-service
+      - user-service
+      - ml-service
+    networks:
+      - eshelf-network
+
+  # Auth Service
+  auth-service:
+    build: ./services/auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret}
+      # 👇 ĐÃ THÊM: Kết nối DB (host là 'postgres', không phải localhost)
+      - DATABASE_URL=postgresql://eshelf:eshelf123@postgres:5432/eshelf?schema=public
+    depends_on:
+      - postgres
+    networks:
+      - eshelf-network
+
+  # Book Service
+  book-service:
+    build: ./services/book-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      # 👇 ĐÃ THÊM: Kết nối DB
+      - DATABASE_URL=postgresql://eshelf:eshelf123@postgres:5432/eshelf?schema=public
+    volumes:
+      - ../src/data:/app/data:ro
+    depends_on:
+      - postgres
+    networks:
+      - eshelf-network
+
+  # User Service
+  user-service:
+    build: ./services/user-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      # 👇 ĐÃ THÊM: Kết nối DB
+      - DATABASE_URL=postgresql://eshelf:eshelf123@postgres:5432/eshelf?schema=public
+    depends_on:
+      - postgres
+    networks:
+      - eshelf-network
+
+  # ML Service
+  ml-service:
+    build: ./services/ml-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../src/data:/app/data:ro
+    networks:
+      - eshelf-network
+
+  # PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=eshelf
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-eshelf123}
+      - POSTGRES_DB=eshelf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eshelf-network
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - eshelf-network
+
+networks:
+  eshelf-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

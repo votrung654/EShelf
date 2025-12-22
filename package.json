@@ -1,13 +1,21 @@
 {
   "name": "eshelf",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "eShelf - Enterprise eBook Platform",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup": "bash scripts/setup-project.sh",
+    "check": "bash scripts/check-services.sh",
+    "test:all": "bash scripts/test-all-components.sh",
+    "test:all:win": "powershell -ExecutionPolicy Bypass -File scripts/test-all-components.ps1",
+    "backend:start": "cd backend && docker-compose up -d",
+    "backend:stop": "cd backend && docker-compose down",
+    "backend:logs": "cd backend && docker-compose logs -f"
   },
   "dependencies": {
     "cssnano": "^7.0.6",
@@ -37,5 +45,12 @@
     "prettier-plugin-tailwindcss": "^0.6.9",
     "tailwindcss": "^3.4.14",
     "vite": "^5.4.8"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/levanvux/eShelf.git"
+  },
+  "keywords": ["ebook", "react", "microservices", "devops", "mlops"],
+  "author": "Lê Văn Vũ",
+  "license": "MIT"
 }

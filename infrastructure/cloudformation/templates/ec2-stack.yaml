@@ -1,0 +1,219 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'eShelf EC2 Stack - Lab 1 Infrastructure as Code'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: eshelf
+    Description: Project name
+
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name
+
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Key Pair for SSH access
+
+  BastionInstanceType:
+    Type: String
+    Default: t3.micro
+    Description: Bastion instance type
+
+  AppInstanceType:
+    Type: String
+    Default: t3.small
+    Description: Application instance type
+
+  AllowedSSHCIDR:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: CIDR allowed for SSH (change to your IP)
+
+Resources:
+  # Bastion Security Group
+  BastionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ProjectName}-bastion-sg-${Environment}'
+      GroupDescription: Security group for bastion host
+      VpcId:
+        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-VpcId'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref AllowedSSHCIDR
+          Description: SSH from allowed IP
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: All outbound traffic
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-bastion-sg-${Environment}'
+
+  # Application Security Group
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${ProjectName}-app-sg-${Environment}'
+      GroupDescription: Security group for application servers
+      VpcId:
+        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-VpcId'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BastionSecurityGroup
+          Description: SSH from Bastion
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref BastionSecurityGroup
+          Description: HTTP from Bastion
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: All outbound traffic
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-app-sg-${Environment}'
+
+  # Bastion Host
+  BastionInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      InstanceType: !Ref BastionInstanceType
+      KeyName: !Ref KeyPairName
+      SubnetId:
+        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-PublicSubnet1Id'
+      SecurityGroupIds:
+        - !Ref BastionSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            Encrypted: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ec2-user
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-bastion-${Environment}'
+        - Key: Role
+          Value: Bastion
+
+  # Application Server 1
+  AppInstance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      InstanceType: !Ref AppInstanceType
+      KeyName: !Ref KeyPairName
+      SubnetId:
+        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-PrivateSubnet1Id'
+      SecurityGroupIds:
+        - !Ref AppSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
+            Encrypted: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ec2-user
+          
+          # Install Docker Compose
+          curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          
+          # Install Node.js
+          curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+          yum install -y nodejs
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-app-1-${Environment}'
+        - Key: Role
+          Value: Application
+
+  # Application Server 2
+  AppInstance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}'
+      InstanceType: !Ref AppInstanceType
+      KeyName: !Ref KeyPairName
+      SubnetId:
+        Fn::ImportValue: !Sub '${ProjectName}-${Environment}-PrivateSubnet2Id'
+      SecurityGroupIds:
+        - !Ref AppSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
+            Encrypted: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y docker
+          systemctl start docker
+          systemctl enable docker
+          usermod -aG docker ec2-user
+          
+          curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          chmod +x /usr/local/bin/docker-compose
+          
+          curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+          yum install -y nodejs
+      Tags:
+        - Key: Name
+          Value: !Sub '${ProjectName}-app-2-${Environment}'
+        - Key: Role
+          Value: Application
+
+Outputs:
+  BastionPublicIP:
+    Description: Bastion host public IP
+    Value: !GetAtt BastionInstance.PublicIp
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-BastionPublicIP'
+
+  BastionInstanceId:
+    Description: Bastion instance ID
+    Value: !Ref BastionInstance
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-BastionInstanceId'
+
+  AppInstance1PrivateIP:
+    Description: App instance 1 private IP
+    Value: !GetAtt AppInstance1.PrivateIp
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-AppInstance1PrivateIP'
+
+  AppInstance2PrivateIP:
+    Description: App instance 2 private IP
+    Value: !GetAtt AppInstance2.PrivateIp
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-AppInstance2PrivateIP'
+
+  SSHCommand:
+    Description: SSH command to bastion
+    Value: !Sub 'ssh -i <key.pem> ec2-user@${BastionInstance.PublicIp}'
+
