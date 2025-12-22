@@ -1,260 +1,123 @@
-// API Service for eShelf Frontend
+import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// Token management
-let accessToken = null;
-
-export const setAccessToken = (token) => {
-  accessToken = token;
-  if (token) {
-    localStorage.setItem('eshelf_token', token);
-  } else {
-    localStorage.removeItem('eshelf_token');
-  }
-};
-
-export const getAccessToken = () => {
-  if (!accessToken) {
-    accessToken = localStorage.getItem('eshelf_token');
-  }
-  return accessToken;
-};
-
-// API request helper
-const request = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  const headers = {
+// Tạo instance axios
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
     'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  },
+});
 
-  const token = getAccessToken();
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
+// Interceptor 1: Tự động gắn Token vào mọi request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-  try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+// Interceptor 2: Xử lý lỗi (Token hết hạn 401)
+api.interceptors.response.use(
+  (response) => response.data, // Trả về data trực tiếp cho gọn
+  async (error) => {
+    const originalRequest = error.config;
 
-    const data = await response.json();
+    // Nếu lỗi 401 và chưa retry lần nào -> Token hết hạn
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      
+      try {
+        // Gọi refresh token
+        const refreshToken = localStorage.getItem('refreshToken');
+        if (!refreshToken) throw new Error('No refresh token');
 
-    if (!response.ok) {
-      // Handle token expiration
-      if (response.status === 401 && data.code === 'TOKEN_EXPIRED') {
-        // Try to refresh token
-        const refreshed = await refreshToken();
-        if (refreshed) {
-          // Retry original request
-          return request(endpoint, options);
+        // Gọi thẳng axios gốc để tránh loop
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+        
+        if (res.data.success) {
+            const { accessToken, refreshToken: newRefreshToken } = res.data.data;
+            
+            // Lưu token mới
+            localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', newRefreshToken);
+            
+            // Gắn lại header và gọi lại request cũ
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            return api(originalRequest);
         }
+      } catch (refreshError) {
+        // Nếu refresh lỗi -> Logout luôn
+        localStorage.clear();
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
-      throw new Error(data.message || 'API Error');
     }
-
-    return data;
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+    return Promise.reject(error);
   }
-};
+);
 
-// Refresh token
-const refreshToken = async () => {
-  const refreshToken = localStorage.getItem('eshelf_refresh_token');
-  if (!refreshToken) return false;
+// --- CÁC API SERVICE ---
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      setAccessToken(data.data.accessToken);
-      localStorage.setItem('eshelf_refresh_token', data.data.refreshToken);
-      return true;
-    }
-  } catch (error) {
-    console.error('Refresh token error:', error);
-  }
-
-  // Clear tokens on failure
-  setAccessToken(null);
-  localStorage.removeItem('eshelf_refresh_token');
-  return false;
-};
-
-// Auth API
 export const authAPI = {
-  register: (userData) => request('/api/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(userData),
-  }),
-
-  login: async (credentials) => {
-    const data = await request('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
-    if (data.success) {
-      setAccessToken(data.data.accessToken);
-      localStorage.setItem('eshelf_refresh_token', data.data.refreshToken);
-    }
-    return data;
-  },
-
-  logout: async () => {
-    try {
-      await request('/api/auth/logout', { method: 'POST' });
-    } finally {
-      setAccessToken(null);
-      localStorage.removeItem('eshelf_refresh_token');
-    }
-  },
-
-  getCurrentUser: () => request('/api/auth/me'),
-
-  forgotPassword: (email) => request('/api/auth/forgot-password', {
-    method: 'POST',
-    body: JSON.stringify({ email }),
-  }),
+  register: (userData) => api.post('/auth/register', userData),
+  login: (credentials) => api.post('/auth/login', credentials),
+  logout: (refreshToken) => api.post('/auth/logout', { refreshToken }),
+  getCurrentUser: () => api.get('/auth/me'),
 };
 
-// Books API
 export const booksAPI = {
-  getAll: (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return request(`/api/books${query ? `?${query}` : ''}`);
+  getAll: (page = 1, limit = 20) => api.get(`/books?page=${page}&limit=${limit}`),
+  search: (query, genre) => {
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (genre && genre !== 'all') params.append('genre', genre);
+    return api.get(`/books/search?${params.toString()}`);
   },
-
-  search: (params) => {
-    const query = new URLSearchParams(params).toString();
-    return request(`/api/books/search?${query}`);
-  },
-
-  getById: (id) => request(`/api/books/${id}`),
-
-  getFeatured: (limit = 10) => request(`/api/books/featured?limit=${limit}`),
-
-  getPopular: (limit = 10) => request(`/api/books/popular?limit=${limit}`),
-
-  getReviews: (bookId) => request(`/api/books/${bookId}/reviews`),
-
-  addReview: (bookId, reviewData) => request(`/api/books/${bookId}/reviews`, {
-    method: 'POST',
-    body: JSON.stringify(reviewData),
-  }),
-
-  // Admin operations
-  create: (bookData) => request('/api/books', {
-    method: 'POST',
-    body: JSON.stringify(bookData),
-  }),
-
-  update: (id, bookData) => request(`/api/books/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(bookData),
-  }),
-
-  delete: (id) => request(`/api/books/${id}`, { method: 'DELETE' }),
+  getById: (id) => api.get(`/books/${id}`),
+  getFeatured: (limit = 10) => api.get(`/books/featured?limit=${limit}`),
+  getPopular: (limit = 10) => api.get(`/books/popular?limit=${limit}`),
+  
+  // Reviews
+  getReviews: (bookId) => api.get(`/books/${bookId}/reviews`),
+  addReview: (bookId, data) => api.post(`/books/${bookId}/reviews`, data),
 };
 
-// Genres API
 export const genresAPI = {
-  getAll: () => request('/api/genres'),
-  getBySlug: (slug) => request(`/api/genres/${slug}`),
-  getBooks: (slug, params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    return request(`/api/genres/${slug}/books${query ? `?${query}` : ''}`);
-  },
+  getAll: () => api.get('/genres'),
+  getBooks: (slug) => api.get(`/genres/${slug}/books`),
 };
 
-// User Profile API
 export const profileAPI = {
-  get: () => request('/api/profile'),
-  update: (data) => request('/api/profile', {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  }),
-  updateAvatar: (avatarUrl) => request('/api/profile/avatar', {
-    method: 'PUT',
-    body: JSON.stringify({ avatar: avatarUrl }),
-  }),
-  getStats: () => request('/api/profile/stats'),
+  get: () => api.get('/users/profile'), // Gateway map sang user-service
+  update: (data) => api.put('/users/profile', data),
 };
 
-// Favorites API
 export const favoritesAPI = {
-  getAll: () => request('/api/favorites'),
-  add: (bookId) => request(`/api/favorites/${bookId}`, { method: 'POST' }),
-  remove: (bookId) => request(`/api/favorites/${bookId}`, { method: 'DELETE' }),
-  check: (bookId) => request(`/api/favorites/check/${bookId}`),
+  // Lấy danh sách (trả về mảng ID sách)
+  getAll: () => api.get('/favorites'),
+  
+  // Thêm: Gửi ID trong Body (Sửa lại cho đúng với backend của bạn)
+  add: (bookId) => api.post('/favorites', { bookId }),
+  
+  // Xóa: Backend RESTful thường là DELETE /favorites/:id
+  remove: (bookId) => api.delete(`/favorites/${bookId}`),
 };
 
-// Collections API
-export const collectionsAPI = {
-  getAll: () => request('/api/collections'),
-  create: (data) => request('/api/collections', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
-  getById: (id) => request(`/api/collections/${id}`),
-  update: (id, data) => request(`/api/collections/${id}`, {
-    method: 'PUT',
-    body: JSON.stringify(data),
-  }),
-  delete: (id) => request(`/api/collections/${id}`, { method: 'DELETE' }),
-  addBook: (collectionId, bookId) => request(`/api/collections/${collectionId}/books/${bookId}`, {
-    method: 'POST',
-  }),
-  removeBook: (collectionId, bookId) => request(`/api/collections/${collectionId}/books/${bookId}`, {
-    method: 'DELETE',
-  }),
-};
-
-// Reading History API
 export const historyAPI = {
-  getAll: () => request('/api/reading-history'),
-  saveProgress: (data) => request('/api/reading-history', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
-  getBookProgress: (bookId) => request(`/api/reading-history/${bookId}`),
-  deleteBook: (bookId) => request(`/api/reading-history/${bookId}`, { method: 'DELETE' }),
+  getAll: () => api.get('/reading-history'),
+  saveProgress: (bookId, progress) => api.post('/reading-history', { bookId, progress }),
 };
 
-// ML API
 export const mlAPI = {
-  getRecommendations: (userId, nItems = 10) => request('/api/ml/recommendations', {
-    method: 'POST',
-    body: JSON.stringify({ user_id: userId, n_items: nItems }),
-  }),
-  getSimilarBooks: (bookId, nItems = 6) => request('/api/ml/similar', {
-    method: 'POST',
-    body: JSON.stringify({ book_id: bookId, n_items: nItems }),
-  }),
-  estimateReadingTime: (pages, genre = null) => request('/api/ml/estimate-time', {
-    method: 'POST',
-    body: JSON.stringify({ pages, genre }),
-  }),
+  getRecommendations: (userId, nItems = 10) => api.post('/ml/recommendations', { user_id: userId, n_items: nItems }),
+  getSimilarBooks: (bookId, nItems = 6) => api.post('/ml/similar', { book_id: bookId, n_items: nItems }),
+  estimateReadingTime: (pages, genre) => api.post('/ml/estimate-time', { pages, genre }),
 };
 
-export default {
-  auth: authAPI,
-  books: booksAPI,
-  genres: genresAPI,
-  profile: profileAPI,
-  favorites: favoritesAPI,
-  collections: collectionsAPI,
-  history: historyAPI,
-  ml: mlAPI,
-};
-
-
+export default api;

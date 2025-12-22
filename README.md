@@ -618,8 +618,16 @@ npm install && npm run dev
 # http://localhost:5173
 ```
 
-**Default credentials for testing:**
-- Email: `user@eshelf.com`
-- Password: `User123!`
+## 🔐 Default Login Credentials
 
-(Register new account if needed)
+### Admin Account
+- **Email:** `admin@eshelf.com`
+- **Password:** `Admin123!`
+- **Quyền hạn:** Quản lý sách, users, dashboard
+
+### Test User Account
+- **Email:** `user@eshelf.com`
+- **Password:** `User123!`
+- **Quyền hạn:** Đọc sách, favorites, recommendations
+
+> **Lưu ý:** Chạy `cd backend/database && npm run db:seed` để tạo tài khoản mặc định

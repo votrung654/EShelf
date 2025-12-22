@@ -1,9 +1,13 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
+const { PrismaClient } = require('@prisma/client');
 
-// In-memory storage (replace with database in production)
-const users = new Map();
+// Khởi tạo Prisma Client
+const prisma = new PrismaClient();
+
+// In-memory storage cho Refresh Token (Tạm thời giữ cái này để xử lý Logout)
+// Lưu ý: Trong môi trường Production thực tế, nên dùng Redis để lưu cái này.
 const refreshTokens = new Map();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
@@ -37,10 +41,15 @@ exports.register = async (req, res) => {
   try {
     const { email, password, username, name } = req.body;
 
-    // Check if user exists
-    const existingUser = Array.from(users.values()).find(
-      u => u.email === email || u.username === username
-    );
+    // 1. Kiểm tra user đã tồn tại trong DB chưa (Check Email hoặc Username)
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: email },
+          { username: username }
+        ]
+      }
+    });
 
     if (existingUser) {
       return res.status(409).json({
@@ -51,31 +60,28 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Hash password
+    // 2. Hash password
     const passwordHash = await bcrypt.hash(password, 12);
 
-    // Create user
-    const user = {
-      id: uuidv4(),
-      email,
-      username,
-      name: name || username,
-      passwordHash,
-      role: 'user',
-      avatar: null,
-      bio: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    // 3. Tạo user mới trong DB
+    const newUser = await prisma.user.create({
+      data: {
+        // id: uuidv4(), // Prisma thường tự sinh UUID nếu schema để @default(uuid()), nhưng để chắc chắn ta tự sinh
+        email,
+        username,
+        name: name || username,
+        passwordHash, // Lưu ý: Tên cột này phải khớp với schema.prisma (passwordHash hoặc password)
+        role: 'USER', // Mặc định là USER
+        emailVerified: false
+      }
+    });
 
-    users.set(user.id, user);
+    // 4. Generate tokens
+    const tokens = generateTokens(newUser);
+    refreshTokens.set(tokens.refreshToken, newUser.id);
 
-    // Generate tokens
-    const tokens = generateTokens(user);
-    refreshTokens.set(tokens.refreshToken, user.id);
-
-    // Response
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    // Response (Bỏ password hash)
+    const { passwordHash: _, ...userWithoutPassword } = newUser;
     
     res.status(201).json({
       success: true,
@@ -99,8 +105,10 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user
-    const user = Array.from(users.values()).find(u => u.email === email);
+    // 1. Tìm user trong DB
+    const user = await prisma.user.findUnique({
+      where: { email: email }
+    });
 
     if (!user) {
       return res.status(401).json({
@@ -109,7 +117,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Verify password
+    // 2. Verify password
     const isMatch = await bcrypt.compare(password, user.passwordHash);
 
     if (!isMatch) {
@@ -119,7 +127,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Generate tokens
+    // 3. Generate tokens
     const tokens = generateTokens(user);
     refreshTokens.set(tokens.refreshToken, user.id);
 
@@ -155,17 +163,19 @@ exports.refreshToken = async (req, res) => {
       });
     }
 
-    // Verify refresh token
-    const userId = refreshTokens.get(refreshToken);
-    if (!userId) {
+    // Kiểm tra trong Map bộ nhớ (Để chặn các token đã logout)
+    const storedUserId = refreshTokens.get(refreshToken);
+    if (!storedUserId) {
       return res.status(401).json({
         success: false,
-        message: 'Refresh token không hợp lệ'
+        message: 'Refresh token không hợp lệ hoặc đã hết hạn'
       });
     }
 
+    // Verify chữ ký JWT
+    let decoded;
     try {
-      jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
     } catch (error) {
       refreshTokens.delete(refreshToken);
       return res.status(401).json({
@@ -174,8 +184,11 @@ exports.refreshToken = async (req, res) => {
       });
     }
 
-    // Get user
-    const user = users.get(userId);
+    // Lấy user từ DB (ĐỂ ĐẢM BẢO USER VẪN TỒN TẠI)
+    const user = await prisma.user.findUnique({
+        where: { id: decoded.userId }
+    });
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -184,9 +197,9 @@ exports.refreshToken = async (req, res) => {
     }
 
     // Generate new tokens
-    refreshTokens.delete(refreshToken);
+    refreshTokens.delete(refreshToken); // Xóa token cũ
     const tokens = generateTokens(user);
-    refreshTokens.set(tokens.refreshToken, user.id);
+    refreshTokens.set(tokens.refreshToken, user.id); // Lưu token mới
 
     res.json({
       success: true,
@@ -223,53 +236,45 @@ exports.logout = async (req, res) => {
   }
 };
 
-// Forgot Password
+// Forgot Password (Mock - chưa có DB lưu token reset)
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    // Check user tồn tại trong DB cho chắc
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    const user = Array.from(users.values()).find(u => u.email === email);
-
-    // Always return success to prevent email enumeration
     res.json({
       success: true,
       message: 'Nếu email tồn tại, bạn sẽ nhận được link đặt lại mật khẩu'
     });
-
-    // TODO: Send email with reset link
   } catch (error) {
     console.error('Forgot password error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server'
-    });
+    res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
 
-// Reset Password
+// Reset Password (Mock)
 exports.resetPassword = async (req, res) => {
   try {
-    const { token, newPassword } = req.body;
-
-    // TODO: Verify reset token and update password
-
+    // Logic reset password cần lưu token vào DB hoặc Redis
+    // Tạm thời trả về thành công
     res.json({
       success: true,
       message: 'Đặt lại mật khẩu thành công'
     });
   } catch (error) {
     console.error('Reset password error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi server'
-    });
+    res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
 
 // Get Current User
 exports.getCurrentUser = async (req, res) => {
   try {
-    const user = users.get(req.user.userId);
+    // Lấy thông tin từ DB dựa trên ID trong Token
+    const user = await prisma.user.findUnique({
+        where: { id: req.user.userId }
+    });
 
     if (!user) {
       return res.status(404).json({
@@ -292,8 +297,4 @@ exports.getCurrentUser = async (req, res) => {
     });
   }
 };
-
-// Export users for other services (development only)
-exports.getUsers = () => users;
-
 

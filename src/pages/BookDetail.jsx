@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback } from "react";
 import AddToCollectionModal from "../components/collection/AddToCollectionModal";
 import ReadingProgress, { getReadingProgress } from "../components/book/ReadingProgress";
 import { useAuth } from "../context/AuthContext";
+import { favoritesAPI, historyAPI } from "../services/api";
 
 const STORAGE_KEY = "eshelf_collections";
 
@@ -30,6 +31,8 @@ const BookDetail = () => {
   const [collections, setCollections] = useState([]);
   const [isBookSaved, setIsBookSaved] = useState(false);
   const [readingProgress, setReadingProgress] = useState(null);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
+  const [isFavoriteReal, setIsFavoriteReal] = useState(false); // Favorite từ backend
 
   // Load collections cho user hiện tại
   useEffect(() => {
@@ -79,6 +82,22 @@ const BookDetail = () => {
       setReadingProgress(progress);
     }
   }, [book]);
+
+  // Load favorite status từ backend khi component mount
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (!isAuthenticated || !book) return;
+      
+      try {
+        const result = await favoritesAPI.check(book.isbn);
+        setIsFavoriteReal(result.data.isFavorite);
+      } catch (error) {
+        console.error('Check favorite error:', error);
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [book, isAuthenticated]);
 
   const saveCollectionsToStorage = (data) => {
     if (!user?.id) return;
@@ -167,6 +186,35 @@ const BookDetail = () => {
       }
     : null;
 
+  // Toggle favorite với backend
+  const handleToggleFavoriteReal = async () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    if (!book) return;
+    
+    setIsFavoriteLoading(true);
+    try {
+      await favoritesAPI.toggle(book.isbn);
+      setIsFavoriteReal(!isFavoriteReal);
+      
+      // Show toast
+      if (!isFavoriteReal) {
+        // Có thể thêm toast notification ở đây
+        console.log('Added to favorites');
+      } else {
+        console.log('Removed from favorites');
+      }
+    } catch (error) {
+      console.error('Toggle favorite error:', error);
+      alert('Không thể cập nhật yêu thích. Vui lòng thử lại.');
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
   if (book) {
     return (
       <div className="px-8 md:px-20 lg:px-24">
@@ -198,15 +246,22 @@ const BookDetail = () => {
               <MessageSquareMore />{" "}
               {`${comments.length} comment${comments.length !== 1 && "s"}`}
             </p>
-            <Heart
-              onClick={() => setIsHeartClicked(!isHeartClicked)}
-              className={`cursor-pointer ${
-                isHeartClicked
-                  ? "text-sky-400"
+            {/* Replace Heart button với version mới */}
+            <button
+              onClick={handleToggleFavoriteReal}
+              disabled={isFavoriteLoading || !isAuthenticated}
+              className={`cursor-pointer transition-colors ${
+                isFavoriteReal
+                  ? "text-red-500"
                   : "text-gray-400 hover:text-gray-500"
-              }`}
-              fill={isHeartClicked ? "#38bdf8" : "#f9fafb"}
-            />
+              } ${isFavoriteLoading ? "opacity-50" : ""}`}
+              title={isAuthenticated ? (isFavoriteReal ? "Xóa khỏi yêu thích" : "Thêm vào yêu thích") : "Đăng nhập để thêm yêu thích"}
+            >
+              <Heart
+                className="w-6 h-6"
+                fill={isFavoriteReal ? "currentColor" : "none"}
+              />
+            </button>
             <Bookmark
               onClick={() => setIsBookmarkClicked(!isBookmarkClicked)}
               className={`cursor-pointer ${

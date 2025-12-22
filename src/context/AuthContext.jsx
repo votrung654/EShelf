@@ -1,53 +1,100 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
-
-const USER_KEY = 'eshelf_user';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount
+  // Khởi động: Kiểm tra xem có token trong localStorage không
   useEffect(() => {
-    const savedUser = localStorage.getItem(USER_KEY);
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        console.error('Failed to parse user:', e);
-        localStorage.removeItem(USER_KEY);
+    const initAuth = async () => {
+      const token = localStorage.getItem('accessToken');
+      const storedUser = localStorage.getItem('user');
+
+      if (token && storedUser) {
+        // Nếu có token, set user tạm thời từ storage để hiển thị ngay
+        setUser(JSON.parse(storedUser));
+        
+        // (Tuỳ chọn) Gọi API verify lại user cho chắc
+        try {
+           const res = await authAPI.getCurrentUser();
+           if(res.success) setUser(res.data);
+        } catch (err) {
+           console.error("Token invalid:", err);
+           logout(); // Token lỗi thì logout luôn
+        }
       }
+      setIsLoading(false);
+    };
+
+    initAuth();
+  }, []);
+
+  // Hàm Login gọi API thật
+  const login = async (email, password) => {
+    try {
+      const response = await authAPI.login({ email, password });
+      
+      if (response.success) {
+        const { user, accessToken, refreshToken } = response.data;
+
+        // Lưu vào Storage
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        localStorage.setItem('user', JSON.stringify(user));
+
+        // Cập nhật State
+        setUser(user);
+        return { success: true };
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Đăng nhập thất bại' 
+      };
     }
-    setIsLoading(false);
-  }, []);
+  };
 
-  const login = useCallback((userData) => {
-    setUser(userData);
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
-  }, []);
+  // Hàm Register gọi API thật
+  const register = async (userData) => {
+    try {
+      const response = await authAPI.register(userData);
+      return { success: true, message: response.message };
+    } catch (error) {
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Đăng ký thất bại' 
+      };
+    }
+  };
 
-  const logout = useCallback(() => {
+  const logout = () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+        authAPI.logout(refreshToken).catch(console.error); // Gọi API logout ngầm
+    }
+    
+    // Xóa sạch storage và state
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
     setUser(null);
-    localStorage.removeItem(USER_KEY);
-  }, []);
-
-  const updateUser = useCallback((updates) => {
-    setUser(prev => {
-      const updated = { ...prev, ...updates };
-      localStorage.setItem(USER_KEY, JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+    
+    // Redirect về login (nếu cần)
+    window.location.href = '/login';
+  };
 
   const value = {
     user,
     isLoading,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.role === 'ADMIN', // Lưu ý: Backend trả về 'ADMIN' hoa
     login,
+    register,
     logout,
-    updateUser,
   };
 
   return (

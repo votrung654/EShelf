@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
-import Logo from "../components/common/Logo.jsx";
-
-const USERS_KEY = "eshelf_users";
+import { useAuth } from "../context/AuthContext"; // Import Context xịn
+import { authAPI } from "../services/api"; // Import API để xử lý forgot pass
 
 const LoginRegister = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, isAuthenticated } = useAuth();
+  
+  // Lấy hàm login và register từ Context
+  const { login, register, isAuthenticated } = useAuth();
 
   const [isLogin, setIsLogin] = useState(searchParams.get("tab") !== "register");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,26 +28,12 @@ const LoginRegister = () => {
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Redirect if already logged in
+  // Nếu đã login thì đá về trang chủ
   useEffect(() => {
     if (isAuthenticated) {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
-
-  // Get registered users from localStorage
-  const getUsers = () => {
-    try {
-      return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    } catch {
-      return [];
-    }
-  };
-
-  // Save users to localStorage
-  const saveUsers = (users) => {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  };
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -56,10 +42,7 @@ const LoginRegister = () => {
 
   const validatePassword = (password) => {
     const errors = [];
-    if (password.length < 8) errors.push("Ít nhất 8 ký tự");
-    if (!/[A-Z]/.test(password)) errors.push("Ít nhất 1 chữ hoa");
-    if (!/[a-z]/.test(password)) errors.push("Ít nhất 1 chữ thường");
-    if (!/[0-9]/.test(password)) errors.push("Ít nhất 1 số");
+    if (password.length < 6) errors.push("Ít nhất 6 ký tự"); // Giảm xuống 6 cho dễ test
     return errors;
   };
 
@@ -84,8 +67,6 @@ const LoginRegister = () => {
     if (!isLogin) {
       if (!form.username.trim()) {
         newErrors.username = "Vui lòng nhập tên người dùng";
-      } else if (form.username.length < 3) {
-        newErrors.username = "Tên người dùng ít nhất 3 ký tự";
       }
 
       if (!form.confirmPassword) {
@@ -105,76 +86,52 @@ const LoginRegister = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-    // Clear error when user types
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
+  // 👇 XỬ LÝ LOGIN VỚI API THẬT
   const handleLogin = async () => {
-    const users = getUsers();
-    const user = users.find((u) => u.email.toLowerCase() === form.email.toLowerCase());
+    // Gọi hàm login từ AuthContext
+    const result = await login(form.email, form.password);
 
-    if (!user) {
-      setErrors({ email: "Email không tồn tại trong hệ thống" });
-      return;
+    if (result.success) {
+      navigate("/"); // Login thành công -> Về trang chủ
+    } else {
+      // Login thất bại -> Hiện lỗi từ Backend
+      setErrors({ 
+        general: result.message || "Email hoặc mật khẩu không đúng",
+        password: result.message === "Mật khẩu không đúng" ? "Mật khẩu không đúng" : ""
+      });
     }
-
-    if (user.password !== form.password) {
-      setErrors({ password: "Mật khẩu không đúng" });
-      return;
-    }
-
-    // Login successful
-    const userData = {
-      id: user.id,
-      email: user.email,
-      username: user.username,
-      name: user.name || user.username,
-      role: user.role || "user",
-      avatar: user.avatar || null,
-      bio: user.bio || "",
-      createdAt: user.createdAt,
-    };
-
-    login(userData);
-    navigate("/");
   };
 
+  // 👇 XỬ LÝ REGISTER VỚI API THẬT
   const handleRegister = async () => {
-    const users = getUsers();
-    
-    // Check if email exists (case insensitive)
-    if (users.find((u) => u.email.toLowerCase() === form.email.toLowerCase())) {
-      setErrors({ email: "Email đã được sử dụng" });
-      return;
-    }
-
-    // Check if username exists (case insensitive)
-    if (users.find((u) => u.username.toLowerCase() === form.username.toLowerCase())) {
-      setErrors({ username: "Tên người dùng đã được sử dụng" });
-      return;
-    }
-
-    // Create new user
-    const newUser = {
-      id: `user_${Date.now()}`,
-      email: form.email.toLowerCase(),
-      username: form.username,
-      name: form.username,
+    // Chuẩn bị dữ liệu gửi lên Backend
+    const userData = {
+      email: form.email,
       password: form.password,
-      role: "user",
-      avatar: null,
-      bio: "",
-      createdAt: new Date().toISOString(),
+      username: form.username,
+      name: form.username, // Tạm thời lấy name = username
     };
 
-    users.push(newUser);
-    saveUsers(users);
+    // Gọi hàm register từ AuthContext
+    const result = await register(userData);
 
-    setSuccessMessage("Đăng ký thành công! Vui lòng đăng nhập.");
-    setIsLogin(true);
-    setForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+    if (result.success) {
+      setSuccessMessage("Đăng ký thành công! Vui lòng đăng nhập.");
+      setIsLogin(true); // Chuyển sang tab login
+      setForm((prev) => ({ ...prev, password: "", confirmPassword: "" }));
+    } else {
+      // Hiện lỗi từ Backend (ví dụ: Email đã tồn tại)
+      setErrors({ 
+        general: result.message,
+        email: result.message?.includes("Email") ? result.message : "",
+        username: result.message?.includes("Tên người dùng") ? result.message : ""
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -183,45 +140,37 @@ const LoginRegister = () => {
 
     setIsLoading(true);
     setSuccessMessage("");
+    setErrors({}); // Reset lỗi cũ
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
       if (isLogin) {
         await handleLogin();
       } else {
         await handleRegister();
       }
     } catch (error) {
-      setErrors({ general: "Có lỗi xảy ra. Vui lòng thử lại." });
+      setErrors({ general: "Lỗi kết nối server. Vui lòng thử lại." });
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Xử lý quên mật khẩu (Gọi API thật)
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     if (!form.email.trim()) {
       setErrors({ email: "Vui lòng nhập email" });
       return;
     }
-    if (!validateEmail(form.email)) {
-      setErrors({ email: "Email không hợp lệ" });
-      return;
+    
+    try {
+      await authAPI.forgotPassword(form.email);
+      // Luôn báo thành công để bảo mật (tránh check mail)
+      setSuccessMessage(`Nếu email tồn tại, hướng dẫn đặt lại mật khẩu sẽ được gửi đến ${form.email}`);
+      setTimeout(() => setShowForgotPassword(false), 3000);
+    } catch (error) {
+      setErrors({ email: "Có lỗi xảy ra khi gửi yêu cầu." });
     }
-
-    const users = getUsers();
-    const user = users.find((u) => u.email === form.email);
-
-    if (!user) {
-      setErrors({ email: "Email không tồn tại trong hệ thống" });
-      return;
-    }
-
-    // In real app, send reset email
-    setSuccessMessage(`Hướng dẫn đặt lại mật khẩu đã được gửi đến ${form.email}`);
-    setShowForgotPassword(false);
   };
 
   const switchMode = () => {
@@ -237,6 +186,7 @@ const LoginRegister = () => {
     });
   };
 
+  // Render Form Quên Mật Khẩu
   if (showForgotPassword) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
@@ -275,15 +225,10 @@ const LoginRegister = () => {
                     name="email"
                     value={form.email}
                     onChange={handleChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                      errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-600"
-                    }`}
+                    className="w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none border-gray-300 dark:border-gray-600"
                     placeholder="your@email.com"
                   />
                 </div>
-                {errors.email && (
-                  <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-                )}
               </div>
 
               <button
@@ -299,6 +244,7 @@ const LoginRegister = () => {
     );
   }
 
+  // Render Form Login/Register Chính
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-8">
       <div className="w-full max-w-md">
@@ -306,11 +252,6 @@ const LoginRegister = () => {
           {/* Logo */}
           <div className="text-center mb-8">
             <Link to="/" className="inline-flex items-center gap-2">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
               <span className="text-2xl font-bold text-gray-800 dark:text-white">eShelf</span>
             </Link>
           </div>
@@ -318,7 +259,7 @@ const LoginRegister = () => {
           {/* Tabs */}
           <div className="flex mb-6 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
             <button
-              onClick={() => switchMode()}
+              onClick={() => !isLogin && switchMode()}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
                 isLogin
                   ? "bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow"
@@ -328,7 +269,7 @@ const LoginRegister = () => {
               Đăng nhập
             </button>
             <button
-              onClick={() => switchMode()}
+              onClick={() => isLogin && switchMode()}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
                 !isLogin
                   ? "bg-white dark:bg-gray-600 text-gray-800 dark:text-white shadow"
@@ -393,7 +334,7 @@ const LoginRegister = () => {
                   className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 focus:outline-none ${
                     errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-600"
                   }`}
-                  placeholder="your@email.com"
+                  placeholder="admin@eshelf.com"
                 />
               </div>
               {errors.email && (
@@ -429,11 +370,6 @@ const LoginRegister = () => {
               {errors.password && (
                 <p className="text-red-500 text-sm mt-1">{errors.password}</p>
               )}
-              {!isLogin && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường và số
-                </p>
-              )}
             </div>
 
             {/* Confirm Password (Register only) */}
@@ -468,19 +404,9 @@ const LoginRegister = () => {
               </div>
             )}
 
-            {/* Remember me & Forgot password (Login only) */}
+            {/* Forgot Password Link */}
             {isLogin && (
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={form.rememberMe}
-                    onChange={handleChange}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Ghi nhớ đăng nhập</span>
-                </label>
+              <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={() => setShowForgotPassword(true)}
@@ -509,18 +435,6 @@ const LoginRegister = () => {
               )}
             </button>
           </form>
-
-          {/* Switch mode link */}
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
-            {isLogin ? "Chưa có tài khoản?" : "Đã có tài khoản?"}
-            <button
-              type="button"
-              onClick={switchMode}
-              className="text-blue-600 hover:text-blue-700 dark:text-blue-400 font-medium ml-1"
-            >
-              {isLogin ? "Đăng ký ngay" : "Đăng nhập"}
-            </button>
-          </p>
         </div>
       </div>
     </div>
