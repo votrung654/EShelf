@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-
-const STORAGE_KEY = 'eshelf_collections';
+import { collectionsAPI, booksAPI } from '../services/api';
 
 export default function CollectionDetail() {
   const { id } = useParams();
@@ -9,49 +8,99 @@ export default function CollectionDetail() {
   const [collection, setCollection] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const collections = JSON.parse(saved);
-      const found = collections.find(c => c.id === id);
-      if (found) {
-        setCollection(found);
-        setEditName(found.name);
-      } else {
+    const loadCollection = async () => {
+      setIsLoading(true);
+      try {
+        const response = await collectionsAPI.getById(id);
+        if (response.success && response.data) {
+          const collectionData = response.data;
+          
+          // Backend chỉ trả về bookId array, cần fetch book details
+          if (collectionData.books && collectionData.books.length > 0) {
+            const bookDetails = await Promise.all(
+              collectionData.books.map(async (bookId) => {
+                try {
+                  const bookResponse = await booksAPI.getById(bookId);
+                  if (bookResponse.success && bookResponse.data) {
+                    return bookResponse.data;
+                  }
+                  return null;
+                } catch (error) {
+                  console.error('Error fetching book:', error);
+                  return null;
+                }
+              })
+            );
+            
+            // Filter out null values và update collection với book objects
+            collectionData.books = bookDetails.filter(Boolean);
+          }
+          
+          setCollection(collectionData);
+          setEditName(collectionData.name);
+        } else {
+          navigate('/collections');
+        }
+      } catch (error) {
+        console.error('Error loading collection:', error);
         navigate('/collections');
+      } finally {
+        setIsLoading(false);
       }
+    };
+
+    if (id) {
+      loadCollection();
     }
   }, [id, navigate]);
 
-  const saveCollection = (updated) => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const collections = saved ? JSON.parse(saved) : [];
-    const index = collections.findIndex(c => c.id === id);
-    if (index !== -1) {
-      collections[index] = updated;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
-      setCollection(updated);
+  const handleRemoveBook = async (bookIdentifier) => {
+    if (!collection) return;
+    
+    try {
+      const response = await collectionsAPI.removeBook(collection.id, bookIdentifier);
+      if (response.success) {
+        // Reload collection
+        const reloadResponse = await collectionsAPI.getById(id);
+        if (reloadResponse.success && reloadResponse.data) {
+          setCollection(reloadResponse.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error removing book:', error);
+      alert('Không thể xóa sách khỏi bộ sưu tập. Vui lòng thử lại.');
     }
   };
 
-  const handleRemoveBook = (bookIdentifier) => {
-    if (!collection) return;
-    const updated = {
-      ...collection,
-      books: collection.books.filter(b => (b.isbn || b.id) !== bookIdentifier),
-    };
-    saveCollection(updated);
-  };
-
-  const handleRename = () => {
+  const handleRename = async () => {
     if (!editName.trim() || !collection) return;
-    const updated = { ...collection, name: editName.trim() };
-    saveCollection(updated);
-    setIsEditing(false);
+    
+    try {
+      const response = await collectionsAPI.update(collection.id, {
+        name: editName.trim(),
+        description: collection.description,
+        isPublic: collection.isPublic,
+      });
+      
+      if (response.success) {
+        // Reload collection
+        const reloadResponse = await collectionsAPI.getById(id);
+        if (reloadResponse.success && reloadResponse.data) {
+          setCollection(reloadResponse.data);
+          setEditName(reloadResponse.data.name);
+        }
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error('Error renaming collection:', error);
+      alert('Không thể đổi tên bộ sưu tập. Vui lòng thử lại.');
+    }
   };
 
-  if (!collection) {
+  if (isLoading || !collection) {
     return (
       <main className="flex-1 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
@@ -65,14 +114,14 @@ export default function CollectionDetail() {
       <nav className="mb-6">
         <ol className="flex items-center space-x-2 text-sm">
           <li>
-            <Link to="/" className="text-blue-600 hover:underline">Trang chủ</Link>
+            <Link to="/" className="text-blue-600 dark:text-blue-400 hover:underline">Trang chủ</Link>
           </li>
-          <li className="text-gray-400">/</li>
+          <li className="text-gray-400 dark:text-gray-500">/</li>
           <li>
-            <Link to="/collections" className="text-blue-600 hover:underline">Bộ sưu tập</Link>
+            <Link to="/collections" className="text-blue-600 dark:text-blue-400 hover:underline">Bộ sưu tập</Link>
           </li>
-          <li className="text-gray-400">/</li>
-          <li className="text-gray-600">{collection.name}</li>
+          <li className="text-gray-400 dark:text-gray-500">/</li>
+          <li className="text-gray-600 dark:text-gray-400">{collection.name}</li>
         </ol>
       </nav>
 
@@ -99,16 +148,16 @@ export default function CollectionDetail() {
                   type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
                   autoFocus
                   onKeyDown={(e) => e.key === 'Enter' && handleRename()}
                 />
-                <button onClick={handleRename} className="p-2 text-green-600 hover:bg-green-50 rounded-lg">
+                <button onClick={handleRename} className="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </button>
-                <button onClick={() => setIsEditing(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg">
+                <button onClick={() => setIsEditing(false)} className="p-2 text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -116,11 +165,11 @@ export default function CollectionDetail() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-gray-800">{collection.name}</h1>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{collection.name}</h1>
                 {collection.id !== 'favorites' && (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                    className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -129,7 +178,7 @@ export default function CollectionDetail() {
                 )}
               </div>
             )}
-            <p className="text-gray-500">{collection.books.length} sách</p>
+            <p className="text-gray-500 dark:text-gray-400">{collection.books.length} sách</p>
           </div>
         </div>
       </div>
@@ -138,8 +187,8 @@ export default function CollectionDetail() {
       {collection.books.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {collection.books.map((book, index) => (
-            <div key={book.isbn || book.id || index} className="group relative">
-              <Link to={`/book/${book.isbn || book.id}`} className="block">
+            <div key={book.id || book.isbn || index} className="group relative">
+              <Link to={`/book/${book.id || book.isbn}`} className="block">
                 <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-md group-hover:shadow-xl transition-shadow">
                   <img
                     src={book.cover || book.coverUrl || '/images/book-covers/default.jpg'}
@@ -150,16 +199,16 @@ export default function CollectionDetail() {
                     }}
                   />
                 </div>
-                <h3 className="mt-2 font-medium text-gray-800 text-sm line-clamp-2 group-hover:text-blue-600">
+                <h3 className="mt-2 font-medium text-gray-800 dark:text-gray-100 text-sm line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                   {book.title}
                 </h3>
-                <p className="text-xs text-gray-500">{book.author}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{book.author}</p>
               </Link>
               
               {/* Remove button */}
               <button
-                onClick={() => handleRemoveBook(book.isbn || book.id)}
-                className="absolute top-2 right-2 p-2 bg-white/90 hover:bg-red-500 hover:text-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all"
+                onClick={() => handleRemoveBook(book.id || book.isbn)}
+                className="absolute top-2 right-2 p-2 bg-white/90 dark:bg-gray-800/90 hover:bg-red-500 hover:text-white rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-all"
                 title="Xóa khỏi bộ sưu tập"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,14 +219,14 @@ export default function CollectionDetail() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-gray-50 rounded-xl">
-          <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="text-center py-16 bg-gray-50 dark:bg-gray-800 rounded-xl">
+          <div className="w-20 h-20 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-10 h-10 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-800 mb-2">Chưa có sách nào</h3>
-          <p className="text-gray-500 mb-4">Thêm sách vào bộ sưu tập từ trang chi tiết sách</p>
+          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100 mb-2">Chưa có sách nào</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">Thêm sách vào bộ sưu tập từ trang chi tiết sách</p>
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

@@ -52,13 +52,13 @@ const SearchForm = ({ isSearchResultPage = false, genres = [] }) => {
 
   return (
     <>
-      <div className="mx-4 mb-2 mt-8 flex border border-gray-400 hover:outline hover:outline-1 hover:outline-sky-400 md:mx-24 lg:mx-44">
+      <div className="mx-4 mb-2 mt-8 flex border border-gray-400 hover:outline hover:outline-1 hover:outline-sky-400 md:mx-24 lg:mx-44 bg-white">
         <input
           type="text"
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
           placeholder="Tìm kiếm theo tên sách, tên tác giả, nxb..."
-          className="w-full px-3 text-gray-800 focus:outline-none"
+          className="w-full px-3 text-gray-900 bg-white focus:outline-none"
         />
         <a
           href={`${searchValue || fromYear || toYear || genres.length > 0 ? "/search/" + convertText(searchValue) + "&" + fromYear + "-" + toYear + "&" + convertArrayToString(genres) : ""}`}
@@ -76,14 +76,14 @@ const SearchForm = ({ isSearchResultPage = false, genres = [] }) => {
               value={fromYear}
               onChange={(e) => setFromYear(e.target.value)}
               placeholder="Từ năm"
-              className="mr-5 w-24 rounded border border-gray-300 px-3 py-[0.42rem] text-gray-800 [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="mr-5 w-24 rounded border border-gray-300 px-3 py-[0.42rem] text-gray-900 bg-white [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
             <input
               type="number"
               value={toYear}
               onChange={(e) => setToYear(e.target.value)}
               placeholder="Đến năm"
-              className="mr-5 w-24 rounded border border-gray-300 py-[0.42rem] pl-3 pr-2 text-gray-800 [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              className="mr-5 w-24 rounded border border-gray-300 py-[0.42rem] pl-3 pr-2 text-gray-900 bg-white [appearance:textfield] focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
           </div>
 
@@ -92,7 +92,41 @@ const SearchForm = ({ isSearchResultPage = false, genres = [] }) => {
             onChange={setSelectedLanguages}
             options={languageOptions}
             placeholder="Chọn ngôn ngữ"
-            className="mr-5 w-52 text-gray-800"
+            className="mr-5 w-52"
+            classNamePrefix="select"
+            styles={{
+              control: (base) => ({
+                ...base,
+                backgroundColor: 'white',
+                color: '#111827',
+                borderColor: '#d1d5db',
+              }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: 'white',
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isSelected ? '#3b82f6' : state.isFocused ? '#eff6ff' : 'white',
+                color: state.isSelected ? 'white' : '#111827',
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: '#111827',
+              }),
+              multiValue: (base) => ({
+                ...base,
+                backgroundColor: '#eff6ff',
+              }),
+              multiValueLabel: (base) => ({
+                ...base,
+                color: '#111827',
+              }),
+              placeholder: (base) => ({
+                ...base,
+                color: '#6b7280',
+              }),
+            }}
             isMulti
           />
           <Select
@@ -100,7 +134,41 @@ const SearchForm = ({ isSearchResultPage = false, genres = [] }) => {
             onChange={setSelectedGenres}
             options={genreOptions}
             placeholder="Chọn thể loại"
-            className="w-60 text-gray-800 placeholder-pink-600"
+            className="w-60"
+            classNamePrefix="select"
+            styles={{
+              control: (base) => ({
+                ...base,
+                backgroundColor: 'white',
+                color: '#111827',
+                borderColor: '#d1d5db',
+              }),
+              menu: (base) => ({
+                ...base,
+                backgroundColor: 'white',
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isSelected ? '#3b82f6' : state.isFocused ? '#eff6ff' : 'white',
+                color: state.isSelected ? 'white' : '#111827',
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: '#111827',
+              }),
+              multiValue: (base) => ({
+                ...base,
+                backgroundColor: '#eff6ff',
+              }),
+              multiValueLabel: (base) => ({
+                ...base,
+                color: '#111827',
+              }),
+              placeholder: (base) => ({
+                ...base,
+                color: '#6b7280',
+              }),
+            }}
             isMulti
           />
         </div>

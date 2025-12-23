@@ -11,6 +11,7 @@ import LoginRegister from "./pages/LoginRegister.jsx";
 import BookDetail from "./pages/BookDetail.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import SearchResult from "./pages/SearchResult.jsx";
+import Search from "./pages/Search.jsx";
 import Reading from "./pages/Reading.jsx";
 import UserProfile from "./pages/UserProfile.jsx";
 import Collections from "./pages/Collections.jsx";
@@ -44,6 +45,10 @@ const router = createBrowserRouter([
       {
         path: "genres",
         element: <Genres />,
+      },
+      {
+        path: "search",
+        element: <Search />,
       },
       {
         path: "search/:searchvalues",

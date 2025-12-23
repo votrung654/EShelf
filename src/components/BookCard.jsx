@@ -62,9 +62,8 @@ const BookCard = ({ book, isMLRecommendation = false }) => {
     <div className="book-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group relative flex flex-col h-full">
       {/* ML Badge */}
       {isMLRecommendation && (
-        <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10 flex items-center gap-1">
-          <span>✨</span>
-          <span>AI Gợi ý</span>
+        <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
+          AI Gợi ý
         </div>
       )}
 
@@ -88,39 +87,41 @@ const BookCard = ({ book, isMLRecommendation = false }) => {
             } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
             title={isFavorite ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
           >
-            <span className="text-lg leading-none">{isFavorite ? '❤️' : '🤍'}</span>
+            <svg className="w-5 h-5" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
           </button>
         </div>
       </Link>
         
       <div className="p-4 flex flex-col flex-1">
         <Link to={`/book/${bookIdentifier}`}>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 mb-1 hover:text-blue-600 transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
             {book.title}
-            </h3>
+          </h3>
         </Link>
         
-        <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
+        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1 mb-2">
           {Array.isArray(book.authors) ? book.authors.join(', ') : (book.author || 'Unknown')}
         </p>
         
         <div className="mt-auto flex items-center justify-between">
-            {/* Rating giả lập nếu backend chưa có */}
-            <div className="flex items-center">
-                <span className="text-yellow-500 text-sm">★</span>
-                <span className="ml-1 text-sm text-gray-600 dark:text-gray-400">
-                {book.rating || '4.5'}
-                </span>
-            </div>
+          {/* Rating giả lập nếu backend chưa có */}
+          <div className="flex items-center">
+            <span className="text-yellow-500 text-sm">★</span>
+            <span className="ml-1 text-sm text-gray-600 dark:text-gray-300">
+              {book.rating || '4.5'}
+            </span>
+          </div>
 
-            {/* Genre Badge */}
-            {(book.genres && book.genres.length > 0) ? (
-                <span className="inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded">
-                {typeof book.genres[0] === 'string' ? book.genres[0] : book.genres[0].name}
-                </span>
-            ) : (
-                <span className="text-xs text-gray-400">General</span>
-            )}
+          {/* Genre Badge */}
+          {(book.genres && book.genres.length > 0) ? (
+            <span className="inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 rounded">
+              {typeof book.genres[0] === 'string' ? book.genres[0] : book.genres[0].name}
+            </span>
+          ) : (
+            <span className="text-xs text-gray-400 dark:text-gray-500">General</span>
+          )}
         </div>
       </div>
     </div>

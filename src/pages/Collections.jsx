@@ -2,10 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Plus, Search } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { collectionsAPI, booksAPI } from '../services/api';
 import CollectionCard from '../components/collection/CollectionCard';
 import CreateCollectionModal from '../components/collection/CreateCollectionModal';
-
-const COLLECTIONS_BASE_KEY = 'eshelf_collections';
 
 export default function Collections() {
   const navigate = useNavigate();
@@ -13,6 +12,7 @@ export default function Collections() {
   const [collections, setCollections] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -21,59 +21,151 @@ export default function Collections() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Load collections for current user
+  // Load collections from API
   useEffect(() => {
-    if (!user?.id) return;
-
-    const storageKey = `${COLLECTIONS_BASE_KEY}_${user.id}`;
-    const saved = localStorage.getItem(storageKey);
-    
-    if (saved) {
-      try {
-        setCollections(JSON.parse(saved));
-      } catch {
-        initializeCollections();
+    const loadCollections = async () => {
+      if (!isAuthenticated || !user?.id) {
+        setIsLoading(false);
+        return;
       }
-    } else {
-      initializeCollections();
+
+      setIsLoading(true);
+      try {
+        const response = await collectionsAPI.getAll();
+        if (response.success && response.data) {
+          const collectionsWithBookCovers = await Promise.all(
+            response.data.map(async (collection) => {
+              if (collection.books && Array.isArray(collection.books) && collection.books.length > 0) {
+                const bookIds = collection.books;
+                const bookCount = bookIds.length;
+                
+                const bookCovers = await Promise.all(
+                  bookIds.slice(0, 4).map(async (bookId) => {
+                    try {
+                      const bookResponse = await booksAPI.getById(bookId);
+                      if (bookResponse.success && bookResponse.data) {
+                        return {
+                          id: bookResponse.data.id || bookId,
+                          isbn: bookResponse.data.isbn || bookId,
+                          coverUrl: bookResponse.data.coverUrl || bookResponse.data.cover,
+                          title: bookResponse.data.title
+                        };
+                      }
+                      return null;
+                    } catch (error) {
+                      console.error(`Error fetching book ${bookId}:`, error);
+                      return null;
+                    }
+                  })
+                );
+                
+                collection.books = bookCovers.filter(Boolean);
+                collection.bookCount = bookCount;
+              } else {
+                collection.books = [];
+                collection.bookCount = 0;
+              }
+              return collection;
+            })
+          );
+          setCollections(collectionsWithBookCovers);
+        } else {
+          setCollections([]);
+        }
+      } catch (error) {
+        console.error('Error loading collections:', error);
+        setCollections([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCollections();
+  }, [isAuthenticated, user?.id]);
+
+  const handleCreate = async (newCollection) => {
+    try {
+      const response = await collectionsAPI.create({
+        name: newCollection.name,
+        description: newCollection.description || '',
+        isPublic: newCollection.isPublic || false,
+      });
+      
+      if (response && response.success && response.data) {
+        // Reload collections
+        try {
+          const reloadResponse = await collectionsAPI.getAll();
+          if (reloadResponse && reloadResponse.success && reloadResponse.data) {
+            const collectionsWithBookCovers = await Promise.all(
+              reloadResponse.data.map(async (collection) => {
+                if (collection.books && Array.isArray(collection.books) && collection.books.length > 0) {
+                  const bookIds = collection.books;
+                  const bookCount = bookIds.length;
+                  
+                  const bookCovers = await Promise.all(
+                    bookIds.slice(0, 4).map(async (bookId) => {
+                      try {
+                        const bookResponse = await booksAPI.getById(bookId);
+                        if (bookResponse && bookResponse.success && bookResponse.data) {
+                          return {
+                            id: bookResponse.data.id || bookId,
+                            isbn: bookResponse.data.isbn || bookId,
+                            coverUrl: bookResponse.data.coverUrl || bookResponse.data.cover,
+                            title: bookResponse.data.title
+                          };
+                        }
+                        return null;
+                      } catch (error) {
+                        console.error(`Error fetching book ${bookId}:`, error);
+                        return null;
+                      }
+                    })
+                  );
+                  
+                  collection.books = bookCovers.filter(Boolean);
+                  collection.bookCount = bookCount;
+                } else {
+                  collection.books = [];
+                  collection.bookCount = 0;
+                }
+                return collection;
+              })
+            );
+            setCollections(collectionsWithBookCovers);
+          }
+        } catch (reloadError) {
+          console.error('Error reloading collections:', reloadError);
+        }
+        setShowCreateModal(false);
+      } else {
+        console.error('Create collection failed:', response);
+        alert(response?.message || 'Không thể tạo bộ sưu tập. Vui lòng thử lại.');
+      }
+    } catch (error) {
+      console.error('Error creating collection:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể tạo bộ sưu tập. Vui lòng thử lại.';
+      alert(errorMessage);
     }
-  }, [user?.id]);
-
-  const initializeCollections = () => {
-    const defaultCollections = [{
-      id: 'favorites',
-      name: 'Yêu thích',
-      description: 'Những cuốn sách bạn yêu thích',
-      books: [],
-      createdAt: new Date().toISOString(),
-    }];
-    setCollections(defaultCollections);
-    saveCollections(defaultCollections);
   };
 
-  const saveCollections = (data) => {
-    if (!user?.id) return;
-    const storageKey = `${COLLECTIONS_BASE_KEY}_${user.id}`;
-    localStorage.setItem(storageKey, JSON.stringify(data));
-  };
-
-  const handleCreate = (newCollection) => {
-    const updated = [...collections, {
-      ...newCollection,
-      id: `collection-${Date.now()}`,
-      books: [],
-      createdAt: new Date().toISOString(),
-    }];
-    setCollections(updated);
-    saveCollections(updated);
-    setShowCreateModal(false);
-  };
-
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (id === 'favorites') return;
-    const updated = collections.filter(c => c.id !== id);
-    setCollections(updated);
-    saveCollections(updated);
+    
+    if (!confirm('Bạn có chắc muốn xóa bộ sưu tập này?')) return;
+
+    try {
+      const response = await collectionsAPI.delete(id);
+      if (response.success) {
+        // Reload collections
+        const reloadResponse = await collectionsAPI.getAll();
+        if (reloadResponse.success && reloadResponse.data) {
+          setCollections(reloadResponse.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting collection:', error);
+      alert('Không thể xóa bộ sưu tập. Vui lòng thử lại.');
+    }
   };
 
   const filteredCollections = collections.filter(c =>
@@ -84,25 +176,35 @@ export default function Collections() {
     return null; // Will redirect
   }
 
+  if (isLoading) {
+    return (
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
       {/* Breadcrumb */}
       <nav className="mb-6">
         <ol className="flex items-center space-x-2 text-sm">
           <li>
-            <Link to="/" className="text-blue-600 dark:text-blue-400 hover:underline">Trang chủ</Link>
+            <Link to="/" className="text-blue-600 hover:underline">Trang chủ</Link>
           </li>
-          <li className="text-gray-400 dark:text-gray-500">/</li>
-          <li className="text-gray-600 dark:text-gray-400">Bộ sưu tập</li>
+          <li className="text-gray-400">/</li>
+          <li className="text-gray-600">Bộ sưu tập</li>
         </ol>
       </nav>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Bộ sưu tập của tôi</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            {collections.length} bộ sưu tập • {collections.reduce((sum, c) => sum + c.books.length, 0)} sách
+          <h1 className="text-2xl font-bold text-gray-800">Bộ sưu tập của tôi</h1>
+          <p className="text-gray-500 mt-1">
+            {collections.length} bộ sưu tập • {collections.reduce((sum, c) => sum + (c.bookCount || c.books?.length || 0), 0)} sách
           </p>
         </div>
         <button
@@ -122,7 +224,7 @@ export default function Collections() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Tìm kiếm bộ sưu tập..."
-          className="w-full sm:w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+          className="w-full sm:w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
         />
       </div>
 
@@ -144,10 +246,10 @@ export default function Collections() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-800 dark:text-gray-100 mb-2">
+          <h3 className="text-lg font-medium text-gray-800 mb-2">
             {searchTerm ? 'Không tìm thấy bộ sưu tập' : 'Chưa có bộ sưu tập nào'}
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">
+          <p className="text-gray-500 mb-4">
             {searchTerm ? 'Thử tìm kiếm với từ khóa khác' : 'Tạo bộ sưu tập đầu tiên của bạn'}
           </p>
           {!searchTerm && (

@@ -24,6 +24,10 @@ app.use(cors({
 // Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
+// Body parsing (Đặt TRƯỚC Proxy để parse body)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 // Rate limiting
 app.use(rateLimiter);
 
@@ -35,14 +39,6 @@ app.use(rateLimiter);
 app.use('/api/auth', createProxyMiddleware({
   target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
   changeOrigin: true,
-  onProxyReq: (proxyReq, req, res) => {
-    if (req.body && !req.headers['content-type']?.includes('multipart/form-data')) {
-      const bodyData = JSON.stringify(req.body);
-      proxyReq.setHeader('Content-Type', 'application/json');
-      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-      proxyReq.write(bodyData);
-    }
-  }
 }));
 
 // 2. Book Service (Xử lý cả Books và Genres)
@@ -53,8 +49,8 @@ app.use(['/api/books', '/api/genres'], createProxyMiddleware({
   // Không cần pathRewrite vì Book Service thường được thiết kế để nhận /api/books
 }));
 
-// 3. User Service (Users, Favorites, History)
-app.use(['/api/users', '/api/favorites', '/api/reading-history'], createProxyMiddleware({
+// 3. User Service (Users, Favorites, History, Collections)
+app.use(['/api/users', '/api/favorites', '/api/reading-history', '/api/collections'], createProxyMiddleware({
   target: process.env.USER_SERVICE_URL || 'http://user-service:3003',
   changeOrigin: true,
 }));
@@ -72,10 +68,6 @@ app.use('/api/ml', createProxyMiddleware({
 
 // ==========================================
 
-// Body parsing (Đặt sau Proxy)
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
 // Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', service: 'API Gateway' });
@@ -88,7 +80,7 @@ app.use(errorHandler);
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`🚀 API Gateway running on port ${PORT}`);
-    console.log(`Routes configured: /api/auth, /api/books, /api/genres, /api/users, /api/favorites, /api/ml`);
+    console.log(`Routes configured: /api/auth, /api/books, /api/genres, /api/users, /api/favorites, /api/collections, /api/reading-history, /api/ml`);
   });
 }
 

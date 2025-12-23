@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Calendar, BookOpen, Clock, Heart, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { favoritesAPI, historyAPI, profileAPI } from '../services/api'; // Import API
+import { favoritesAPI, historyAPI, profileAPI, collectionsAPI } from '../services/api'; // Import API
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -32,24 +32,24 @@ export default function Profile() {
     const loadRealStats = async () => {
         setIsLoading(true);
         try {
-            // Gọi song song 2 API lấy Favorites và History
-            const [favRes, histRes] = await Promise.all([
+            const [favRes, histRes, collRes] = await Promise.all([
                 favoritesAPI.getAll(),
-                historyAPI.getAll()
+                historyAPI.getAll(),
+                collectionsAPI.getAll()
             ]);
 
             const favoritesCount = favRes.success ? (favRes.data?.length || 0) : 0;
             const historyList = histRes.success ? (histRes.data || []) : [];
+            const collectionsList = collRes.success ? (collRes.data || []) : [];
             const totalBooksRead = historyList.length;
+            const collectionsCount = collectionsList.length;
 
-            // Tính toán thời gian đọc dựa trên lịch sử (Giả lập: mỗi sách đọc được tính là 30p)
-            // Nếu backend có trường `readingTime` thì dùng trường đó.
             const estimatedMinutes = totalBooksRead * 30;
 
             setStats({
                 totalBooks: totalBooksRead,
                 favorites: favoritesCount,
-                collections: 0, // Nếu chưa làm API Collection thì để 0
+                collections: collectionsCount,
                 readingTime: estimatedMinutes,
             });
 

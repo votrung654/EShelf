@@ -100,8 +100,7 @@ const HomePage = () => {
         {/* ML Recommendations Section */}
         {!isLoading && isAuthenticated && mlRecommendations.length > 0 && (
           <div className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
-              <span className="text-3xl">✨</span>
+            <div className="mb-6">
               <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
                 Gợi ý dành cho bạn (AI)
               </h2>

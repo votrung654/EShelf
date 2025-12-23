@@ -31,12 +31,19 @@ exports.createCollection = async (req, res) => {
     const userId = req.user.userId;
     const { name, description, isPublic = false } = req.body;
 
+    if (!name || !name.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tên bộ sưu tập không được để trống'
+      });
+    }
+
     const collection = {
       id: uuidv4(),
       userId,
-      name,
-      description,
-      isPublic,
+      name: name.trim(),
+      description: description ? description.trim() : '',
+      isPublic: Boolean(isPublic),
       books: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

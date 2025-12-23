@@ -11,14 +11,11 @@
     "preview": "vite preview",
     "setup": "bash scripts/setup-project.sh",
     "check": "bash scripts/check-services.sh",
-    "test:all": "bash scripts/test-all-components.sh",
-    "test:all:win": "powershell -ExecutionPolicy Bypass -File scripts/test-all-components.ps1",
     "backend:start": "cd backend && docker-compose up -d",
     "backend:stop": "cd backend && docker-compose down",
     "backend:logs": "cd backend && docker-compose logs -f"
   },
   "dependencies": {
-    "axios": "^1.13.2",
     "cssnano": "^7.0.6",
     "lucide-react": "^0.453.0",
     "react": "^18.3.1",
@@ -51,13 +48,7 @@
     "type": "git",
     "url": "https://github.com/levanvux/eShelf.git"
   },
-  "keywords": [
-    "ebook",
-    "react",
-    "microservices",
-    "devops",
-    "mlops"
-  ],
+  "keywords": ["ebook", "react", "microservices", "devops", "mlops"],
   "author": "Lê Văn Vũ",
   "license": "MIT"
 }

@@ -1,5 +1,6 @@
 import { Heart, Bookmark } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const SearchResultItem = ({ bookDetail = null }) => {
   const convertText = (input) => {
@@ -23,43 +24,41 @@ const SearchResultItem = ({ bookDetail = null }) => {
     <>
       {bookDetail && bookDetail.coverUrl && bookDetail.title && (
         <div className="flex gap-4 px-4 py-5">
-          <a href={`/book/${bookDetail.isbn}`} target="_blank">
+          <Link to={`/book/${bookDetail.isbn}`}>
             <img
               src={bookDetail.coverUrl}
               alt={bookDetail.title}
               className="float-left aspect-[5/7] w-24 rounded-sm object-cover drop-shadow-[0_0.1rem_0.1rem_rgba(0,0,0,0.5)]"
             />
-          </a>
+          </Link>
           <div className="relative flex-grow">
             <p>
-              <a
-                href={`/book/${bookDetail.isbn}`}
-                target="_blank"
-                className="cursor-pointer underline"
+              <Link
+                to={`/book/${bookDetail.isbn}`}
+                className="cursor-pointer underline text-gray-800 hover:text-blue-600"
               >
                 {bookDetail.title}
-              </a>
+              </Link>
             </p>
             <p>
-              <a
+              <Link
                 className="cursor-pointer text-sm text-gray-400 hover:text-blue-700"
-                href={`/search/${convertText(bookDetail.publisher)}&-&`}
-                target="_blank"
+                to={`/search?q=${encodeURIComponent(bookDetail.publisher || '')}`}
               >
                 {bookDetail.publisher ? bookDetail.publisher : ""}
-              </a>
+              </Link>
             </p>
             <p className="mt-2 cursor-pointer text-[0.925rem] text-sky-400">
               {bookDetail.author && bookDetail.author.length > 0 ? (
                 bookDetail.author.map((au, index) => {
                   return (
-                    <a
-                      href={`/search/${convertText(bookDetail.author.map(convertText).join("+"))}&-&`}
+                    <Link
+                      to={`/search?q=${encodeURIComponent(au)}`}
                       key={index}
                     >
                       <span className="hover:underline">{au}</span>
                       {index < bookDetail.author.length - 1 && ", "}
-                    </a>
+                    </Link>
                   );
                 })
               ) : (

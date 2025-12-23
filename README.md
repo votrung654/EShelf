@@ -10,54 +10,54 @@
 
 ---
 
-## 📋 Mục lục
+## Mục lục
 
-- [Giới thiệu](#-giới-thiệu)
-- [Kiến trúc hệ thống](#-kiến-trúc-hệ-thống)
-- [Tech Stack](#-tech-stack)
-- [Hướng dẫn chạy dự án](#-hướng-dẫn-chạy-dự-án)
-- [Cấu trúc thư mục](#-cấu-trúc-thư-mục)
-- [Lab 1 & Lab 2](#-lab-1--lab-2)
-- [API Documentation](#-api-documentation)
+- [Giới thiệu](#giới-thiệu)
+- [Kiến trúc hệ thống](#kiến-trúc-hệ-thống)
+- [Tech Stack](#tech-stack)
+- [Hướng dẫn chạy dự án](#hướng-dẫn-chạy-dự-án)
+- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
+- [Trạng thái dự án](#trạng-thái-dự-án)
+- [API Documentation](#api-documentation)
 
 ---
 
-## 🎯 Giới thiệu
+## Giới thiệu
 
 **eShelf** là nền tảng đọc sách điện tử được xây dựng với kiến trúc microservices, áp dụng đầy đủ quy trình DevOps và MLOps chuyên nghiệp.
 
 ### Tính năng chính
 
 **Người dùng:**
-- 📚 Đọc sách PDF trực tuyến
-- 🔍 Tìm kiếm và lọc sách theo thể loại
-- ⭐ Đánh giá và review sách
-- 📖 Lưu bộ sưu tập và sách yêu thích
-- 📊 Theo dõi tiến độ đọc
-- 🤖 Gợi ý sách thông minh (AI-powered)
+- Đọc sách PDF trực tuyến
+- Tìm kiếm và lọc sách theo thể loại
+- Đánh giá và review sách
+- Lưu bộ sưu tập và sách yêu thích
+- Theo dõi tiến độ đọc
+- Gợi ý sách thông minh (AI-powered)
 
 **Admin:**
-- 📊 Dashboard thống kê
-- ➕ Quản lý sách (CRUD)
-- 👥 Quản lý người dùng
-- 🏷️ Quản lý thể loại
+- Dashboard thống kê
+- Quản lý sách (CRUD)
+- Quản lý người dùng
+- Quản lý thể loại
 
 **DevOps:**
-- 🏗️ Infrastructure as Code (Terraform, CloudFormation)
-- 🔄 CI/CD Pipeline (GitHub Actions, Jenkins)
-- ☸️ Kubernetes deployment với GitOps (ArgoCD)
-- 📊 Monitoring (Prometheus, Grafana, Loki)
-- 🔒 Security scanning (Checkov, Trivy, SonarQube)
+- Infrastructure as Code (Terraform, CloudFormation)
+- CI/CD Pipeline (GitHub Actions, Jenkins)
+- Kubernetes deployment với GitOps (ArgoCD)
+- Monitoring (Prometheus, Grafana, Loki)
+- Security scanning (Checkov, Trivy, SonarQube)
 
 **MLOps:**
-- 🤖 Recommendation system
-- 📈 Model tracking với MLflow
-- 🔄 Automated model deployment
-- 📊 Model performance monitoring
+- Recommendation system
+- Model tracking với MLflow
+- Automated model deployment
+- Model performance monitoring
 
 ---
 
-## 🏗️ Kiến trúc hệ thống
+## Kiến trúc hệ thống
 
 ### Microservices Architecture
 
@@ -104,7 +104,7 @@
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework:** React 18 + Vite
@@ -153,7 +153,7 @@
 
 ---
 
-## 🚀 Hướng dẫn chạy dự án
+## Hướng dẫn chạy dự án
 
 ### Prerequisites
 
@@ -165,7 +165,7 @@
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/levanvux/eShelf.git
+git clone https://github.com/votrung654/eShelf.git
 cd eShelf
 ```
 
@@ -181,7 +181,7 @@ npm run dev
 
 Frontend sẽ chạy tại: **http://localhost:5173**
 
-### 3. Chạy Backend (Option A: Docker Compose - Recommended)
+### 3. Chạy Backend (Docker Compose - Recommended)
 
 ```bash
 cd backend
@@ -197,57 +197,7 @@ Tất cả services sẽ tự động start:
 - PostgreSQL: localhost:5432
 - Redis: localhost:6379
 
-### 4. Chạy Backend (Option B: Manual)
-
-**Terminal 1 - Auth Service:**
-```bash
-cd backend/services/auth-service
-npm install
-cp .env.example .env
-npm run dev
-```
-
-**Terminal 2 - Book Service:**
-```bash
-cd backend/services/book-service
-npm install
-cp .env.example .env
-npm run dev
-```
-
-**Terminal 3 - User Service:**
-```bash
-cd backend/services/user-service
-npm install
-cp .env.example .env
-npm run dev
-```
-
-**Terminal 4 - ML Service:**
-```bash
-cd backend/services/ml-service
-pip install -r requirements.txt
-uvicorn src.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 5. Setup Database (Optional - cho production)
-
-```bash
-cd backend/database
-npm install
-cp .env.example .env
-
-# Generate Prisma Client
-npm run db:generate
-
-# Run migrations
-npm run db:migrate
-
-# Seed data
-npm run db:seed
-```
-
-### 6. Verify Services
+### 4. Verify Services
 
 ```bash
 # Check all services
@@ -258,7 +208,7 @@ curl http://localhost:3003/health  # User Service
 curl http://localhost:8000/health  # ML Service
 ```
 
-### 7. Access Application
+### 5. Access Application
 
 - **Frontend:** http://localhost:5173
 - **API Gateway:** http://localhost:3000
@@ -266,7 +216,7 @@ curl http://localhost:8000/health  # ML Service
 
 ---
 
-## 📁 Cấu trúc thư mục
+## Cấu trúc thư mục
 
 ```
 eShelf/
@@ -283,7 +233,7 @@ eShelf/
 │   │   └── ml-service/      # Port 8000 - ML recommendations
 │   ├── database/
 │   │   └── prisma/          # Database schema
-│   └── docker-compose.yml   # All services orchestration
+│   └── docker-compose.yml  # All services orchestration
 │
 ├── infrastructure/
 │   └── terraform/
@@ -307,70 +257,92 @@ eShelf/
 │   ├── images/             # Images
 │   └── pdfs/               # Sample books
 │
-├── scripts/                 # Utility scripts
-├── PLAN.md                 # Project plan (3-person team)
-└── README.md               # This file
+└── scripts/                 # Utility scripts
 ```
 
 ---
 
-## 🧪 Lab 1 & Lab 2
+## Trạng thái dự án
 
-### Lab 1: Infrastructure as Code (10 điểm)
+### Đã hoàn thành
 
-**Terraform:**
-```bash
-cd infrastructure/terraform/environments/dev
+**Frontend:**
+- ✅ Giao diện người dùng với React + Vite
+- ✅ Tìm kiếm và lọc sách
+- ✅ Quản lý bộ sưu tập
+- ✅ Lịch sử đọc
+- ✅ Yêu thích sách
+- ✅ Dark mode
+- ✅ Kết nối với backend API
 
-# Initialize
-terraform init
+**Backend:**
+- ✅ Kiến trúc microservices
+- ✅ API Gateway với proxy routing
+- ✅ Auth Service (JWT authentication)
+- ✅ Book Service (CRUD, search)
+- ✅ User Service (Profile, favorites, collections, history)
+- ✅ ML Service (Recommendations, similarity)
+- ✅ Database schema với Prisma
+- ✅ Docker Compose setup
 
-# Validate
-terraform validate
+**DevOps:**
+- ✅ GitHub Actions CI pipeline
+- ✅ Jenkins pipeline
+- ✅ Terraform modules (VPC, EC2, Security Groups)
+- ✅ CloudFormation templates
+- ✅ Docker containerization
 
-# Plan
-terraform plan
+**MLOps:**
+- ✅ Recommendation API
+- ✅ Similar books API
+- ✅ Reading time estimation
 
-# Apply
-terraform apply
-```
+### Đang phát triển
 
-**CloudFormation:**
-```bash
-cd infrastructure/cloudformation
+**Backend:**
+- 🔄 Chuyển từ in-memory storage sang database persistence (Prisma)
+- 🔄 Hoàn thiện error handling và validation
+- 🔄 Thêm unit tests và integration tests
 
-# Validate template
-aws cloudformation validate-template --template-body file://templates/vpc-stack.yaml
+**DevOps:**
+- 🔄 Smart Build (path-filter trong CI/CD)
+- 🔄 GitOps với ArgoCD
+- 🔄 Image tagging tự động
+- 🔄 Multi-environment deployment (Dev, Staging, Prod)
+- 🔄 Monitoring setup (Prometheus, Grafana, Loki)
 
-# Deploy
-aws cloudformation create-stack \
-  --stack-name eshelf-vpc \
-  --template-body file://templates/vpc-stack.yaml
-```
+**MLOps:**
+- 🔄 MLflow integration
+- 🔄 Model versioning
+- 🔄 Model performance monitoring
 
-**Test Cases:**
-```bash
-# Run infrastructure tests
-bash scripts/test-infrastructure.sh
-```
+### Dự kiến làm
 
-### Lab 2: CI/CD Automation (10 điểm)
+**Infrastructure:**
+- 📋 Deploy lên AWS (EKS hoặc K3s trên EC2)
+- 📋 Setup Harbor/Artifactory cho artifact management
+- 📋 Ansible scripts cho configuration management
+- 📋 Complete monitoring stack
 
-**GitHub Actions:**
-- Push code → Automatic CI/CD triggered
-- Checkov scan cho Terraform
-- Docker build & security scan
-- Automated deployment
+**CI/CD:**
+- 📋 Smart Build với path-filter
+- 📋 ArgoCD Image Updater
+- 📋 Blue/Green deployment
+- 📋 Automated rollback
 
-**Jenkins:**
-- Jenkinsfile với multi-stage pipeline
-- SonarQube code quality
-- Trivy container scanning
-- Kubernetes deployment
+**Security:**
+- 📋 Complete security scanning pipeline
+- 📋 Secrets management
+- 📋 Network policies
+
+**Testing:**
+- 📋 E2E tests
+- 📋 Load testing
+- 📋 Security testing
 
 ---
 
-## 📖 API Documentation
+## API Documentation
 
 ### Authentication
 
@@ -466,7 +438,7 @@ Xem full API docs: http://localhost:8000/docs (ML Service)
 
 ---
 
-## 🐳 Docker Commands
+## Docker Commands
 
 ```bash
 # Build all services
@@ -488,28 +460,7 @@ docker-compose up -d --build auth-service
 
 ---
 
-## 🧪 Testing
-
-### Test All Components (FE, BE, Database, ML-AI)
-
-Trước khi chuyển sang phần Ops, test tất cả components:
-
-**Option 1: Test tự động (Script)**
-```bash
-# Linux/Mac
-npm run test:all
-
-# Windows (PowerShell)
-npm run test:all:win
-```
-
-**Option 2: Test thủ công (Manual) - Khuyến nghị**
-- [docs/TEST_THU_CONG.md](docs/TEST_THU_CONG.md) - Hướng dẫn nhanh (Tiếng Việt)
-- [docs/MANUAL_TESTING_GUIDE.md](docs/MANUAL_TESTING_GUIDE.md) - Hướng dẫn chi tiết
-
-Xem chi tiết: [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md)
-
-### Individual Tests
+## Testing
 
 ```bash
 # Frontend
@@ -521,14 +472,11 @@ cd backend/services/book-service && npm test
 
 # Infrastructure
 bash scripts/test-infrastructure.sh
-
-# E2E tests (if implemented)
-npm run test:e2e
 ```
 
 ---
 
-## 📊 Monitoring
+## Monitoring
 
 ### Prometheus Metrics
 - Service health and uptime
@@ -549,7 +497,7 @@ npm run test:e2e
 
 ---
 
-## 🔒 Security
+## Security
 
 - **Authentication:** JWT with access/refresh tokens
 - **Password:** Hashed with bcrypt (12 rounds)
@@ -561,34 +509,32 @@ npm run test:e2e
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 | Document | Description |
 |----------|-------------|
-| [PLAN.md](PLAN.md) | Project plan for 3-person team |
-| [docs/master_prompts.md](docs/master_prompts.md) | Detailed prompt plan |
 | [yeucaumonhoc.md](yeucaumonhoc.md) | Course requirements |
 | [gopygiangvien.md](gopygiangvien.md) | Instructor feedback |
 
 ---
 
-## 👥 Team
+## Team
 
-| MSSV | Họ Tên | Vai trò |
-|------|--------|---------|
-| 23521809 | Lê Văn Vũ | DevOps Engineer (Lead) |
-| TBD | Thành viên 2 | Backend Developer |
-| TBD | Thành viên 3 | Full-stack & ML Engineer |
+| MSSV | Họ Tên |Phân công|
+|------|--------|--------|
+| 23521809 | Lê Văn Vũ | |
+| 22521571 | Võ Đình Trung | |
+| 22521587| Trương Phúc Trường | |
 
 ---
 
-## 📄 License
+## License
 
 MIT License - For educational purposes only.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - Instructor: [Tên giảng viên]
 - Course: IE104 - DevOps & MLOps
@@ -596,13 +542,13 @@ MIT License - For educational purposes only.
 
 ---
 
-## 📧 Contact
+## Contact
 
 **Lê Văn Vũ** - [GitHub](https://github.com/levanvux)
 
 ---
 
-## 🚀 Quick Start (TL;DR)
+## Quick Start (TL;DR)
 
 ```bash
 # 1. Clone
@@ -618,16 +564,8 @@ npm install && npm run dev
 # http://localhost:5173
 ```
 
-## 🔐 Default Login Credentials
+**Default credentials for testing:**
+- Email: `user@eshelf.com`
+- Password: `User123!`
 
-### Admin Account
-- **Email:** `admin@eshelf.com`
-- **Password:** `Admin123!`
-- **Quyền hạn:** Quản lý sách, users, dashboard
-
-### Test User Account
-- **Email:** `user@eshelf.com`
-- **Password:** `User123!`
-- **Quyền hạn:** Đọc sách, favorites, recommendations
-
-> **Lưu ý:** Chạy `cd backend/database && npm run db:seed` để tạo tài khoản mặc định
+(Register new account if needed)

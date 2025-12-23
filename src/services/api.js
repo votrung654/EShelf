@@ -102,16 +102,31 @@ export const favoritesAPI = {
   // Lấy danh sách (trả về mảng ID sách)
   getAll: () => api.get('/favorites'),
   
-  // Thêm: Gửi ID trong Body (Sửa lại cho đúng với backend của bạn)
-  add: (bookId) => api.post('/favorites', { bookId }),
+  // Thêm: POST /favorites/:bookId (bookId trong URL)
+  add: (bookId) => api.post(`/favorites/${bookId}`),
   
-  // Xóa: Backend RESTful thường là DELETE /favorites/:id
+  // Xóa: DELETE /favorites/:bookId
   remove: (bookId) => api.delete(`/favorites/${bookId}`),
+  
+  // Kiểm tra: GET /favorites/check/:bookId
+  check: (bookId) => api.get(`/favorites/check/${bookId}`),
 };
 
 export const historyAPI = {
   getAll: () => api.get('/reading-history'),
-  saveProgress: (bookId, progress) => api.post('/reading-history', { bookId, progress }),
+  saveProgress: (data) => api.post('/reading-history', data), // { bookId, currentPage, totalPages }
+  getBookProgress: (bookId) => api.get(`/reading-history/${bookId}`),
+  deleteBook: (bookId) => api.delete(`/reading-history/${bookId}`),
+};
+
+export const collectionsAPI = {
+  getAll: () => api.get('/collections'),
+  create: (data) => api.post('/collections', data), // { name, description, isPublic }
+  getById: (id) => api.get(`/collections/${id}`),
+  update: (id, data) => api.put(`/collections/${id}`, data),
+  delete: (id) => api.delete(`/collections/${id}`),
+  addBook: (collectionId, bookId) => api.post(`/collections/${collectionId}/books/${bookId}`),
+  removeBook: (collectionId, bookId) => api.delete(`/collections/${collectionId}/books/${bookId}`),
 };
 
 export const mlAPI = {

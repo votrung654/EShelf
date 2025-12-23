@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import genres from "../data/genres.json";
 import bookDetails from "../data/book-details.json";
 
@@ -32,10 +33,10 @@ const Genres = () => {
   return (
     <div className="px-28 py-8">
       <p className="mb-8 cursor-default text-sm text-gray-400">
-        <a className="cursor-pointer text-sky-400" href="/">
+        <Link className="cursor-pointer text-sky-400" to="/">
           Trang Chính
-        </a>
-        {" > "} <a className="cursor-pointer">Thể Loại</a>
+        </Link>
+        {" > "} <span className="cursor-pointer text-gray-400">Thể Loại</span>
       </p>
       <div className="mb-3 flex flex-wrap justify-between">
         <h1
@@ -48,15 +49,15 @@ const Genres = () => {
           type="text"
           value={searchGenre}
           onChange={(e) => handleTypeSearchGenre(e.target.value)}
-          className="mt-3 w-64 rounded-sm border border-gray-300 px-3 py-1 text-gray-500 focus:outline-none md:mt-0"
+          className="mt-3 w-64 rounded-sm border border-gray-300 px-3 py-1 text-gray-900 bg-white focus:outline-none md:mt-0"
           placeholder="Tìm kiếm thể loại"
         />
       </div>
       <div className="grid grid-cols-1 gap-y-1.5 md:grid-cols-3">
         {filteredGenres &&
           filteredGenres.map((genre) => (
-            <a
-              href=""
+            <Link
+              to={`/search?genre=${encodeURIComponent(genre.trim())}`}
               className="text-gray-600 hover:text-sky-400"
               key={crypto.randomUUID()}
             >
@@ -64,7 +65,7 @@ const Genres = () => {
               <span className="text-sm italic text-gray-400">
                 ({countBooksByGenre(genre.trim())})
               </span>
-            </a>
+            </Link>
           ))}
       </div>
     </div>

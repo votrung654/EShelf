@@ -34,7 +34,17 @@ function AddToCollectionModal({ isOpen, onClose, book, collections, onAdd, onCre
 
   const isBookInCollection = useCallback((collection) => {
     const bookId = book?.isbn || book?.id;
-    return collection.books.some(b => (b.isbn || b.id) === bookId);
+    if (!bookId) return false;
+    
+    if (Array.isArray(collection.books)) {
+      return collection.books.some(b => {
+        if (typeof b === 'string') {
+          return b === bookId;
+        }
+        return (b.isbn || b.id) === bookId;
+      });
+    }
+    return false;
   }, [book]);
 
   const handleClose = useCallback(() => {
@@ -89,7 +99,9 @@ function AddToCollectionModal({ isOpen, onClose, book, collections, onAdd, onCre
                 )}
                 <div className="flex-1 text-left min-w-0">
                   <p className="font-medium text-gray-800 dark:text-gray-100 truncate">{collection.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{collection.books.length} sách</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {collection.bookCount || (Array.isArray(collection.books) ? collection.books.length : 0)} sách
+                  </p>
                 </div>
                 
                 {/* Nút Thêm hoặc Xóa */}

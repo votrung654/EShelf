@@ -1,122 +1,146 @@
-Thầy muốn các nhóm không chỉ "làm cho chạy" mà phải hướng tới sự chuyên nghiệp, bảo mật và tối ưu hóa (Smart Build, GitOps). Dưới đây là cấu trúc lại toàn bộ nội dung:
+# Góp ý của giảng viên
 
-1. Kiến trúc Hạ tầng (Infrastructure & Cloud)
-Thầy yêu cầu xây dựng hạ tầng trên AWS với quy mô cụ thể, không chạy local đơn giản.
+## Tổng quan
 
-Quy mô Cluster: Tối thiểu 3 Node (1 Master, 2 Worker).
+Giảng viên yêu cầu các nhóm không chỉ "làm cho chạy" mà phải hướng tới sự chuyên nghiệp, bảo mật và tối ưu hóa (Smart Build, GitOps).
 
-Công cụ triển khai:
+---
 
-AWS: Phải làm sớm để tận dụng credit/tài nguyên.
+## 1. Kiến trúc Hạ tầng (Infrastructure & Cloud)
 
-Terraform: Dùng để dựng hạ tầng (IaC).
+### Quy mô Cluster
 
-Yêu cầu: Chia module rõ ràng (Network, Compute, Security...), không code "cứng" (hardcode), phải có bảo mật.
+- Tối thiểu 3 Node (1 Master, 2 Worker)
 
-Ansible: Dùng để cấu hình bên trong server sau khi Terraform dựng xong (Configuration Management).
+### Công cụ triển khai
 
-Yêu cầu: Deploy k3s hoặc các tool lên 3 môi trường (Dev, Staging, Prod).
+**AWS:**
+- Phải làm sớm để tận dụng credit/tài nguyên
 
-Lựa chọn nền tảng Kubernetes:
+**Terraform:**
+- Dùng để dựng hạ tầng (IaC)
+- Yêu cầu: Chia module rõ ràng (Network, Compute, Security...), không code "cứng" (hardcode), phải có bảo mật
 
-Bạn có thể chọn EKS (Amazon Elastic Kubernetes Service) cho chuyên nghiệp.
+**Ansible:**
+- Dùng để cấu hình bên trong server sau khi Terraform dựng xong (Configuration Management)
+- Yêu cầu: Deploy k3s hoặc các tool lên 3 môi trường (Dev, Staging, Prod)
 
-Hoặc tự dựng cụm K8s trên EC2 bằng K3s (dùng Ansible script thầy gửi: k3s-ansible) để hiểu sâu về setup.
+### Lựa chọn nền tảng Kubernetes
 
-2. Quy trình CI/CD & Pipeline (Trọng tâm)
-Đây là phần thầy nhấn mạnh nhất. Pipeline phải tự động hoàn toàn, thông minh và bảo mật.
+- Có thể chọn EKS (Amazon Elastic Kubernetes Service) cho chuyên nghiệp
+- Hoặc tự dựng cụm K8s trên EC2 bằng K3s (dùng Ansible script k3s-ansible) để hiểu sâu về setup
 
-A. Flow cơ bản:
-Code (GitHub) -> CI (Build/Test/Scan) -> Push Artifact -> Update Manifest -> CD (ArgoCD) -> Deploy.
+---
 
-B. Yêu cầu nâng cao (Để đạt điểm tối đa):
-Smart Build (Build thông minh):
+## 2. Quy trình CI/CD & Pipeline (Trọng tâm)
 
-Vấn đề: Trong cấu trúc Microservices (hoặc Monorepo), khi sửa code 1 service, không được build lại toàn bộ hệ thống.
+### Flow cơ bản
 
-Giải pháp: Pipeline phải có bước path-filter. Chỉ khi folder chứa code của Service A thay đổi -> chỉ chạy Pipeline build Service A.
+Code (GitHub) → CI (Build/Test/Scan) → Push Artifact → Update Manifest → CD (ArgoCD) → Deploy
 
-Cơ chế GitOps & Image Tagging:
+### Yêu cầu nâng cao (Để đạt điểm tối đa)
 
-Vấn đề: Khi có Image mới, làm sao Cluster biết để update?
+#### Smart Build (Build thông minh)
 
-Giải pháp: Không dùng lệnh kubectl apply thủ công.
+**Vấn đề:**
+- Trong cấu trúc Microservices (hoặc Monorepo), khi sửa code 1 service, không được build lại toàn bộ hệ thống
 
-Dùng GitHub Actions/Jenkins build Docker Image -> Push lên Registry.
+**Giải pháp:**
+- Pipeline phải có bước path-filter
+- Chỉ khi folder chứa code của Service A thay đổi → chỉ chạy Pipeline build Service A
 
-Dùng tool (như yq, kustomize hoặc ArgoCD Image Updater) để tự động sửa file YAML (Deployment manifest) trong Git repo chứa config (ví dụ: sửa tag từ v1.0 thành v1.1 hoặc commit hash).
+#### Cơ chế GitOps & Image Tagging
 
-ArgoCD sẽ phát hiện sự thay đổi trên Git repo config và đồng bộ (sync) về cụm Kubernetes.
+**Vấn đề:**
+- Khi có Image mới, làm sao Cluster biết để update?
 
-Artifact Management (Quản lý kho chứa):
+**Giải pháp:**
+- Không dùng lệnh kubectl apply thủ công
+- Dùng GitHub Actions/Jenkins build Docker Image → Push lên Registry
+- Dùng tool (như yq, kustomize hoặc ArgoCD Image Updater) để tự động sửa file YAML (Deployment manifest) trong Git repo chứa config (ví dụ: sửa tag từ v1.0 thành v1.1 hoặc commit hash)
+- ArgoCD sẽ phát hiện sự thay đổi trên Git repo config và đồng bộ (sync) về cụm Kubernetes
 
-Thay vì dùng DockerHub public, thầy gợi ý dựng Harbor, JFrog Artifactory hoặc Sonatype Nexus (tự host) để quản lý Docker Images chuyên nghiệp hơn.
+#### Artifact Management (Quản lý kho chứa)
 
-Phân loại môi trường (Environments):
+- Thay vì dùng DockerHub public, nên dựng Harbor, JFrog Artifactory hoặc Sonatype Nexus (tự host) để quản lý Docker Images chuyên nghiệp hơn
 
-Cần ít nhất 2 môi trường (Dev, Prod), tốt nhất là 3 (thêm Staging).
+#### Phân loại môi trường (Environments)
 
-Cơ chế Pull Request (PR) vs. Push:
+- Cần ít nhất 2 môi trường (Dev, Prod), tốt nhất là 3 (thêm Staging)
 
-Khi tạo PR: Chỉ chạy test, scan code, lint (kiểm tra lỗi), build thử (chưa deploy).
+#### Cơ chế Pull Request (PR) vs. Push
 
-Khi Merge vào Main: Mới thực sự build image, push artifact và deploy lên Production.
+- Khi tạo PR: Chỉ chạy test, scan code, lint (kiểm tra lỗi), build thử (chưa deploy)
+- Khi Merge vào Main: Mới thực sự build image, push artifact và deploy lên Production
 
-3. Giải thích các Tools & Links thầy gửi (Trong ảnh)
-Thầy gửi các link này để gợi ý giải pháp cho các vấn đề kỹ thuật hóc búa nêu trên:
+---
 
-Deploy Kubernetes:
+## 3. Giải thích các Tools & Links
 
-k3s-ansible: Script mẫu để cài K3s bằng Ansible (dành cho ai muốn tự dựng cluster trên EC2 thay vì mua EKS).
+### Deploy Kubernetes
 
-eks: Tài liệu AWS EKS (dành cho nhóm giàu tài nguyên/muốn chuẩn Cloud native).
+- **k3s-ansible:** Script mẫu để cài K3s bằng Ansible (dành cho ai muốn tự dựng cluster trên EC2 thay vì mua EKS)
+- **eks:** Tài liệu AWS EKS (dành cho nhóm giàu tài nguyên/muốn chuẩn Cloud native)
 
-Cập nhật Image tự động (Phần khó):
+### Cập nhật Image tự động
 
-fluxcd image-update / argocd-image-updater: Các tool tự động theo dõi Image Registry, nếu có tag mới nó sẽ tự update vào Cluster.
+- **fluxcd image-update / argocd-image-updater:** Các tool tự động theo dõi Image Registry, nếu có tag mới nó sẽ tự update vào Cluster
+- **yq:** Tool dòng lệnh xử lý file YAML. Dùng trong bước CI để sửa file manifest
+- **kustomize:** Một cách khác để quản lý cấu hình đè (overlay) cho các môi trường khác nhau (Dev/Prod) và update image tag sạch sẽ hơn
 
-yq: Tool dòng lệnh xử lý file YAML. Ý thầy: Dùng cái này trong bước CI để sửa file manifest (ví dụ: yq e '.spec.template.spec.containers[0].image = "new-image:tag"' deployment.yaml).
+### CI/CD Tools
 
-kustomize: Một cách khác để quản lý cấu hình đè (overlay) cho các môi trường khác nhau (Dev/Prod) và update image tag sạch sẽ hơn.
+- **Jenkins on Kubernetes:** Cách cài Jenkins chạy như một Pod trong K8s (scalable hơn)
 
-CI/CD Tools:
+### Artifact Repo
 
-Jenkins on Kubernetes: Cách cài Jenkins chạy như một Pod trong K8s (scalable hơn).
+- **Harbor, JFrog, Nexus:** Các lựa chọn để thay thế DockerHub. Harbor là lựa chọn mã nguồn mở rất tốt và phổ biến hiện nay
 
-Artifact Repo:
+---
 
-Harbor, JFrog, Nexus: Các lựa chọn để thay thế DockerHub. Harbor là lựa chọn mã nguồn mở rất tốt và phổ biến hiện nay.
+## 4. Yêu cầu về Báo cáo & Demo
 
-4. Yêu cầu về Báo cáo & Demo (Để qua môn/điểm cao)
-Kiến trúc hệ thống (Architecture Diagram): Phải vẽ rất rõ ràng, chi tiết luồng đi của dữ liệu và luồng CI/CD. Đây là phần thầy sẽ soi kỹ nhất để hỏi thi.
+### Kiến trúc hệ thống (Architecture Diagram)
 
-Nội dung Slide:
+- Phải vẽ rất rõ ràng, chi tiết luồng đi của dữ liệu và luồng CI/CD
+- Đây là phần giảng viên sẽ soi kỹ nhất để hỏi thi
 
-Cần có phần kết luận, hướng phát triển tương lai.
+### Nội dung Slide
 
-Giải thích rõ cơ chế hoạt động (Tại sao chọn tool này? ArgoCD sync thế nào?).
+- Cần có phần kết luận, hướng phát triển tương lai
+- Giải thích rõ cơ chế hoạt động (Tại sao chọn tool này? ArgoCD sync thế nào?)
+- Kịch bản Rollback (Khi deploy lỗi, hệ thống quay lại bản cũ thế nào?)
 
-Kịch bản Rollback (Khi deploy lỗi, hệ thống quay lại bản cũ thế nào?).
+### Demo
 
-Demo:
+- Quay video demo gửi giảng viên (đề phòng lúc demo trực tiếp bị lỗi)
+- Show code trực tiếp, show log chạy pipeline
+- Chứng minh được tính năng "chỉ build service thay đổi" và "tự động update tag"
 
-Quay video demo gửi thầy (đề phòng lúc demo trực tiếp bị lỗi).
+---
 
-Show code trực tiếp, show log chạy pipeline.
+## 5. Tóm tắt "To-Do List"
 
-Chứng minh được tính năng "chỉ build service thay đổi" và "tự động update tag".
+### Hạ tầng
 
-5. Tóm tắt "To-Do List" cho nhóm bạn
-Hạ tầng: Viết Terraform dựng 3 EC2 trên AWS. Viết Ansible cài K3s lên đó.
+- Viết Terraform dựng 3 EC2 trên AWS
+- Viết Ansible cài K3s lên đó
 
-Tools: Cài Jenkins (hoặc setup GitHub Actions runner), cài ArgoCD, cài Harbor.
+### Tools
 
-Code: Viết Dockerfile cho các service (Backend/Frontend).
+- Cài Jenkins (hoặc setup GitHub Actions runner)
+- Cài ArgoCD
+- Cài Harbor
 
-Pipeline (Khó nhất):
+### Code
 
-Viết script logic: "Nếu folder /backend đổi -> Build Docker Backend -> Push Harbor -> Dùng yq update file backend-deploy.yaml trong Git -> Commit code".
+- Viết Dockerfile cho các service (Backend/Frontend)
 
-Cấu hình ArgoCD trỏ vào repo chứa file yaml đó.
+### Pipeline (Khó nhất)
 
-Monitoring/Log: Setup đơn giản (như ELK stack hoặc Prometheus/Grafana) để show log (như thầy note "Xây dựng hệ thống log").
+- Viết script logic: "Nếu folder /backend đổi → Build Docker Backend → Push Harbor → Dùng yq update file backend-deploy.yaml trong Git → Commit code"
+- Cấu hình ArgoCD trỏ vào repo chứa file yaml đó
+
+### Monitoring/Log
+
+- Setup đơn giản (như ELK stack hoặc Prometheus/Grafana) để show log
