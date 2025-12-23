@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback } from 'react';
 
 function AddToCollectionModal({ isOpen, onClose, book, collections, onAdd, onCreateNew, onRemove }) {
   const [showCreate, setShowCreate] = useState(false);
@@ -33,19 +33,25 @@ function AddToCollectionModal({ isOpen, onClose, book, collections, onAdd, onCre
   }, [newName, book, onCreateNew]);
 
   const isBookInCollection = useCallback((collection) => {
-    const bookId = book?.isbn || book?.id;
-    if (!bookId) return false;
+    // Backend trả về books là array của UUIDs, nên cần dùng book.id (UUID) để check
+    // Nếu chưa có UUID, dùng isbn
+    const bookUUID = book?.id;
+    const bookIsbn = book?.isbn;
+    
+    if (!bookUUID && !bookIsbn) return false;
     
     if (Array.isArray(collection.books)) {
       return collection.books.some(b => {
         if (typeof b === 'string') {
-          return b === bookId;
+          // Backend trả về UUID, nên check với bookUUID trước
+          return b === bookUUID || b === bookIsbn || b === book?.id || b === book?.isbn;
         }
-        return (b.isbn || b.id) === bookId;
+        // Nếu là object, check cả id và isbn
+        return (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === bookIsbn || (b.id || b.isbn) === book?.id || (b.id || b.isbn) === book?.isbn;
       });
     }
     return false;
-  }, [book]);
+  }, [book, collections]); // Thêm collections vào dependency để re-render khi collections thay đổi
 
   const handleClose = useCallback(() => {
     setShowCreate(false);
@@ -181,4 +187,5 @@ function AddToCollectionModal({ isOpen, onClose, book, collections, onAdd, onCre
   );
 }
 
-export default memo(AddToCollectionModal);
+// Bỏ memo để component luôn re-render khi collections thay đổi
+export default AddToCollectionModal;

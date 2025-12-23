@@ -60,7 +60,9 @@ services:
 
   # User Service
   user-service:
-    build: ./services/user-service
+    build:
+      context: .
+      dockerfile: ./services/user-service/Dockerfile
     ports:
       - "3003:3003"
     environment:

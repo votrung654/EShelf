@@ -15,13 +15,18 @@ const Reading = () => {
       ? state
       : state?.pdfUrl || state || "/pdfs/lorem-ipsum.pdf";
 
-  // Ghi nhận đã đọc sách này - Gọi API thay vì localStorage
+  // Ghi nhận đã đọc sách này - Chỉ lưu 1 lần khi component mount
   useEffect(() => {
+    let isMounted = true;
+    let saved = false; // Flag để prevent duplicate saves
+
     const saveProgress = async () => {
-      if (!id || !isAuthenticated || !user?.id) return;
+      if (!id || !isAuthenticated || !user?.id || saved) return;
+      
+      saved = true; // Đánh dấu đã save
       
       try {
-        // Lưu progress vào backend API
+        // Lưu progress vào backend API (upsert sẽ tự động update nếu đã có)
         await historyAPI.saveProgress({
           bookId: id,
           currentPage: 1,
@@ -29,11 +34,17 @@ const Reading = () => {
         });
       } catch (error) {
         console.error('Error saving reading progress:', error);
-        // Không hiển thị lỗi để không làm gián đoạn việc đọc
+        saved = false; // Reset nếu lỗi để có thể retry
       }
     };
 
-    saveProgress();
+    if (isMounted) {
+      saveProgress();
+    }
+
+    return () => {
+      isMounted = false;
+    };
   }, [id, isAuthenticated, user?.id]);
 
   return (

@@ -73,11 +73,17 @@ export const authAPI = {
 
 export const booksAPI = {
   getAll: (page = 1, limit = 20) => api.get(`/books?page=${page}&limit=${limit}`),
-  search: (query, genre) => {
-    const params = new URLSearchParams();
-    if (query) params.append('q', query);
-    if (genre && genre !== 'all') params.append('genre', genre);
-    return api.get(`/books/search?${params.toString()}`);
+  search: (params = {}) => {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.append('q', params.q);
+    if (params.genre && params.genre !== 'all') searchParams.append('genre', params.genre);
+    if (params.year) searchParams.append('year', params.year);
+    if (params.fromYear) searchParams.append('fromYear', params.fromYear);
+    if (params.toYear) searchParams.append('toYear', params.toYear);
+    if (params.language) searchParams.append('language', params.language);
+    if (params.page) searchParams.append('page', params.page);
+    if (params.limit) searchParams.append('limit', params.limit);
+    return api.get(`/books/search?${searchParams.toString()}`);
   },
   getById: (id) => api.get(`/books/${id}`),
   getFeatured: (limit = 10) => api.get(`/books/featured?limit=${limit}`),

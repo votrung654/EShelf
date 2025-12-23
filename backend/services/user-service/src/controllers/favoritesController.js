@@ -1,15 +1,27 @@
-// In-memory storage
-const favorites = new Map(); // userId -> Set of bookIds
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// Get favorites
+// Get favorites - từ database
 exports.getFavorites = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const userFavorites = favorites.get(userId) || new Set();
+    
+    const favorites = await prisma.favorite.findMany({
+      where: { userId },
+      include: {
+        book: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    // Trả về array bookIds để frontend xử lý
+    const bookIds = favorites.map(f => f.bookId);
 
     res.json({
       success: true,
-      data: Array.from(userFavorites)
+      data: bookIds
     });
   } catch (error) {
     console.error('Get favorites error:', error);
@@ -17,19 +29,51 @@ exports.getFavorites = async (req, res) => {
   }
 };
 
-// Add favorite
+// Add favorite - vào database
 exports.addFavorite = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { bookId } = req.params;
+    let { bookId } = req.params;
 
-    let userFavorites = favorites.get(userId);
-    if (!userFavorites) {
-      userFavorites = new Set();
-      favorites.set(userId, userFavorites);
+    // Nếu bookId là ISBN (không phải UUID), tìm book bằng ISBN để lấy id
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookId);
+    if (!isUUID) {
+      const book = await prisma.book.findUnique({
+        where: { isbn: bookId },
+        select: { id: true }
+      });
+      if (!book) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sách không tồn tại trong hệ thống'
+        });
+      }
+      bookId = book.id;
     }
 
-    userFavorites.add(bookId);
+    // Check if already exists (Favorite có composite key @@id([userId, bookId]))
+    const existing = await prisma.favorite.findUnique({
+      where: {
+        userId_bookId: {
+          userId,
+          bookId
+        }
+      }
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'Sách đã có trong yêu thích'
+      });
+    }
+
+    await prisma.favorite.create({
+      data: {
+        userId,
+        bookId
+      }
+    });
 
     res.json({
       success: true,
@@ -41,16 +85,37 @@ exports.addFavorite = async (req, res) => {
   }
 };
 
-// Remove favorite
+// Remove favorite - khỏi database
 exports.removeFavorite = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { bookId } = req.params;
+    let { bookId } = req.params;
 
-    const userFavorites = favorites.get(userId);
-    if (userFavorites) {
-      userFavorites.delete(bookId);
+    // Nếu bookId là ISBN (không phải UUID), tìm book bằng ISBN để lấy id
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookId);
+    if (!isUUID) {
+      const book = await prisma.book.findUnique({
+        where: { isbn: bookId },
+        select: { id: true }
+      });
+      if (!book) {
+        return res.status(404).json({
+          success: false,
+          message: 'Sách không tồn tại trong hệ thống'
+        });
+      }
+      bookId = book.id;
     }
+
+    // Favorite có composite key @@id([userId, bookId]) nên có thể dùng findUnique
+    await prisma.favorite.delete({
+      where: {
+        userId_bookId: {
+          userId,
+          bookId
+        }
+      }
+    });
 
     res.json({
       success: true,
@@ -62,18 +127,40 @@ exports.removeFavorite = async (req, res) => {
   }
 };
 
-// Check if book is favorite
+// Check if book is favorite - từ database
 exports.checkFavorite = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const { bookId } = req.params;
+    let { bookId } = req.params;
 
-    const userFavorites = favorites.get(userId);
-    const isFavorite = userFavorites ? userFavorites.has(bookId) : false;
+    // Nếu bookId là ISBN (không phải UUID), tìm book bằng ISBN để lấy id
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookId);
+    if (!isUUID) {
+      const book = await prisma.book.findUnique({
+        where: { isbn: bookId },
+        select: { id: true }
+      });
+      if (!book) {
+        return res.json({
+          success: true,
+          data: { isFavorite: false }
+        });
+      }
+      bookId = book.id;
+    }
+
+    const favorite = await prisma.favorite.findUnique({
+      where: {
+        userId_bookId: {
+          userId,
+          bookId
+        }
+      }
+    });
 
     res.json({
       success: true,
-      data: { isFavorite }
+      data: { isFavorite: !!favorite }
     });
   } catch (error) {
     console.error('Check favorite error:', error);

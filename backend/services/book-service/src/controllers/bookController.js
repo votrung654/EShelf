@@ -58,8 +58,10 @@ exports.getAllBooks = async (req, res) => {
 // ==========================================
 exports.searchBooks = async (req, res) => {
   try {
-    const { q, genre, year, language, page = 1, limit = 20 } = req.query;
+    const { q, genre, year, fromYear, toYear, language, page = 1, limit = 20 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    console.log('Search request params:', { q, genre, year, fromYear, toYear, language, page, limit });
     
     // Xây dựng điều kiện lọc (Where clause)
     const where = {};
@@ -87,9 +89,47 @@ exports.searchBooks = async (req, res) => {
       };
     }
 
-    // Lọc theo năm và ngôn ngữ
-    if (year) where.publishedYear = parseInt(year);
-    if (language) where.language = { equals: language, mode: 'insensitive' };
+    // Lọc theo năm (hỗ trợ cả year cụ thể và range fromYear-toYear)
+    if (year) {
+      where.publishedYear = parseInt(year);
+    } else if (fromYear || toYear) {
+      const yearFilter = {};
+      if (fromYear) {
+        yearFilter.gte = parseInt(fromYear);
+      }
+      if (toYear) {
+        yearFilter.lte = parseInt(toYear);
+      }
+      // Chỉ thêm filter nếu có ít nhất một điều kiện
+      if (Object.keys(yearFilter).length > 0) {
+        where.publishedYear = yearFilter;
+      }
+    }
+    
+    // Lọc theo ngôn ngữ
+    if (language) {
+      where.language = { equals: language, mode: 'insensitive' };
+    }
+
+    console.log('Where clause:', JSON.stringify(where, null, 2));
+
+    // Nếu không có bất kỳ điều kiện nào, trả về mảng rỗng thay vì tất cả sách
+    const hasAnyFilter = q || (genre && genre !== 'all') || year || fromYear || toYear || language;
+    if (!hasAnyFilter) {
+      console.log('No filters provided, returning empty array');
+      return res.json({
+        success: true,
+        data: {
+          books: [],
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: 0,
+            totalPages: 0
+          }
+        }
+      });
+    }
 
     const [results, total] = await Promise.all([
       prisma.book.findMany({
@@ -103,6 +143,8 @@ exports.searchBooks = async (req, res) => {
       }),
       prisma.book.count({ where })
     ]);
+
+    console.log(`Found ${total} books matching criteria`);
 
     res.json({
       success: true,

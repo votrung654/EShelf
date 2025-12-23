@@ -26,16 +26,56 @@ const Collections = () => {
     const loadCollections = async () => {
       if (!user?.id || !isAuthenticated) {
         setCollections([]);
+        setIsLoading(false);
         return;
       }
 
+      setIsLoading(true);
       try {
         const response = await collectionsAPI.getAll();
         if (response.success && response.data) {
-          setCollections(response.data);
+          // Fetch book covers cho mỗi collection (chỉ 4 cuốn đầu để hiển thị)
+          const collectionsWithBooks = await Promise.all(
+            response.data.map(async (collection) => {
+              if (collection.books && Array.isArray(collection.books) && collection.books.length > 0) {
+                const bookIds = collection.books.slice(0, 4); // Chỉ lấy 4 cuốn đầu
+                const bookCovers = await Promise.all(
+                  bookIds.map(async (bookId) => {
+                    try {
+                      const bookRes = await booksAPI.getById(bookId);
+                      if (bookRes.success && bookRes.data) {
+                        return {
+                          id: bookId,
+                          coverUrl: bookRes.data.coverUrl || bookRes.data.cover,
+                          cover: bookRes.data.coverUrl || bookRes.data.cover
+                        };
+                      }
+                      return null;
+                    } catch (error) {
+                      return null;
+                    }
+                  })
+                );
+                return {
+                  ...collection,
+                  books: bookCovers.filter(Boolean) // Chỉ giữ những book có cover
+                };
+              }
+              return {
+                ...collection,
+                books: []
+              };
+            })
+          );
+          setCollections(collectionsWithBooks);
+        } else {
+          setCollections([]);
         }
       } catch (error) {
         console.error('Failed to load collections:', error);
+        setCollections([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 

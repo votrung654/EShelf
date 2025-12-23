@@ -24,74 +24,52 @@ app.use(cors({
 // Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// ⚠️ KHÔNG parse body ở đây - để proxy tự handle
-// Rate limiting (chỉ cho GET requests)
-app.use((req, res, next) => {
-  if (req.method === 'GET') {
-    return rateLimiter(req, res, next);
-  }
-  next();
-});
+// Body parsing (Đặt TRƯỚC Proxy để parse body)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Rate limiting
+app.use(rateLimiter);
 
 // ==========================================
-// 👇 CẤU HÌNH PROXY (ĐÃ SỬA)
+// 👇 CẤU HÌNH PROXY (ĐÃ BỔ SUNG ĐẦY ĐỦ)
 // ==========================================
-
-const commonProxyOptions = {
-  changeOrigin: true,
-  timeout: 30000,
-  proxyTimeout: 30000,
-  // Không parse body, để proxy forward trực tiếp
-  parseReqBody: false,
-  onError: (err, req, res) => {
-    console.error(`[Proxy Error] ${req.path}:`, err.message);
-    res.status(503).json({
-      success: false,
-      message: 'Service temporarily unavailable',
-      error: err.message
-    });
-  }
-};
 
 // 1. Auth Service
 app.use('/api/auth', createProxyMiddleware({
-  ...commonProxyOptions,
   target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
+  changeOrigin: true,
 }));
 
 // 2. Book Service (Xử lý cả Books và Genres)
+// 👉 BỔ SUNG ROUTE GENRES VÀO ĐÂY
 app.use(['/api/books', '/api/genres'], createProxyMiddleware({
-  ...commonProxyOptions,
   target: process.env.BOOK_SERVICE_URL || 'http://book-service:3002',
+  changeOrigin: true,
+  // Không cần pathRewrite vì Book Service thường được thiết kế để nhận /api/books
 }));
 
-// 3. User Service
-app.use('/api/users', createProxyMiddleware({
-  ...commonProxyOptions,
+// 3. User Service - Tách riêng từng route để đảm bảo hoạt động đúng
+const userServiceProxyOptions = {
   target: process.env.USER_SERVICE_URL || 'http://user-service:3003',
-}));
+  changeOrigin: true,
+  timeout: 30000, // 30 seconds timeout
+  proxyTimeout: 30000,
+};
 
-app.use('/api/favorites', createProxyMiddleware({
-  ...commonProxyOptions,
-  target: process.env.USER_SERVICE_URL || 'http://user-service:3003',
-}));
+app.use('/api/users', createProxyMiddleware(userServiceProxyOptions));
+app.use('/api/favorites', createProxyMiddleware(userServiceProxyOptions));
+app.use('/api/reading-history', createProxyMiddleware(userServiceProxyOptions));
+app.use('/api/collections', createProxyMiddleware(userServiceProxyOptions));
 
-app.use('/api/reading-history', createProxyMiddleware({
-  ...commonProxyOptions,
-  target: process.env.USER_SERVICE_URL || 'http://user-service:3003',
-}));
-
-app.use('/api/collections', createProxyMiddleware({
-  ...commonProxyOptions,
-  target: process.env.USER_SERVICE_URL || 'http://user-service:3003',
-}));
-
-// 4. ML Service
+// 4. ML Service (Gợi ý sách)
+// 👉 QUAN TRỌNG: ML Service Python thường dùng đường dẫn gốc (/recommendations)
+// Nên ta cần pathRewrite để cắt bỏ chữ /api/ml đi
 app.use('/api/ml', createProxyMiddleware({
-  ...commonProxyOptions,
   target: process.env.ML_SERVICE_URL || 'http://ml-service:8000',
+  changeOrigin: true,
   pathRewrite: {
-    '^/api/ml': '',
+    '^/api/ml': '', // Biến /api/ml/recommendations thành /recommendations
   },
 }));
 
@@ -109,7 +87,7 @@ app.use(errorHandler);
 if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`🚀 API Gateway running on port ${PORT}`);
-    console.log(`✅ Proxy configured for: auth, books, genres, users, favorites, collections, history, ml`);
+    console.log(`Routes configured: /api/auth, /api/books, /api/genres, /api/users, /api/favorites, /api/collections, /api/reading-history, /api/ml`);
   });
 }
 

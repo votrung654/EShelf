@@ -41,25 +41,45 @@ const BookCard = ({ book, isMLRecommendation = false }) => {
       return;
     }
 
+    if (!bookIdentifier) {
+      console.error('Book identifier is missing');
+      alert('Không thể xác định sách. Vui lòng thử lại.');
+      return;
+    }
+
     setIsLoading(true);
     try {
       if (isFavorite) {
-        await favoritesAPI.remove(bookIdentifier);
-        setIsFavorite(false);
+        const response = await favoritesAPI.remove(bookIdentifier);
+        if (response && response.success) {
+          setIsFavorite(false);
+        } else {
+          throw new Error(response?.message || 'Không thể xóa khỏi yêu thích');
+        }
       } else {
-        await favoritesAPI.add(bookIdentifier);
-        setIsFavorite(true);
+        const response = await favoritesAPI.add(bookIdentifier);
+        if (response && response.success) {
+          setIsFavorite(true);
+        } else {
+          // Nếu sách đã có trong yêu thích (400), coi như thành công
+          if (response?.status === 400 || response?.message?.includes('đã có')) {
+            setIsFavorite(true);
+          } else {
+            throw new Error(response?.message || 'Không thể thêm vào yêu thích');
+          }
+        }
       }
     } catch (error) {
       console.error('Toggle favorite error:', error);
-      alert('Không thể cập nhật yêu thích. Kiểm tra kết nối!');
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể cập nhật yêu thích. Vui lòng thử lại.';
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="book-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group relative flex flex-col h-full">
+    <div className="book-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group relative flex flex-col h-full" style={{ pointerEvents: 'auto' }}>
       {/* ML Badge */}
       {isMLRecommendation && (
         <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-full z-10">
@@ -78,14 +98,19 @@ const BookCard = ({ book, isMLRecommendation = false }) => {
           
           {/* Favorite button overlay */}
           <button
-            onClick={handleToggleFavorite}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleToggleFavorite();
+            }}
             disabled={isLoading}
-            className={`absolute top-2 right-2 p-2 rounded-full transition-all shadow-sm ${
+            className={`absolute top-2 right-2 p-2 rounded-full transition-all shadow-sm z-20 ${
               isFavorite 
                 ? 'bg-red-500 text-white' 
                 : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500'
             } ${isLoading ? 'opacity-70 cursor-wait' : ''}`}
             title={isFavorite ? 'Bỏ yêu thích' : 'Thêm yêu thích'}
+            style={{ pointerEvents: 'auto' }}
           >
             <svg className="w-5 h-5" fill={isFavorite ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />

@@ -21,9 +21,11 @@ const BookDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
-  const book = bookDetails
-    ? bookDetails.find((bookDetail) => bookDetail.isbn === id)
-    : null;
+  
+  // State để lưu book data (có thể từ local JSON hoặc API)
+  const [book, setBook] = useState(null);
+  const [isLoadingBook, setIsLoadingBook] = useState(true);
+  
   const [isHeartClicked, setIsHeartClicked] = useState(false);
   const [isBookmarkClicked, setIsBookmarkClicked] = useState(false);
   const [comments, setComments] = useState([]);
@@ -33,6 +35,50 @@ const BookDetail = () => {
   const [readingProgress, setReadingProgress] = useState(null);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [isFavoriteReal, setIsFavoriteReal] = useState(false); // Favorite từ backend
+
+  // Load book data - thử local JSON trước, nếu không có thì fetch từ API
+  useEffect(() => {
+    const loadBook = async () => {
+      setIsLoadingBook(true);
+      
+      // Thử tìm trong local JSON trước (nếu id là ISBN)
+      const localBook = bookDetails
+        ? bookDetails.find((bookDetail) => bookDetail.isbn === id)
+        : null;
+      
+      if (localBook) {
+        setBook(localBook);
+        setIsLoadingBook(false);
+        return;
+      }
+      
+      // Nếu không tìm thấy trong local JSON, fetch từ API (có thể là UUID hoặc ISBN)
+      try {
+        const { booksAPI } = await import('../services/api');
+        const bookResponse = await booksAPI.getById(id);
+        if (bookResponse.success && bookResponse.data) {
+          setBook({
+            ...bookResponse.data,
+            // Đảm bảo có các field cần thiết
+            author: bookResponse.data.authors || bookResponse.data.author || [],
+            coverUrl: bookResponse.data.coverUrl || bookResponse.data.cover,
+            cover: bookResponse.data.coverUrl || bookResponse.data.cover,
+          });
+        } else {
+          setBook(null);
+        }
+      } catch (error) {
+        console.error('Error fetching book from API:', error);
+        setBook(null);
+      } finally {
+        setIsLoadingBook(false);
+      }
+    };
+    
+    if (id) {
+      loadBook();
+    }
+  }, [id]);
 
   // Load collections từ API
   useEffect(() => {
@@ -48,12 +94,33 @@ const BookDetail = () => {
         if (response.success && response.data) {
           setCollections(response.data);
 
-          // Check if book is in any collection (check bookId array, not book objects)
+          // Check if book is in any collection
+          // Backend trả về books là array của UUIDs, nên cần fetch book từ backend để lấy UUID
           if (book) {
-            const bookId = book.id || book.isbn;
-            const isSaved = response.data.some((c) =>
-              c.books && Array.isArray(c.books) && c.books.includes(bookId)
-            );
+            let bookUUID = book.id;
+            // Nếu chưa có UUID, fetch từ backend
+            if (!bookUUID && book.isbn) {
+              try {
+                const { booksAPI } = await import('../services/api');
+                const bookResponse = await booksAPI.getById(book.isbn);
+                if (bookResponse.success && bookResponse.data) {
+                  bookUUID = bookResponse.data.id;
+                }
+              } catch (fetchError) {
+                console.error('Error fetching book UUID:', fetchError);
+              }
+            }
+            
+            const isSaved = response.data.some((c) => {
+              if (!c.books || !Array.isArray(c.books)) return false;
+              return c.books.some(b => {
+                if (typeof b === 'string') {
+                  // Backend trả về UUID, nên check với bookUUID trước
+                  return b === bookUUID || b === book.isbn || b === book.id;
+                }
+                return (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === book.isbn || (b.id || b.isbn) === book.id;
+              });
+            });
             setIsBookSaved(isSaved);
           }
         } else {
@@ -82,10 +149,16 @@ const BookDetail = () => {
       if (!isAuthenticated || !book) return;
       
       try {
-        const result = await favoritesAPI.check(book.isbn);
-        setIsFavoriteReal(result.data.isFavorite);
+        const bookId = book.id || book.isbn;
+        if (!bookId) return;
+        
+        const result = await favoritesAPI.check(bookId);
+        if (result && result.success) {
+          setIsFavoriteReal(result.data.isFavorite);
+        }
       } catch (error) {
         console.error('Check favorite error:', error);
+        // Không set state nếu có lỗi, để tránh hiển thị sai
       }
     };
 
@@ -105,32 +178,122 @@ const BookDetail = () => {
         return;
       }
       
-      try {
-        const bookId = bookData.id || bookData.isbn;
-        const response = await collectionsAPI.addBook(collectionId, bookId);
-        
-        if (response.success) {
-          setIsBookSaved(true);
-          setShowCollectionModal(false);
-          
+      // Helper function để reload collections và update state
+      const reloadCollectionsAndUpdateState = async (bookIdForFallback) => {
+        console.log('Reloading collections and updating state...');
+        try {
+          const reloadResponse = await collectionsAPI.getAll();
+          console.log('Reload response:', reloadResponse);
+          if (reloadResponse.success && reloadResponse.data) {
+            console.log('Collections reloaded:', reloadResponse.data);
+            setCollections(reloadResponse.data);
+            // Check lại xem book có trong collection không
+            // Backend trả về books là array của UUIDs, nên cần dùng book.id (UUID) để check
+            // Nếu book.id chưa có (chỉ có isbn), cần fetch book từ backend để lấy UUID
+            let bookUUID = book?.id;
+            if (!bookUUID && book?.isbn) {
+              // Nếu chưa có UUID, fetch từ backend
+              try {
+                const { booksAPI } = await import('../services/api');
+                const bookResponse = await booksAPI.getById(book.isbn);
+                if (bookResponse.success && bookResponse.data) {
+                  bookUUID = bookResponse.data.id;
+                  console.log('Fetched book UUID:', bookUUID, 'from ISBN:', book.isbn);
+                }
+              } catch (fetchError) {
+                console.error('Error fetching book UUID:', fetchError);
+              }
+            }
+            
+            const currentBookId = bookUUID || book?.id || book?.isbn;
+            const currentIsbn = book?.isbn;
+            console.log('Checking if book is saved. bookUUID:', bookUUID, 'currentBookId:', currentBookId, 'currentIsbn:', currentIsbn);
+            console.log('Collections to check:', reloadResponse.data.map(c => ({ id: c.id, name: c.name, books: c.books })));
+            
+            const isSaved = reloadResponse.data.some((c) => {
+              if (!c.books || !Array.isArray(c.books)) {
+                console.log(`Collection ${c.id} has no books array`);
+                return false;
+              }
+              console.log(`Checking collection ${c.id}, books:`, c.books);
+              const found = c.books.some(b => {
+                if (typeof b === 'string') {
+                  // Backend trả về UUID, nên check với bookUUID trước
+                  const match = b === bookUUID || b === currentBookId || b === currentIsbn || b === book?.isbn || b === book?.id;
+                  if (match) console.log(`Found match in collection ${c.id}: string bookId "${b}" matches bookUUID "${bookUUID}" or currentBookId "${currentBookId}"`);
+                  return match;
+                }
+                const match = (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === currentBookId || (b.id || b.isbn) === currentIsbn || (b.id || b.isbn) === book?.isbn || (b.id || b.isbn) === book?.id;
+                if (match) console.log(`Found match in collection ${c.id}: object book`, b);
+                return match;
+              });
+              if (found) console.log(`Book found in collection ${c.id}`);
+              return found;
+            });
+            console.log('Final isBookSaved:', isSaved);
+            setIsBookSaved(isSaved);
+            // KHÔNG đóng modal ngay, để user thấy nút đã chuyển thành "Xóa"
+            // Modal sẽ tự đóng khi collections state update và re-render
+          } else {
+            console.log('Reload failed, using fallback');
+            // Fallback nếu reload thất bại
+            setIsBookSaved(true);
+            setShowCollectionModal(false);
+          }
+        } catch (reloadError) {
+          console.error('Error reloading collections:', reloadError);
+          // Fallback: update local state
           const updatedCollections = collections.map(c => {
             if (c.id === collectionId) {
               return {
                 ...c,
-                books: Array.isArray(c.books) ? [...c.books, bookData] : [bookData],
+                books: Array.isArray(c.books) ? [...c.books, bookIdForFallback] : [bookIdForFallback],
                 bookCount: (c.bookCount || c.books?.length || 0) + 1
               };
             }
             return c;
           });
           setCollections(updatedCollections);
+          // Update isBookSaved based on updated collections
+          const currentBookId = book?.id || book?.isbn;
+          const isSaved = updatedCollections.some((c) => {
+            if (!c.books || !Array.isArray(c.books)) return false;
+            return c.books.some(b => {
+              if (typeof b === 'string') {
+                return b === currentBookId || b === book?.isbn || b === book?.id;
+              }
+              return (b.id || b.isbn) === currentBookId;
+            });
+          });
+          setIsBookSaved(isSaved);
+          setShowCollectionModal(false);
+        }
+      };
+      
+      try {
+        const bookId = bookData.id || bookData.isbn;
+        const response = await collectionsAPI.addBook(collectionId, bookId);
+        
+        if (response.success) {
+          // Reload collections từ backend để có data chính xác TRƯỚC KHI đóng modal
+          await reloadCollectionsAndUpdateState(bookId);
         }
       } catch (error) {
         console.error('Error adding book to collection:', error);
-        alert('Không thể thêm sách vào bộ sưu tập. Vui lòng thử lại.');
+        console.log('Error response:', error.response?.data);
+        // Nếu lỗi 400 và message là "đã có trong bộ sưu tập", xử lý như success
+        const errorMessage = error.response?.data?.message || '';
+        if (error.response?.status === 400 && (errorMessage.includes('đã có') || errorMessage.includes('Sách đã có'))) {
+          // Reload collections và update state
+          console.log('Book already in collection, reloading...');
+          await reloadCollectionsAndUpdateState(bookData.id || bookData.isbn);
+        } else {
+          const errorMsg = error.response?.data?.message || error.message || 'Không thể thêm sách vào bộ sưu tập. Vui lòng thử lại.';
+          alert(errorMsg);
+        }
       }
     },
-    [user?.id, isAuthenticated, navigate]
+    [user?.id, isAuthenticated, navigate, collections, book]
   );
 
   const handleCreateNewCollection = useCallback(
@@ -156,11 +319,39 @@ const BookDetail = () => {
               await collectionsAPI.addBook(createdCollection.id, bookId);
             } catch (addError) {
               console.error('Error adding book to new collection:', addError);
+              // Vẫn tiếp tục dù có lỗi add book
             }
           }
           
-          setCollections(prev => [...prev, createdCollection]);
-          setIsBookSaved(true);
+          // Reload collections từ backend để có data chính xác
+          try {
+            const reloadResponse = await collectionsAPI.getAll();
+            if (reloadResponse.success && reloadResponse.data) {
+              setCollections(reloadResponse.data);
+              // Check lại xem book có trong collection không (check cả isbn và id)
+              const currentBookId = book?.id || book?.isbn;
+              const isSaved = reloadResponse.data.some((c) => {
+                if (!c.books || !Array.isArray(c.books)) return false;
+                return c.books.some(b => {
+                  if (typeof b === 'string') {
+                    return b === currentBookId || b === book?.isbn || b === book?.id;
+                  }
+                  return (b.id || b.isbn) === currentBookId || (b.id || b.isbn) === book?.isbn || (b.id || b.isbn) === book?.id;
+                });
+              });
+              setIsBookSaved(isSaved);
+            } else {
+              // Fallback
+              setCollections(prev => [...prev, createdCollection]);
+              setIsBookSaved(true);
+            }
+          } catch (reloadError) {
+            console.error('Error reloading collections:', reloadError);
+            // Fallback
+            setCollections(prev => [...prev, createdCollection]);
+            setIsBookSaved(true);
+          }
+          
           setShowCollectionModal(false);
         } else {
           console.error('Create collection failed:', response);
@@ -183,38 +374,84 @@ const BookDetail = () => {
       const response = await collectionsAPI.removeBook(collectionId, bookId);
       
       if (response.success) {
-        const updatedCollections = collections.map(c => {
-          if (c.id === collectionId) {
-            return {
-              ...c,
-              books: Array.isArray(c.books) ? c.books.filter(b => {
-                if (typeof b === 'string') return b !== bookId;
-                return (b.id || b.isbn) !== bookId;
-              }) : [],
-              bookCount: Math.max(0, (c.bookCount || c.books?.length || 0) - 1)
-            };
-          }
-          return c;
-        });
-        
-        setCollections(updatedCollections);
-        
-        const stillSaved = updatedCollections.some(c => {
-          if (Array.isArray(c.books)) {
-            return c.books.some(b => {
-              if (typeof b === 'string') return b === bookId;
-              return (b.id || b.isbn) === bookId;
+        // Reload collections từ backend để có data chính xác
+        try {
+          const reloadResponse = await collectionsAPI.getAll();
+          if (reloadResponse.success && reloadResponse.data) {
+            setCollections(reloadResponse.data);
+            // Check lại xem book có còn trong collection không
+            const currentBookId = book?.id || book?.isbn;
+            const stillSaved = reloadResponse.data.some((c) => {
+              if (!c.books || !Array.isArray(c.books)) return false;
+              return c.books.some(b => {
+                if (typeof b === 'string') {
+                  return b === currentBookId || b === book?.isbn || b === book?.id;
+                }
+                return (b.id || b.isbn) === currentBookId || (b.id || b.isbn) === book?.isbn || (b.id || b.isbn) === book?.id;
+              });
             });
+            setIsBookSaved(stillSaved);
+          } else {
+            // Fallback
+            const updatedCollections = collections.map(c => {
+              if (c.id === collectionId) {
+                return {
+                  ...c,
+                  books: Array.isArray(c.books) ? c.books.filter(b => {
+                    if (typeof b === 'string') return b !== bookId;
+                    return (b.id || b.isbn) !== bookId;
+                  }) : [],
+                  bookCount: Math.max(0, (c.bookCount || c.books?.length || 0) - 1)
+                };
+              }
+              return c;
+            });
+            setCollections(updatedCollections);
+            const stillSaved = updatedCollections.some(c => {
+              if (Array.isArray(c.books)) {
+                return c.books.some(b => {
+                  if (typeof b === 'string') return b === bookId;
+                  return (b.id || b.isbn) === bookId;
+                });
+              }
+              return false;
+            });
+            setIsBookSaved(stillSaved);
           }
-          return false;
-        });
-        setIsBookSaved(stillSaved);
+        } catch (reloadError) {
+          console.error('Error reloading collections:', reloadError);
+          // Fallback
+          const updatedCollections = collections.map(c => {
+            if (c.id === collectionId) {
+              return {
+                ...c,
+                books: Array.isArray(c.books) ? c.books.filter(b => {
+                  if (typeof b === 'string') return b !== bookId;
+                  return (b.id || b.isbn) !== bookId;
+                }) : [],
+                bookCount: Math.max(0, (c.bookCount || c.books?.length || 0) - 1)
+              };
+            }
+            return c;
+          });
+          setCollections(updatedCollections);
+          const stillSaved = updatedCollections.some(c => {
+            if (Array.isArray(c.books)) {
+              return c.books.some(b => {
+                if (typeof b === 'string') return b === bookId;
+                return (b.id || b.isbn) === bookId;
+              });
+            }
+            return false;
+          });
+          setIsBookSaved(stillSaved);
+        }
       }
     } catch (error) {
       console.error('Error removing book from collection:', error);
       alert('Không thể xóa sách khỏi bộ sưu tập. Vui lòng thử lại.');
     }
-  }, [user?.id, isAuthenticated, collections]);
+  }, [user?.id, isAuthenticated, collections, book]);
 
   const openCollectionModal = useCallback(() => {
     setShowCollectionModal(true);
@@ -224,13 +461,13 @@ const BookDetail = () => {
     setShowCollectionModal(false);
   }, []);
 
-  // Tạo book object để truyền vào modal
+  // Tạo currentBookData từ book state (đã được load từ local JSON hoặc API)
   const currentBookData = book
     ? {
         id: book.id,
         isbn: book.isbn,
         title: book.title,
-        author: book.author,
+        author: Array.isArray(book.author) ? book.author : (book.authors || []),
         cover: book.coverUrl || book.cover,
         coverUrl: book.coverUrl || book.cover,
       }
@@ -245,25 +482,69 @@ const BookDetail = () => {
 
     if (!book) return;
     
+    const bookId = book.id || book.isbn;
+    if (!bookId) {
+      console.error('Book ID is missing');
+      alert('Không thể xác định sách. Vui lòng thử lại.');
+      return;
+    }
+    
     setIsFavoriteLoading(true);
     try {
-      await favoritesAPI.toggle(book.isbn);
-      setIsFavoriteReal(!isFavoriteReal);
-      
-      // Show toast
-      if (!isFavoriteReal) {
-        // Có thể thêm toast notification ở đây
-        console.log('Added to favorites');
+      if (isFavoriteReal) {
+        const response = await favoritesAPI.remove(bookId);
+        if (response && response.success) {
+          setIsFavoriteReal(false);
+        } else {
+          throw new Error(response?.message || 'Không thể xóa khỏi yêu thích');
+        }
       } else {
-        console.log('Removed from favorites');
+        const response = await favoritesAPI.add(bookId);
+        if (response && response.success) {
+          setIsFavoriteReal(true);
+        } else {
+          // Nếu sách đã có trong yêu thích (400), coi như thành công
+          if (response?.status === 400 || response?.message?.includes('đã có')) {
+            setIsFavoriteReal(true);
+          } else {
+            throw new Error(response?.message || 'Không thể thêm vào yêu thích');
+          }
+        }
       }
     } catch (error) {
       console.error('Toggle favorite error:', error);
-      alert('Không thể cập nhật yêu thích. Vui lòng thử lại.');
+      const errorMessage = error.response?.data?.message || error.message || 'Không thể cập nhật yêu thích. Vui lòng thử lại.';
+      alert(errorMessage);
     } finally {
       setIsFavoriteLoading(false);
     }
   };
+
+  // Loading state
+  if (isLoadingBook) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  // Not found state
+  if (!book) {
+    return (
+      <div className="px-8 md:px-20 lg:px-24">
+        <div className="flex flex-col items-center justify-center min-h-screen">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Không tìm thấy sách</h1>
+          <button
+            onClick={() => navigate(-1)}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Quay lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (book) {
     return (
@@ -284,10 +565,10 @@ const BookDetail = () => {
           />
           <p className="mb-1 text-2xl text-gray-800 dark:text-gray-100">{book.title}</p>
           <p className="mb-5 cursor-pointer text-sm text-sky-400">
-            {book.author.map((au, index) => (
+            {(Array.isArray(book.author) ? book.author : (book.authors || [])).map((au, index, arr) => (
               <span key={index}>
                 <a className="underline hover:text-sky-600 dark:text-sky-300 dark:hover:text-sky-200">{au}</a>
-                {index !== book.author.length - 1 && ", "}
+                {index !== arr.length - 1 && ", "}
               </span>
             ))}
           </p>
@@ -329,7 +610,7 @@ const BookDetail = () => {
             </p>
           )}
           <div className="mb-5 grid grid-cols-2 gap-x-12 gap-y-2 text-sm text-gray-700 dark:text-gray-300">
-            {book.genres.length > 0 && (
+            {book.genres && Array.isArray(book.genres) && book.genres.length > 0 && (
               <p className="cursor-pointer">
                 <span className="text-gray-500 dark:text-gray-400">Thể loại:</span>{" "}
                 {book.genres.join(", ")}
@@ -353,7 +634,7 @@ const BookDetail = () => {
               </p>
             )}
 
-            {book.translator.length > 0 && (
+            {book.translator && Array.isArray(book.translator) && book.translator.length > 0 && (
               <p>
                 <span className="text-gray-500 dark:text-gray-400">Người dịch:</span>{" "}
                 {book.translator.join(", ")}
@@ -459,6 +740,7 @@ const BookDetail = () => {
             {/* Modal - thêm prop onRemove */}
             {showCollectionModal && currentBookData && (
               <AddToCollectionModal
+                key={`modal-${collections.length}-${isBookSaved}-${currentBookData.id || currentBookData.isbn}-${JSON.stringify(collections.map(c => ({ id: c.id, books: c.books })))}`} // Force re-render when collections or isBookSaved change
                 isOpen={showCollectionModal}
                 onClose={() => setShowCollectionModal(false)}
                 book={currentBookData}

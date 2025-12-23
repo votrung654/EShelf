@@ -36,7 +36,12 @@ export default function ReadingHistory() {
                 if (bookResponse.success && bookResponse.data) {
                   return {
                     ...bookResponse.data,
+                    id: bookResponse.data.id || bookResponse.data.isbn, // Đảm bảo có id
+                    isbn: bookResponse.data.isbn,
+                    bookId: historyItem.bookId, // Giữ lại bookId từ history
+                    historyId: historyItem.id, // Thêm historyId để có unique key
                     progress: {
+                      id: historyItem.id, // Thêm id vào progress để dùng làm key
                       currentPage: historyItem.currentPage,
                       totalPages: historyItem.totalPages,
                       progressPercent: historyItem.progressPercent,
@@ -101,63 +106,98 @@ export default function ReadingHistory() {
       </div>
 
       {historyItems.length > 0 ? (
-        <div className="space-y-4">
-          {historyItems.map((item, index) => (
-            <div
-              key={item.id || item.isbn || index}
-              className="bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-900/50 p-4 flex gap-4 hover:shadow-lg transition-shadow"
-            >
-              <Link to={`/book/${item.id || item.isbn}`} className="flex-shrink-0">
-                <img
-                  src={item.coverUrl || item.cover || '/images/book-placeholder.svg'}
-                  alt={item.title}
-                  className="w-20 h-28 object-cover rounded-lg shadow"
-                  onError={(e) => { e.target.src = '/images/book-placeholder.svg'; }}
-                />
-              </Link>
-
-              <div className="flex-1 min-w-0">
-                <Link to={`/book/${item.id || item.isbn}`} className="font-semibold text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 line-clamp-1">
-                  {item.title}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {historyItems.map((item, index) => {
+            // Tạo unique key - dùng historyItem id từ backend nếu có, nếu không thì dùng bookId + index
+            const historyId = item.progress?.id || item.historyId;
+            const uniqueKey = historyId || `${item.id || item.isbn || item.bookId || 'book'}-${index}`;
+            
+            return (
+              <div
+                key={uniqueKey}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-gray-900/50 p-4 flex gap-4 hover:shadow-lg transition-shadow"
+              >
+                <Link 
+                  to={`/book/${item.id || item.isbn || item.bookId}`} 
+                  className="flex-shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <img
+                    src={item.coverUrl || item.cover || '/images/book-placeholder.svg'}
+                    alt={item.title}
+                    className="w-20 h-28 object-cover rounded-lg shadow"
+                    onError={(e) => { e.target.src = '/images/book-placeholder.svg'; }}
+                  />
                 </Link>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                  {Array.isArray(item.authors) ? item.authors.join(', ') : (item.author || 'Unknown')}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Đọc lần cuối: {formatTimeAgo(item.progress?.lastReadAt)}
-                </p>
-                {item.progress && (
-                  <div className="mt-2">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full" 
-                        style={{ width: `${item.progress.progressPercent || 0}%` }}
-                      />
+
+                <div className="flex-1 min-w-0">
+                  <Link 
+                    to={`/book/${item.id || item.isbn || item.bookId}`} 
+                    className="font-semibold text-gray-800 dark:text-gray-100 hover:text-blue-600 dark:hover:text-blue-400 line-clamp-1"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {item.title}
+                  </Link>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    {Array.isArray(item.authors) ? item.authors.join(', ') : (item.author || 'Unknown')}
+                  </p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">
+                    Đọc lần cuối: {formatTimeAgo(item.progress?.lastReadAt)}
+                  </p>
+                  {item.progress && (
+                    <div className="mt-2">
+                      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${item.progress.progressPercent || 0}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {item.progress.currentPage || 0} / {item.progress.totalPages || 0} trang
+                      </p>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {item.progress.currentPage || 0} / {item.progress.totalPages || 0} trang
-                    </p>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
 
-              <div className="flex flex-col gap-2">
-                <Link
-                  to={`/reading/${item.id || item.isbn}`}
-                  state={item.pdfUrl}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors text-center"
-                >
-                  Đọc tiếp
-                </Link>
-                <Link
-                  to={`/book/${item.id || item.isbn}`}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-center"
-                >
-                  Chi tiết
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    to={`/reading/${item.id || item.isbn || item.bookId}`}
+                    state={item.pdfUrl}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Đọc tiếp
+                  </Link>
+                  <Link
+                    to={`/book/${item.id || item.isbn || item.bookId}`}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-sm rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Chi tiết
+                  </Link>
+                  <button
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (!window.confirm('Xóa khỏi lịch sử đọc?')) return;
+                      
+                      try {
+                        const { historyAPI } = await import('../services/api');
+                        await historyAPI.deleteBook(item.id || item.isbn);
+                        // Reload history
+                        setHistoryItems(prev => prev.filter(h => (h.id || h.isbn) !== (item.id || item.isbn)));
+                      } catch (error) {
+                        console.error('Error deleting history:', error);
+                        alert('Không thể xóa lịch sử');
+                      }
+                    }}
+                    className="px-4 py-2 border border-red-300 dark:border-red-600 text-red-600 dark:text-red-300 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  >
+                    Xóa
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-16 bg-gray-50 dark:bg-gray-800 rounded-xl">

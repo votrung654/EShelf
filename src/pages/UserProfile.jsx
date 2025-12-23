@@ -50,10 +50,14 @@ export default function UserProfile() {
           const historyWithBooks = await Promise.all(
             histRes.data.map(async (historyItem) => {
               try {
-                const bookRes = await booksAPI.getById(historyItem.bookId);
+                // Backend trả về bookId có thể là UUID hoặc ISBN
+                const bookId = historyItem.bookId;
+                const bookRes = await booksAPI.getById(bookId);
                 if (bookRes.success && bookRes.data) {
                   return {
-                    id: historyItem.bookId,
+                    id: bookRes.data.id || bookRes.data.isbn, // Dùng id từ book response
+                    bookId: historyItem.bookId, // Giữ lại bookId từ history
+                    isbn: bookRes.data.isbn,
                     title: bookRes.data.title,
                     author: Array.isArray(bookRes.data.authors) ? bookRes.data.authors.join(', ') : (bookRes.data.author || 'Unknown'),
                     progress: historyItem.progressPercent || 0,
@@ -63,6 +67,7 @@ export default function UserProfile() {
                 }
                 return null;
               } catch (error) {
+                console.error('Error fetching book for history:', error);
                 return null;
               }
             })
@@ -138,7 +143,13 @@ export default function UserProfile() {
               </span>
             </div>
           </div>
-          <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => {
+              // TODO: Implement edit profile modal/page
+              alert('Tính năng chỉnh sửa hồ sơ đang được phát triển');
+            }}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             Chỉnh sửa hồ sơ
           </button>
         </div>
@@ -208,7 +219,7 @@ function FavoritesSection({ books, isLoading }) {
           {books.map((book) => (
             <Link
               key={book.id}
-              to={`/book/${book.id}`}
+              to={`/book/${book.id || book.isbn}`}
               className="flex gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
             >
               <img
@@ -224,7 +235,23 @@ function FavoritesSection({ books, isLoading }) {
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {Array.isArray(book.authors) ? book.authors.join(', ') : (book.author || 'Unknown')}
                 </p>
-                <button className="mt-2 text-red-500 hover:text-red-600 text-sm flex items-center gap-1">
+                <button 
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    if (!window.confirm('Bỏ yêu thích sách này?')) return;
+                    
+                    try {
+                      const { favoritesAPI } = await import('../services/api');
+                      await favoritesAPI.remove(book.id || book.isbn);
+                      // Reload page để cập nhật danh sách
+                      window.location.reload();
+                    } catch (error) {
+                      console.error('Error removing favorite:', error);
+                      alert('Không thể bỏ yêu thích');
+                    }
+                  }}
+                  className="mt-2 text-red-500 hover:text-red-600 text-sm flex items-center gap-1"
+                >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                   </svg>
@@ -257,40 +284,47 @@ function ReadingHistorySection({ history, isLoading }) {
       <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">Lịch sử đọc</h2>
       {history.length > 0 ? (
         <div className="space-y-4">
-          {history.map((item) => (
-            <div key={item.id} className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              {item.cover && (
-                <img
-                  src={item.cover}
-                  alt={item.title}
-                  className="w-16 h-20 object-cover rounded shadow"
-                  onError={(e) => {
-                    e.target.src = '/images/book-placeholder.svg';
-                  }}
-                />
-              )}
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-800 dark:text-gray-100">{item.title}</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{item.author}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Đọc lần cuối: {item.lastRead}</p>
-              </div>
-              <div className="text-right">
-                <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-1">
-                  <div
-                    className={`h-2 rounded-full ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-                    style={{ width: `${item.progress}%` }}
-                  />
-                </div>
-                <span className="text-sm text-gray-600 dark:text-gray-300">{item.progress}%</span>
-              </div>
+          {history.map((item, index) => {
+            const uniqueKey = item.id || `history-${index}`;
+            return (
               <Link
-                to={`/reading/${item.id}`}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                key={uniqueKey}
+                to={`/book/${item.id || item.isbn || item.bookId}`}
+                className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
               >
-                {item.progress === 100 ? 'Đọc lại' : 'Tiếp tục'}
+                {item.cover && (
+                  <img
+                    src={item.cover}
+                    alt={item.title}
+                    className="w-16 h-20 object-cover rounded shadow"
+                    onError={(e) => {
+                      e.target.src = '/images/book-placeholder.svg';
+                    }}
+                  />
+                )}
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-800 dark:text-gray-100">{item.title}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">{item.author}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Đọc lần cuối: {item.lastRead}</p>
+                </div>
+                <div className="text-right">
+                  <div className="w-32 bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-1">
+                    <div
+                      className={`h-2 rounded-full ${item.progress === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
+                      style={{ width: `${item.progress}%` }}
+                    />
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">{item.progress}%</span>
+                </div>
+                <Link
+                  to={`/reading/${item.id || item.isbn || item.bookId}`}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  {item.progress === 100 ? 'Đọc lại' : 'Tiếp tục'}
+                </Link>
               </Link>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <p className="text-gray-500 dark:text-gray-400 text-center py-8">Chưa có lịch sử đọc sách.</p>
@@ -308,7 +342,13 @@ function SettingsSection({ user }) {
         <div className="p-4 border border-gray-200 rounded-lg">
           <h3 className="font-medium text-gray-800 mb-2">Đổi mật khẩu</h3>
           <p className="text-sm text-gray-500 mb-3">Cập nhật mật khẩu để bảo vệ tài khoản của bạn.</p>
-          <button className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+          <button 
+            onClick={() => {
+              // TODO: Implement change password modal
+              alert('Tính năng đổi mật khẩu đang được phát triển');
+            }}
+            className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+          >
             Đổi mật khẩu
           </button>
         </div>
@@ -328,7 +368,15 @@ function SettingsSection({ user }) {
         <div className="p-4 border border-red-200 bg-red-50 rounded-lg">
           <h3 className="font-medium text-red-800 mb-2">Xóa tài khoản</h3>
           <p className="text-sm text-red-600 mb-3">Hành động này không thể hoàn tác. Tất cả dữ liệu sẽ bị xóa vĩnh viễn.</p>
-          <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+          <button 
+            onClick={() => {
+              if (window.confirm('Bạn có chắc muốn xóa tài khoản? Hành động này không thể hoàn tác!')) {
+                // TODO: Implement delete account API call
+                alert('Tính năng xóa tài khoản đang được phát triển');
+              }
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
             Xóa tài khoản
           </button>
         </div>
