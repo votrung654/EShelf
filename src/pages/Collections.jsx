@@ -6,7 +6,7 @@ import { collectionsAPI, booksAPI } from '../services/api';
 import CollectionCard from '../components/collection/CollectionCard';
 import CreateCollectionModal from '../components/collection/CreateCollectionModal';
 
-export default function Collections() {
+const Collections = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [collections, setCollections] = useState([]);
@@ -21,150 +21,54 @@ export default function Collections() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Load collections from API
+  // Load collections từ backend thay vì localStorage
   useEffect(() => {
     const loadCollections = async () => {
-      if (!isAuthenticated || !user?.id) {
-        setIsLoading(false);
+      if (!user?.id || !isAuthenticated) {
+        setCollections([]);
         return;
       }
 
-      setIsLoading(true);
       try {
         const response = await collectionsAPI.getAll();
         if (response.success && response.data) {
-          const collectionsWithBookCovers = await Promise.all(
-            response.data.map(async (collection) => {
-              if (collection.books && Array.isArray(collection.books) && collection.books.length > 0) {
-                const bookIds = collection.books;
-                const bookCount = bookIds.length;
-                
-                const bookCovers = await Promise.all(
-                  bookIds.slice(0, 4).map(async (bookId) => {
-                    try {
-                      const bookResponse = await booksAPI.getById(bookId);
-                      if (bookResponse.success && bookResponse.data) {
-                        return {
-                          id: bookResponse.data.id || bookId,
-                          isbn: bookResponse.data.isbn || bookId,
-                          coverUrl: bookResponse.data.coverUrl || bookResponse.data.cover,
-                          title: bookResponse.data.title
-                        };
-                      }
-                      return null;
-                    } catch (error) {
-                      console.error(`Error fetching book ${bookId}:`, error);
-                      return null;
-                    }
-                  })
-                );
-                
-                collection.books = bookCovers.filter(Boolean);
-                collection.bookCount = bookCount;
-              } else {
-                collection.books = [];
-                collection.bookCount = 0;
-              }
-              return collection;
-            })
-          );
-          setCollections(collectionsWithBookCovers);
-        } else {
-          setCollections([]);
+          setCollections(response.data);
         }
       } catch (error) {
-        console.error('Error loading collections:', error);
-        setCollections([]);
-      } finally {
-        setIsLoading(false);
+        console.error('Failed to load collections:', error);
       }
     };
 
     loadCollections();
-  }, [isAuthenticated, user?.id]);
+  }, [user?.id, isAuthenticated]);
 
   const handleCreate = async (newCollection) => {
     try {
       const response = await collectionsAPI.create({
         name: newCollection.name,
         description: newCollection.description || '',
-        isPublic: newCollection.isPublic || false,
+        isPublic: false
       });
       
-      if (response && response.success && response.data) {
-        // Reload collections
-        try {
-          const reloadResponse = await collectionsAPI.getAll();
-          if (reloadResponse && reloadResponse.success && reloadResponse.data) {
-            const collectionsWithBookCovers = await Promise.all(
-              reloadResponse.data.map(async (collection) => {
-                if (collection.books && Array.isArray(collection.books) && collection.books.length > 0) {
-                  const bookIds = collection.books;
-                  const bookCount = bookIds.length;
-                  
-                  const bookCovers = await Promise.all(
-                    bookIds.slice(0, 4).map(async (bookId) => {
-                      try {
-                        const bookResponse = await booksAPI.getById(bookId);
-                        if (bookResponse && bookResponse.success && bookResponse.data) {
-                          return {
-                            id: bookResponse.data.id || bookId,
-                            isbn: bookResponse.data.isbn || bookId,
-                            coverUrl: bookResponse.data.coverUrl || bookResponse.data.cover,
-                            title: bookResponse.data.title
-                          };
-                        }
-                        return null;
-                      } catch (error) {
-                        console.error(`Error fetching book ${bookId}:`, error);
-                        return null;
-                      }
-                    })
-                  );
-                  
-                  collection.books = bookCovers.filter(Boolean);
-                  collection.bookCount = bookCount;
-                } else {
-                  collection.books = [];
-                  collection.bookCount = 0;
-                }
-                return collection;
-              })
-            );
-            setCollections(collectionsWithBookCovers);
-          }
-        } catch (reloadError) {
-          console.error('Error reloading collections:', reloadError);
-        }
+      if (response.success && response.data) {
+        setCollections(prev => [...prev, response.data]);
         setShowCreateModal(false);
-      } else {
-        console.error('Create collection failed:', response);
-        alert(response?.message || 'Không thể tạo bộ sưu tập. Vui lòng thử lại.');
       }
     } catch (error) {
-      console.error('Error creating collection:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Không thể tạo bộ sưu tập. Vui lòng thử lại.';
-      alert(errorMessage);
+      console.error('Create collection error:', error);
+      alert('Không thể tạo bộ sưu tập. Vui lòng thử lại.');
     }
   };
 
   const handleDelete = async (id) => {
     if (id === 'favorites') return;
     
-    if (!confirm('Bạn có chắc muốn xóa bộ sưu tập này?')) return;
-
     try {
-      const response = await collectionsAPI.delete(id);
-      if (response.success) {
-        // Reload collections
-        const reloadResponse = await collectionsAPI.getAll();
-        if (reloadResponse.success && reloadResponse.data) {
-          setCollections(reloadResponse.data);
-        }
-      }
+      await collectionsAPI.delete(id);
+      setCollections(prev => prev.filter(c => c.id !== id));
     } catch (error) {
-      console.error('Error deleting collection:', error);
-      alert('Không thể xóa bộ sưu tập. Vui lòng thử lại.');
+      console.error('Delete collection error:', error);
+      alert('Không thể xóa bộ sưu tập.');
     }
   };
 
@@ -273,3 +177,5 @@ export default function Collections() {
     </main>
   );
 }
+
+export default Collections;
