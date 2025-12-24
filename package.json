@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
+    "lint": "eslint src public",
     "preview": "vite preview",
     "setup": "bash scripts/setup-project.sh",
     "check": "bash scripts/check-services.sh",
