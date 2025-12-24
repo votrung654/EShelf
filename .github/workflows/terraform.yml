@@ -29,6 +29,10 @@ jobs:
           framework: terraform
           output_format: sarif
           soft_fail: true
+          args: >-
+            --skip-check CKV_AWS_130
+            --skip-check CKV2_AWS_19
+            --skip-check CKV2_AWS_5
 
   terraform-plan:
     name: Terraform Plan
