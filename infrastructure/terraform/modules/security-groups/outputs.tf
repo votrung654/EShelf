@@ -20,4 +20,14 @@ output "rds_sg_id" {
   value       = aws_security_group.rds.id
 }
 
+output "k3s_master_sg_id" {
+  description = "K3s master security group ID"
+  value       = aws_security_group.k3s_master.id
+}
+
+output "k3s_worker_sg_id" {
+  description = "K3s worker security group ID"
+  value       = aws_security_group.k3s_worker.id
+}
+
 

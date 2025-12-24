@@ -111,19 +111,150 @@ resource "aws_security_group" "alb" {
   })
 }
 
+# K3s Master Security Group
+resource "aws_security_group" "k3s_master" {
+  name        = "${var.project}-k3s-master-sg-${var.environment}"
+  description = "Security group for K3s master node"
+  vpc_id      = var.vpc_id
+
+  # SSH from allowed IP
+  ingress {
+    description = "SSH from allowed IP"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = var.allowed_ssh_cidrs
+  }
+
+  # K3s API Server
+  ingress {
+    description = "K3s API Server"
+    from_port   = 6443
+    to_port     = 6443
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # K3s Flannel VXLAN
+  ingress {
+    description = "K3s Flannel VXLAN"
+    from_port   = 8472
+    to_port     = 8472
+    protocol    = "udp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # K3s Kubelet metrics
+  ingress {
+    description = "K3s Kubelet metrics"
+    from_port   = 10250
+    to_port     = 10250
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # K3s etcd
+  ingress {
+    description = "K3s etcd client"
+    from_port   = 2379
+    to_port     = 2380
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  egress {
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.project}-k3s-master-sg-${var.environment}"
+  })
+}
+
+# K3s Worker Security Group
+resource "aws_security_group" "k3s_worker" {
+  name        = "${var.project}-k3s-worker-sg-${var.environment}"
+  description = "Security group for K3s worker nodes"
+  vpc_id      = var.vpc_id
+
+  # SSH from Master or Bastion
+  ingress {
+    description     = "SSH from Master"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.k3s_master.id]
+  }
+
+  # K3s Flannel VXLAN
+  ingress {
+    description = "K3s Flannel VXLAN"
+    from_port   = 8472
+    to_port     = 8472
+    protocol    = "udp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # K3s Kubelet metrics
+  ingress {
+    description = "K3s Kubelet metrics"
+    from_port   = 10250
+    to_port     = 10250
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
+  # NodePort range
+  ingress {
+    description = "NodePort services"
+    from_port   = 30000
+    to_port     = 32767
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Internal communication
+  ingress {
+    description = "Internal communication"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
+  }
+
+  egress {
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.project}-k3s-worker-sg-${var.environment}"
+  })
+}
+
 # RDS Security Group
 resource "aws_security_group" "rds" {
   name        = "${var.project}-rds-sg-${var.environment}"
   description = "Security group for RDS database"
   vpc_id      = var.vpc_id
 
-  # PostgreSQL from App
+  # PostgreSQL from App or K3s Workers
   ingress {
     description     = "PostgreSQL from App"
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.app.id]
+    security_groups = concat(
+      [aws_security_group.app.id],
+      var.create_k3s_cluster ? [aws_security_group.k3s_worker.id] : []
+    )
   }
 
   tags = merge(var.tags, {

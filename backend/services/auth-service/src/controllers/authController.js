@@ -3,11 +3,10 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const { PrismaClient } = require('@prisma/client');
 
-// Khởi tạo Prisma Client
 const prisma = new PrismaClient();
 
-// In-memory storage cho Refresh Token (Tạm thời giữ cái này để xử lý Logout)
-// Lưu ý: Trong môi trường Production thực tế, nên dùng Redis để lưu cái này.
+// In-memory storage for refresh tokens
+// Note: Use Redis in production
 const refreshTokens = new Map();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';

@@ -2,15 +2,15 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// Tạo instance axios
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 seconds timeout
 });
 
-// Interceptor 1: Tự động gắn Token vào mọi request
+// Attach token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
@@ -22,42 +22,68 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor 2: Xử lý lỗi (Token hết hạn 401)
+// Handle token expiration and request errors
 api.interceptors.response.use(
-  (response) => response.data, // Trả về data trực tiếp cho gọn
+  (response) => response.data,
   async (error) => {
     const originalRequest = error.config;
 
-    // Nếu lỗi 401 và chưa retry lần nào -> Token hết hạn
+    // Handle request aborted/timeout errors
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      console.error('Request timeout or aborted:', error.message);
+      return Promise.reject({
+        ...error,
+        message: 'Kết nối bị gián đoạn. Vui lòng thử lại.',
+        isTimeout: true
+      });
+    }
+
+    // Handle network errors
+    if (!error.response && error.request) {
+      console.error('Network error:', error.message);
+      return Promise.reject({
+        ...error,
+        message: 'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.',
+        isNetworkError: true
+      });
+    }
+
+    // Handle 401 - Token expired
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       
       try {
-        // Gọi refresh token
         const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) throw new Error('No refresh token');
+        if (!refreshToken) {
+          // Clear expired tokens
+          localStorage.clear();
+          window.location.href = '/login';
+          throw new Error('No refresh token');
+        }
 
-        // Gọi thẳng axios gốc để tránh loop
-        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
+        const res = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken }, {
+          timeout: 10000
+        });
         
         if (res.data.success) {
             const { accessToken, refreshToken: newRefreshToken } = res.data.data;
             
-            // Lưu token mới
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('refreshToken', newRefreshToken);
             
-            // Gắn lại header và gọi lại request cũ
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
             return api(originalRequest);
         }
       } catch (refreshError) {
-        // Nếu refresh lỗi -> Logout luôn
+        // Clear all tokens on refresh failure
         localStorage.clear();
-        window.location.href = '/login';
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshError);
       }
     }
+    
     return Promise.reject(error);
   }
 );

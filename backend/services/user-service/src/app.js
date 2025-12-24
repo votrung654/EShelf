@@ -43,7 +43,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/reading-history', historyRoutes);
-app.use('/api/users', usersRoutes); // Thêm route users cho admin
+app.use('/api/users', usersRoutes);
 
 // Error handler
 app.use(errorHandler);

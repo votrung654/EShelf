@@ -1,0 +1,115 @@
+name: Deploy with Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      image_tag:
+        description: 'Docker image tag'
+        required: false
+        default: 'latest'
+      rollback:
+        description: 'Rollback to previous version'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  deploy:
+    name: Deploy to ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=./kubeconfig
+          kubectl get nodes
+      
+      - name: Get current deployment version
+        id: current_version
+        run: |
+          export KUBECONFIG=./kubeconfig
+          CURRENT=$(kubectl get deployment api-gateway -n eshelf-${{ github.event.inputs.environment }} -o jsonpath='{.spec.template.spec.containers[0].image}' 2>/dev/null || echo "")
+          echo "current=$CURRENT" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT"
+      
+      - name: Rollback deployment
+        if: github.event.inputs.rollback == 'true'
+        run: |
+          export KUBECONFIG=./kubeconfig
+          kubectl rollout undo deployment/api-gateway -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/auth-service -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/book-service -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/user-service -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/ml-service -n eshelf-${{ github.event.inputs.environment }}
+          echo "✅ Rollback completed"
+      
+      - name: Deploy new version
+        if: github.event.inputs.rollback != 'true'
+        run: |
+          export KUBECONFIG=./kubeconfig
+          IMAGE_TAG="${{ github.event.inputs.image_tag || github.sha }}"
+          REGISTRY="${{ secrets.DOCKER_REGISTRY_URL }}"
+          
+          # Update deployments
+          kubectl set image deployment/api-gateway api-gateway=$REGISTRY/eshelf/api-gateway:$IMAGE_TAG -n eshelf-${{ github.event.inputs.environment }}
+          kubectl set image deployment/auth-service auth-service=$REGISTRY/eshelf/auth-service:$IMAGE_TAG -n eshelf-${{ github.event.inputs.environment }}
+          kubectl set image deployment/book-service book-service=$REGISTRY/eshelf/book-service:$IMAGE_TAG -n eshelf-${{ github.event.inputs.environment }}
+          kubectl set image deployment/user-service user-service=$REGISTRY/eshelf/user-service:$IMAGE_TAG -n eshelf-${{ github.event.inputs.environment }}
+          kubectl set image deployment/ml-service ml-service=$REGISTRY/eshelf/ml-service:$IMAGE_TAG -n eshelf-${{ github.event.inputs.environment }}
+          
+          echo "✅ Deployment initiated"
+      
+      - name: Wait for rollout
+        if: github.event.inputs.rollback != 'true'
+        run: |
+          export KUBECONFIG=./kubeconfig
+          kubectl rollout status deployment/api-gateway -n eshelf-${{ github.event.inputs.environment }} --timeout=300s
+          kubectl rollout status deployment/auth-service -n eshelf-${{ github.event.inputs.environment }} --timeout=300s
+          kubectl rollout status deployment/book-service -n eshelf-${{ github.event.inputs.environment }} --timeout=300s
+          kubectl rollout status deployment/user-service -n eshelf-${{ github.event.inputs.environment }} --timeout=300s
+          kubectl rollout status deployment/ml-service -n eshelf-${{ github.event.inputs.environment }} --timeout=300s
+      
+      - name: Run health checks
+        if: github.event.inputs.rollback != 'true'
+        run: |
+          export KUBECONFIG=./kubeconfig
+          
+          # Wait for services to be ready
+          sleep 10
+          
+          # Check API Gateway
+          kubectl exec -n eshelf-${{ github.event.inputs.environment }} deployment/api-gateway -- curl -f http://localhost:3000/health || exit 1
+          
+          echo "✅ Health checks passed"
+      
+      - name: Rollback on failure
+        if: failure() && github.event.inputs.rollback != 'true'
+        run: |
+          export KUBECONFIG=./kubeconfig
+          echo "❌ Deployment failed, rolling back..."
+          
+          kubectl rollout undo deployment/api-gateway -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/auth-service -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/book-service -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/user-service -n eshelf-${{ github.event.inputs.environment }}
+          kubectl rollout undo deployment/ml-service -n eshelf-${{ github.event.inputs.environment }}
+          
+          kubectl rollout status deployment/api-gateway -n eshelf-${{ github.event.inputs.environment }} --timeout=300s
+          
+          echo "✅ Rollback completed"
+

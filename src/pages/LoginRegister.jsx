@@ -93,17 +93,31 @@ const LoginRegister = () => {
 
   // 👇 XỬ LÝ LOGIN VỚI API THẬT
   const handleLogin = async () => {
-    // Gọi hàm login từ AuthContext
-    const result = await login(form.email, form.password);
+    if (!validate()) return;
+    
+    setIsLoading(true);
+    setErrors({});
+    
+    try {
+      // Gọi hàm login từ AuthContext
+      const result = await login(form.email, form.password);
 
-    if (result.success) {
-      navigate("/"); // Login thành công -> Về trang chủ
-    } else {
-      // Login thất bại -> Hiện lỗi từ Backend
-      setErrors({ 
-        general: result.message || "Email hoặc mật khẩu không đúng",
-        password: result.message === "Mật khẩu không đúng" ? "Mật khẩu không đúng" : ""
+      if (result.success) {
+        navigate("/"); // Login thành công -> Về trang chủ
+      } else {
+        // Login thất bại -> Hiện lỗi từ Backend
+        setErrors({ 
+          general: result.message || "Email hoặc mật khẩu không đúng",
+          password: result.message?.includes("mật khẩu") ? result.message : ""
+        });
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrors({
+        general: error.message || "Đã xảy ra lỗi. Vui lòng thử lại."
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

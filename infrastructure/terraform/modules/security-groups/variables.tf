@@ -20,7 +20,19 @@ variable "vpc_id" {
 variable "allowed_ssh_cidrs" {
   description = "CIDR blocks allowed for SSH access"
   type        = list(string)
-  default     = ["0.0.0.0/0"] # Change to specific IP in production
+  default     = ["0.0.0.0/0"]
+}
+
+variable "vpc_cidr" {
+  description = "VPC CIDR block"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "create_k3s_cluster" {
+  description = "Create K3s cluster security groups"
+  type        = bool
+  default     = false
 }
 
 variable "tags" {

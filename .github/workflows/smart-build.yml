@@ -60,6 +60,7 @@ jobs:
       
       - name: Build
         run: npm run build
+        continue-on-error: false
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
@@ -117,11 +118,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
       - name: Build Docker image
         working-directory: backend/services/user-service
         run: |
           docker build -t eshelf/user-service:${{ github.sha }} .
           docker tag eshelf/user-service:${{ github.sha }} eshelf/user-service:latest
+        continue-on-error: false
 
   # Build ML Service (only if changed)
   build-ml-service:

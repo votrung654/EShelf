@@ -72,4 +72,28 @@ variable "app_instance_count" {
   default     = 2
 }
 
+variable "create_k3s_cluster" {
+  description = "Create K3s cluster (1 master + 2 workers)"
+  type        = bool
+  default     = true
+}
+
+variable "k3s_master_instance_type" {
+  description = "K3s master instance type"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "k3s_worker_instance_type" {
+  description = "K3s worker instance type"
+  type        = string
+  default     = "t3.small"
+}
+
+variable "k3s_worker_count" {
+  description = "Number of K3s worker nodes"
+  type        = number
+  default     = 2
+}
+
 

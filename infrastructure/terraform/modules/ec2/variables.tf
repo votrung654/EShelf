@@ -48,6 +48,30 @@ variable "app_instance_count" {
   default     = 2
 }
 
+variable "k3s_master_instance_type" {
+  description = "Instance type for K3s master node"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "k3s_worker_instance_type" {
+  description = "Instance type for K3s worker nodes"
+  type        = string
+  default     = "t3.small"
+}
+
+variable "k3s_worker_count" {
+  description = "Number of K3s worker nodes"
+  type        = number
+  default     = 2
+}
+
+variable "create_k3s_cluster" {
+  description = "Create K3s cluster (1 master + N workers)"
+  type        = bool
+  default     = false
+}
+
 variable "public_subnet_id" {
   description = "Public subnet ID for bastion"
   type        = string
@@ -66,6 +90,18 @@ variable "bastion_sg_id" {
 variable "app_sg_id" {
   description = "Application security group ID"
   type        = string
+}
+
+variable "k3s_master_sg_id" {
+  description = "K3s master security group ID"
+  type        = string
+  default     = ""
+}
+
+variable "k3s_worker_sg_id" {
+  description = "K3s worker security group ID"
+  type        = string
+  default     = ""
 }
 
 variable "tags" {

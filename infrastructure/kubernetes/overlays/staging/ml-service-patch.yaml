@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-service
+  namespace: eshelf-staging
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+      - name: ml-service
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        env:
+        - name: ENVIRONMENT
+          value: "staging"
+

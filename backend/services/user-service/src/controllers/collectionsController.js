@@ -1,12 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
-const { v4: uuidv4 } = require('uuid');
 const prisma = new PrismaClient();
 
-// In-memory storage
-const collections = new Map(); // collectionId -> collection
-const userCollections = new Map(); // userId -> Set of collectionIds
-
-// Get user collections - từ database
+// Get user collections
 exports.getCollections = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -25,14 +20,13 @@ exports.getCollections = async (req, res) => {
       }
     });
 
-    // Format response để frontend dễ xử lý
     const formatted = collections.map(col => ({
       id: col.id,
       name: col.name,
       description: col.description,
       isPublic: col.isPublic,
       bookCount: col.books.length,
-      books: col.books.map(cb => cb.bookId), // Chỉ trả về array bookIds
+      books: col.books.map(cb => cb.bookId),
       createdAt: col.createdAt,
       updatedAt: col.updatedAt
     }));
@@ -47,7 +41,7 @@ exports.getCollections = async (req, res) => {
   }
 };
 
-// Create collection - vào database
+// Create collection
 exports.createCollection = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -87,7 +81,7 @@ exports.createCollection = async (req, res) => {
   }
 };
 
-// Get collection by ID - từ database
+// Get collection by ID
 exports.getCollectionById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -124,7 +118,7 @@ exports.getCollectionById = async (req, res) => {
       data: {
         ...collection,
         bookCount: collection.books.length,
-        books: collection.books.map(cb => cb.book) // Trả về full book objects
+        books: collection.books.map(cb => cb.book)
       }
     });
   } catch (error) {
@@ -133,7 +127,7 @@ exports.getCollectionById = async (req, res) => {
   }
 };
 
-// Update collection - database
+// Update collection
 exports.updateCollection = async (req, res) => {
   try {
     const { id } = req.params;
@@ -178,7 +172,7 @@ exports.updateCollection = async (req, res) => {
   }
 };
 
-// Delete collection - khỏi database
+// Delete collection
 exports.deleteCollection = async (req, res) => {
   try {
     const { id } = req.params;
@@ -216,7 +210,7 @@ exports.deleteCollection = async (req, res) => {
   }
 };
 
-// Add book to collection - database
+// Add book to collection
 exports.addBookToCollection = async (req, res) => {
   try {
     const { id, bookId } = req.params;
@@ -240,39 +234,28 @@ exports.addBookToCollection = async (req, res) => {
       });
     }
 
-    // Nếu bookId là ISBN (không phải UUID), tìm book bằng ISBN để lấy id
     let actualBookId = bookId;
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookId);
-    console.log('addBookToCollection - bookId:', bookId, 'isUUID:', isUUID);
     
     if (!isUUID) {
-      console.log('Converting ISBN to UUID for collection. ISBN:', bookId);
       try {
-        const book = await prisma.book.findUnique({
-          where: { isbn: bookId },
-          select: { id: true, isbn: true, title: true }
+        const book = await prisma.book.findFirst({
+          where: {
+            OR: [
+              { isbn: bookId },
+              { id: bookId }
+            ]
+          },
+          select: { id: true }
         });
+        
         if (!book) {
-          console.error('Book not found with ISBN:', bookId);
-          // Thử tìm bằng id nếu ISBN không tìm thấy
-          const bookById = await prisma.book.findUnique({
-            where: { id: bookId },
-            select: { id: true }
+          return res.status(404).json({
+            success: false,
+            message: 'Sách không tồn tại trong hệ thống'
           });
-          if (!bookById) {
-            // Debug: List một vài books để xem có gì trong DB
-            const sampleBooks = await prisma.book.findMany({ take: 3, select: { id: true, isbn: true, title: true } });
-            console.error('Sample books in DB:', sampleBooks);
-            return res.status(404).json({
-              success: false,
-              message: `Sách không tồn tại trong hệ thống (ISBN/ID: ${bookId})`
-            });
-          }
-          actualBookId = bookById.id;
-        } else {
-          console.log('Found book for collection. UUID:', book.id, 'Title:', book.title);
-          actualBookId = book.id;
         }
+        actualBookId = book.id;
       } catch (prismaError) {
         console.error('Prisma error when finding book:', prismaError);
         return res.status(500).json({
@@ -281,8 +264,6 @@ exports.addBookToCollection = async (req, res) => {
         });
       }
     }
-    
-    console.log('Using actualBookId (UUID):', actualBookId);
 
     // Check if already exists
     const existing = await prisma.collectionBook.findUnique({
@@ -318,7 +299,7 @@ exports.addBookToCollection = async (req, res) => {
   }
 };
 
-// Remove book from collection - database
+// Remove book from collection
 exports.removeBookFromCollection = async (req, res) => {
   try {
     const { id, bookId } = req.params;
@@ -342,12 +323,16 @@ exports.removeBookFromCollection = async (req, res) => {
       });
     }
 
-    // Nếu bookId là ISBN (không phải UUID), tìm book bằng ISBN để lấy id
     let actualBookId = bookId;
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(bookId);
     if (!isUUID) {
-      const book = await prisma.book.findUnique({
-        where: { isbn: bookId },
+      const book = await prisma.book.findFirst({
+        where: {
+          OR: [
+            { isbn: bookId },
+            { id: bookId }
+          ]
+        },
         select: { id: true }
       });
       if (!book) {

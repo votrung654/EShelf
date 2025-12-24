@@ -24,10 +24,6 @@ app.use(cors({
 // Logging
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
-// Body parsing (Đặt TRƯỚC Proxy để parse body)
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
 // Rate limiting
 app.use(rateLimiter);
 
@@ -36,9 +32,31 @@ app.use(rateLimiter);
 // ==========================================
 
 // Auth Service
+// Note: http-proxy-middleware automatically forwards the raw request body
+// We don't need to parse it here, let the proxy forward the stream
 app.use('/api/auth', createProxyMiddleware({
   target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
   changeOrigin: true,
+  timeout: 30000,
+  proxyTimeout: 30000,
+  onProxyReq: (proxyReq, req, res) => {
+    console.log(`[Auth Proxy] ${req.method} ${req.url} -> auth-service:3001${req.url}`);
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log(`[Auth Proxy] Response: ${proxyRes.statusCode} for ${req.url}`);
+  },
+  onError: (err, req, res) => {
+    console.error('[Auth Proxy Error]', err.message);
+    console.error('[Target URL]', process.env.AUTH_SERVICE_URL || 'http://auth-service:3001');
+    console.error('[Request URL]', req.url);
+    if (!res.headersSent) {
+      res.status(503).json({
+        success: false,
+        message: 'Auth service temporarily unavailable',
+        error: err.message
+      });
+    }
+  }
 }));
 
 // Book Service (handles both Books and Genres)

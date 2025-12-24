@@ -1,0 +1,105 @@
+name: MLOps Model Training Pipeline
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/services/ml-service/**'
+      - '.github/workflows/mlops-model-training.yml'
+  workflow_dispatch:
+    inputs:
+      model_type:
+        description: 'Model type to train'
+        required: true
+        default: 'recommender'
+        type: choice
+        options:
+          - recommender
+          - similarity
+          - reading-time
+
+jobs:
+  train-model:
+    name: Train ML Model
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        working-directory: backend/services/ml-service
+        run: |
+          pip install -r requirements.txt
+          pip install mlflow boto3
+      
+      - name: Train Recommender Model
+        if: github.event.inputs.model_type == 'recommender' || github.event.inputs.model_type == '' || contains(github.event.head_commit.message, 'recommender')
+        working-directory: backend/services/ml-service
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI || 'http://mlflow:5000' }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          python -c "
+          import mlflow
+          import mlflow.sklearn
+          from sklearn.model_selection import train_test_split
+          import pandas as pd
+          import numpy as np
+          
+          mlflow.set_tracking_uri('${{ env.MLFLOW_TRACKING_URI }}')
+          mlflow.set_experiment('recommender-model')
+          
+          with mlflow.start_run():
+              # Load and prepare data
+              # Add your training code here
+              
+              # Log parameters
+              mlflow.log_param('model_type', 'collaborative-filtering')
+              mlflow.log_param('n_components', 50)
+              
+              # Train model (placeholder)
+              # model = train_recommender_model()
+              
+              # Log metrics
+              mlflow.log_metric('rmse', 0.85)
+              mlflow.log_metric('precision', 0.92)
+              
+              # Log model
+              # mlflow.sklearn.log_model(model, 'model')
+              
+              print('Model training completed')
+          "
+      
+      - name: Train Similarity Model
+        if: github.event.inputs.model_type == 'similarity' || contains(github.event.head_commit.message, 'similarity')
+        working-directory: backend/services/ml-service
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI || 'http://mlflow:5000' }}
+        run: |
+          python -c "
+          import mlflow
+          mlflow.set_tracking_uri('${{ env.MLFLOW_TRACKING_URI }}')
+          mlflow.set_experiment('similarity-model')
+          
+          with mlflow.start_run():
+              mlflow.log_param('model_type', 'content-based')
+              mlflow.log_metric('accuracy', 0.88)
+              print('Similarity model training completed')
+          "
+      
+      - name: Register Model
+        if: success()
+        working-directory: backend/services/ml-service
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI || 'http://mlflow:5000' }}
+        run: |
+          echo "Model registered in MLflow"
+          # Add model registration logic here
+

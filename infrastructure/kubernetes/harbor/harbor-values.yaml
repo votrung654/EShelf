@@ -1,0 +1,115 @@
+# Harbor Helm Values
+# Install using: helm install harbor harbor/harbor -f harbor-values.yaml
+
+expose:
+  type: ingress
+  tls:
+    enabled: true
+    certSource: secret
+    secret:
+      secretName: "harbor-tls"
+      notarySecretName: "harbor-notary-tls"
+  ingress:
+    hosts:
+      core: harbor.yourdomain.com
+      notary: notary.yourdomain.com
+    className: "nginx"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      ingress.kubernetes.io/ssl-redirect: "true"
+      ingress.kubernetes.io/proxy-body-size: "0"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/proxy-body-size: "0"
+
+persistence:
+  enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 50Gi
+    chartmuseum:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 5Gi
+    jobservice:
+      jobLog:
+        existingClaim: ""
+        storageClass: ""
+        subPath: ""
+        accessMode: ReadWriteOnce
+        size: 1Gi
+      scanDataExports:
+        existingClaim: ""
+        storageClass: ""
+        subPath: ""
+        accessMode: ReadWriteOnce
+        size: 1Gi
+    database:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    redis:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    trivy:
+      existingClaim: ""
+      storageClass: ""
+      subPath: ""
+      accessMode: ReadWriteOnce
+      size: 5Gi
+
+externalURL: https://harbor.yourdomain.com
+
+internalTLS:
+  enabled: true
+
+harborAdminPassword: "Harbor12345"
+
+secretKey: "not-a-secure-key"
+
+database:
+  password: "root123"
+  maxIdleConns: 50
+  maxOpenConns: 100
+
+redis:
+  password: ""
+
+core:
+  secret: "not-a-secure-secret"
+  xsrfKey: "not-a-secure-xsrf-key"
+
+jobservice:
+  jobLoggers: filesystem
+  replicas: 1
+
+registry:
+  replicas: 1
+  relativeurls: false
+
+chartmuseum:
+  enabled: true
+  replicas: 1
+
+trivy:
+  enabled: true
+  replicas: 1
+  ignoreUnfixed: false
+  skipUpdate: false
+  offlineScan: false
+  securityChecks: "vuln,secret"
+
+notary:
+  enabled: true
+

@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - prometheus/prometheus-deployment.yaml
+  - prometheus/prometheus-configmap.yaml
+  - prometheus/alerts.yaml
+  - grafana/grafana-deployment.yaml
+  - loki/loki-deployment.yaml
+  - promtail/promtail-daemonset.yaml
+  - alertmanager/alertmanager-deployment.yaml
+

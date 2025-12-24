@@ -1,0 +1,115 @@
+---
+- name: Install K3s Master Node
+  hosts: master
+  become: yes
+  vars:
+    k3s_version: "latest"
+    k3s_token: "{{ vault_k3s_token | default('changeme-token-12345') }}"
+  
+  tasks:
+    - name: Update system packages
+      package:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+    
+    - name: Install required packages
+      package:
+        name:
+          - curl
+          - wget
+          - vim
+          - net-tools
+        state: present
+    
+    - name: Disable swap
+      shell: |
+        swapoff -a
+        sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+      ignore_errors: yes
+    
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - br_netfilter
+        - overlay
+    
+    - name: Configure sysctl
+      sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+        sysctl_set: yes
+        reload: yes
+      loop:
+        - { key: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+        - { key: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+        - { key: 'net.ipv4.ip_forward', value: '1' }
+    
+    - name: Install K3s server
+      shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION={{ k3s_version }} sh -s - server \
+          --cluster-init \
+          --tls-san {{ ansible_default_ipv4.address }} \
+          --tls-san {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} \
+          --node-ip {{ ansible_default_ipv4.address }}
+      args:
+        creates: /usr/local/bin/k3s
+    
+    - name: Wait for K3s to be ready
+      wait_for:
+        path: /etc/rancher/k3s/k3s.yaml
+        timeout: 300
+    
+    - name: Get K3s token
+      shell: cat /var/lib/rancher/k3s/server/node-token
+      register: k3s_token_output
+      changed_when: false
+    
+    - name: Display K3s token
+      debug:
+        msg: "K3s token: {{ k3s_token_output.stdout }}"
+    
+    - name: Create .kube directory
+      file:
+        path: /home/ec2-user/.kube
+        state: directory
+        owner: ec2-user
+        group: ec2-user
+        mode: '0755'
+    
+    - name: Copy kubeconfig to user home
+      copy:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: /home/ec2-user/.kube/config
+        owner: ec2-user
+        group: ec2-user
+        mode: '0600'
+      register: kubeconfig_copy
+    
+    - name: Update kubeconfig server URL
+      replace:
+        path: /home/ec2-user/.kube/config
+        regexp: '127\.0\.0\.1'
+        replace: "{{ ansible_default_ipv4.address }}"
+      when: kubeconfig_copy.changed
+    
+    - name: Install kubectl
+      shell: |
+        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+        chmod +x kubectl
+        mv kubectl /usr/local/bin/
+      args:
+        creates: /usr/local/bin/kubectl
+    
+    - name: Verify K3s installation
+      command: /usr/local/bin/k3s kubectl get nodes
+      register: k3s_nodes
+      changed_when: false
+    
+    - name: Display cluster nodes
+      debug:
+        var: k3s_nodes.stdout_lines
+

@@ -46,6 +46,25 @@ const BookDetail = () => {
       if (localBook) {
         setBook(localBook);
         setIsLoadingBook(false);
+        
+        // Fetch UUID từ backend ngay để có sẵn cho collections
+        if (localBook.isbn) {
+          try {
+            const { booksAPI } = await import('../services/api');
+            const bookResponse = await booksAPI.getById(localBook.isbn);
+            if (bookResponse.success && bookResponse.data && bookResponse.data.id) {
+              // Update book với UUID
+              setBook(prev => ({
+                ...prev,
+                id: bookResponse.data.id,
+                ...bookResponse.data
+              }));
+            }
+          } catch (fetchError) {
+            // Không cần log error, có thể fetch sau
+            console.log('Will fetch UUID later when needed');
+          }
+        }
         return;
       }
       
@@ -90,26 +109,40 @@ const BookDetail = () => {
           setCollections(response.data);
 
           if (book) {
+            // Lấy UUID từ ISBN nếu cần
             let bookUUID = book.id;
-            if (!bookUUID && book.isbn) {
-              try {
-                const { booksAPI } = await import('../services/api');
-                const bookResponse = await booksAPI.getById(book.isbn);
-                if (bookResponse.success && bookResponse.data) {
-                  bookUUID = bookResponse.data.id;
+            let updatedBook = book;
+            
+            if (!bookUUID || (bookUUID.length !== 36 || !bookUUID.includes('-'))) {
+              // Nếu không phải UUID format, fetch từ backend
+              if (book.isbn) {
+                try {
+                  const { booksAPI } = await import('../services/api');
+                  const bookResponse = await booksAPI.getById(book.isbn);
+                  if (bookResponse.success && bookResponse.data && bookResponse.data.id) {
+                    bookUUID = bookResponse.data.id;
+                    // Update book state với UUID để dùng cho các lần sau
+                    updatedBook = {
+                      ...book,
+                      id: bookResponse.data.id,
+                      ...bookResponse.data
+                    };
+                    setBook(updatedBook);
+                  }
+                } catch (fetchError) {
+                  console.error('Error fetching book UUID:', fetchError);
                 }
-              } catch (fetchError) {
-                console.error('Error fetching book UUID:', fetchError);
               }
             }
             
+            // Chỉ check bằng UUID
             const isSaved = response.data.some((c) => {
               if (!c.books || !Array.isArray(c.books)) return false;
               return c.books.some(b => {
                 if (typeof b === 'string') {
-                  return b === bookUUID || b === book.isbn || b === book.id;
+                  return b === bookUUID;
                 }
-                return (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === book.isbn || (b.id || b.isbn) === book.id;
+                return (b.id || b.isbn) === bookUUID;
               });
             });
             setIsBookSaved(isSaved);
@@ -124,7 +157,7 @@ const BookDetail = () => {
     };
 
     loadCollections();
-  }, [book, user?.id, isAuthenticated]);
+  }, [book?.isbn, user?.id, isAuthenticated]); // Chỉ depend vào ISBN để tránh loop
 
   // Load reading progress
   useEffect(() => {
@@ -169,87 +202,81 @@ const BookDetail = () => {
         return;
       }
       
+      // Helper function để lấy UUID từ ISBN nếu cần
+      const getBookUUID = async (bookData) => {
+        // Nếu đã có UUID (format UUID), dùng luôn
+        if (bookData.id && bookData.id.length === 36 && bookData.id.includes('-')) {
+          return bookData.id;
+        }
+        
+        // Nếu có ISBN, fetch UUID từ backend
+        if (bookData.isbn) {
+          try {
+            const { booksAPI } = await import('../services/api');
+            const bookResponse = await booksAPI.getById(bookData.isbn);
+            if (bookResponse.success && bookResponse.data && bookResponse.data.id) {
+              return bookResponse.data.id;
+            }
+          } catch (fetchError) {
+            console.error('Error fetching book UUID:', fetchError);
+          }
+        }
+        
+        // Fallback: trả về id hoặc isbn
+        return bookData.id || bookData.isbn;
+      };
+
       // Helper function để reload collections và update state
-      const reloadCollectionsAndUpdateState = async (bookIdForFallback) => {
+      const reloadCollectionsAndUpdateState = async (bookUUID) => {
         try {
+          // Update book state với UUID nếu chưa có
+          if (book && (!book.id || book.id !== bookUUID)) {
+            setBook(prev => ({
+              ...prev,
+              id: bookUUID
+            }));
+          }
+          
           const reloadResponse = await collectionsAPI.getAll();
           if (reloadResponse.success && reloadResponse.data) {
             setCollections(reloadResponse.data);
             
-            let bookUUID = book?.id;
-            if (!bookUUID && book?.isbn) {
-              try {
-                const { booksAPI } = await import('../services/api');
-                const bookResponse = await booksAPI.getById(book.isbn);
-                if (bookResponse.success && bookResponse.data) {
-                  bookUUID = bookResponse.data.id;
-                }
-              } catch (fetchError) {
-                console.error('Error fetching book UUID:', fetchError);
-              }
-            }
-            
-            const currentBookId = bookUUID || book?.id || book?.isbn;
-            const currentIsbn = book?.isbn;
-            
+            // Check xem book có trong collections không (chỉ check bằng UUID)
             const isSaved = reloadResponse.data.some((c) => {
               if (!c.books || !Array.isArray(c.books)) {
                 return false;
               }
               return c.books.some(b => {
                 if (typeof b === 'string') {
-                  return b === bookUUID || b === currentBookId || b === currentIsbn || b === book?.isbn || b === book?.id;
+                  return b === bookUUID;
                 }
-                return (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === currentBookId || (b.id || b.isbn) === currentIsbn || (b.id || b.isbn) === book?.isbn || (b.id || b.isbn) === book?.id;
+                return (b.id || b.isbn) === bookUUID;
               });
             });
-            console.log('Final isBookSaved:', isSaved);
+            
+            console.log('Reloaded collections, isBookSaved:', isSaved, 'bookUUID:', bookUUID);
             setIsBookSaved(isSaved);
             // KHÔNG đóng modal ngay, để user thấy nút đã chuyển thành "Xóa"
-            // Modal sẽ tự đóng khi collections state update và re-render
           } else {
             console.log('Reload failed, using fallback');
-            // Fallback nếu reload thất bại
             setIsBookSaved(true);
             setShowCollectionModal(false);
           }
         } catch (reloadError) {
           console.error('Error reloading collections:', reloadError);
-          // Fallback: update local state
-          const updatedCollections = collections.map(c => {
-            if (c.id === collectionId) {
-              return {
-                ...c,
-                books: Array.isArray(c.books) ? [...c.books, bookIdForFallback] : [bookIdForFallback],
-                bookCount: (c.bookCount || c.books?.length || 0) + 1
-              };
-            }
-            return c;
-          });
-          setCollections(updatedCollections);
-          // Update isBookSaved based on updated collections
-          const currentBookId = book?.id || book?.isbn;
-          const isSaved = updatedCollections.some((c) => {
-            if (!c.books || !Array.isArray(c.books)) return false;
-            return c.books.some(b => {
-              if (typeof b === 'string') {
-                return b === currentBookId || b === book?.isbn || b === book?.id;
-              }
-              return (b.id || b.isbn) === currentBookId;
-            });
-          });
-          setIsBookSaved(isSaved);
+          setIsBookSaved(true);
           setShowCollectionModal(false);
         }
       };
       
       try {
-        const bookId = bookData.id || bookData.isbn;
-        const response = await collectionsAPI.addBook(collectionId, bookId);
+        // Lấy UUID trước khi add vào collection
+        const bookUUID = await getBookUUID(bookData);
+        const response = await collectionsAPI.addBook(collectionId, bookUUID);
         
         if (response.success) {
-          // Reload collections từ backend để có data chính xác TRƯỚC KHI đóng modal
-          await reloadCollectionsAndUpdateState(bookId);
+          // Reload collections từ backend để có data chính xác
+          await reloadCollectionsAndUpdateState(bookUUID);
         }
       } catch (error) {
         console.error('Error adding book to collection:', error);
@@ -259,7 +286,26 @@ const BookDetail = () => {
         if (error.response?.status === 400 && (errorMessage.includes('đã có') || errorMessage.includes('Sách đã có'))) {
           // Reload collections và update state
           console.log('Book already in collection, reloading...');
-          await reloadCollectionsAndUpdateState(bookData.id || bookData.isbn);
+          const bookUUID = await getBookUUID(bookData);
+          await reloadCollectionsAndUpdateState(bookUUID);
+        } else if (error.response?.status === 404 && errorMessage.includes('không tồn tại')) {
+          // Nếu sách không tồn tại, thử fetch UUID lại
+          console.log('Book not found, fetching UUID...');
+          const bookUUID = await getBookUUID(bookData);
+          if (bookUUID && bookUUID !== bookData.isbn) {
+            // Retry với UUID
+            try {
+              const retryResponse = await collectionsAPI.addBook(collectionId, bookUUID);
+              if (retryResponse.success) {
+                await reloadCollectionsAndUpdateState(bookUUID);
+                return;
+              }
+            } catch (retryError) {
+              console.error('Retry failed:', retryError);
+            }
+          }
+          const errorMsg = error.response?.data?.message || error.message || 'Không thể thêm sách vào bộ sưu tập. Vui lòng thử lại.';
+          alert(errorMsg);
         } else {
           const errorMsg = error.response?.data?.message || error.message || 'Không thể thêm sách vào bộ sưu tập. Vui lòng thử lại.';
           alert(errorMsg);
@@ -285,11 +331,31 @@ const BookDetail = () => {
         
         if (response && response.success && response.data) {
           const createdCollection = response.data;
-          const bookId = book?.id || book?.isbn;
           
-          if (bookId) {
+          // Helper để lấy UUID
+          const getBookUUID = async (bookData) => {
+            if (bookData?.id && bookData.id.length === 36 && bookData.id.includes('-')) {
+              return bookData.id;
+            }
+            if (bookData?.isbn) {
+              try {
+                const { booksAPI } = await import('../services/api');
+                const bookResponse = await booksAPI.getById(bookData.isbn);
+                if (bookResponse.success && bookResponse.data && bookResponse.data.id) {
+                  return bookResponse.data.id;
+                }
+              } catch (fetchError) {
+                console.error('Error fetching book UUID:', fetchError);
+              }
+            }
+            return bookData?.id || bookData?.isbn;
+          };
+          
+          const bookUUID = await getBookUUID(book);
+          
+          if (bookUUID) {
             try {
-              await collectionsAPI.addBook(createdCollection.id, bookId);
+              await collectionsAPI.addBook(createdCollection.id, bookUUID);
             } catch (addError) {
               console.error('Error adding book to new collection:', addError);
               // Vẫn tiếp tục dù có lỗi add book
@@ -301,15 +367,14 @@ const BookDetail = () => {
             const reloadResponse = await collectionsAPI.getAll();
             if (reloadResponse.success && reloadResponse.data) {
               setCollections(reloadResponse.data);
-              // Check lại xem book có trong collection không (check cả isbn và id)
-              const currentBookId = book?.id || book?.isbn;
+              // Check lại xem book có trong collection không (chỉ check bằng UUID)
               const isSaved = reloadResponse.data.some((c) => {
                 if (!c.books || !Array.isArray(c.books)) return false;
                 return c.books.some(b => {
                   if (typeof b === 'string') {
-                    return b === currentBookId || b === book?.isbn || b === book?.id;
+                    return b === bookUUID;
                   }
-                  return (b.id || b.isbn) === currentBookId || (b.id || b.isbn) === book?.isbn || (b.id || b.isbn) === book?.id;
+                  return (b.id || b.isbn) === bookUUID;
                 });
               });
               setIsBookSaved(isSaved);

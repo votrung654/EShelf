@@ -1,0 +1,16 @@
+---
+- name: Setup K3s Cluster (Master + Workers)
+  hosts: all
+  become: yes
+  vars:
+    k3s_version: "latest"
+  
+  tasks:
+    - name: Include master setup
+      include: k3s-master.yml
+      when: inventory_hostname in groups['master']
+    
+    - name: Include worker setup
+      include: k3s-worker.yml
+      when: inventory_hostname in groups['workers']
+

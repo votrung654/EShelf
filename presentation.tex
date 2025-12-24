@@ -1,0 +1,442 @@
+\documentclass[aspectratio=169]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Code styling
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10}
+}
+
+\title{eShelf - Enterprise eBook Platform}
+\subtitle{Đồ án môn học IE104 - DevOps \& MLOps}
+\author{Nhóm eShelf}
+\institute{Đại học Công nghệ Thông tin (UIT)}
+\date{\today}
+
+\begin{document}
+
+% Title slide
+\frame{\titlepage}
+
+% Table of contents
+\begin{frame}
+\frametitle{Mục lục}
+\tableofcontents
+\end{frame}
+
+% Section 1: Giới thiệu
+\section{Giới thiệu}
+
+\begin{frame}
+\frametitle{Tổng quan dự án}
+\begin{itemize}
+    \item \textbf{eShelf} - Nền tảng đọc sách điện tử enterprise-grade
+    \item Kiến trúc \textbf{Microservices} với 4 services chính
+    \item Áp dụng đầy đủ quy trình \textbf{DevOps} và \textbf{MLOps}
+    \item Tech stack hiện đại: React, Node.js, FastAPI, PostgreSQL, Kubernetes
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Tính năng chính}
+\begin{columns}
+\column{0.5\textwidth}
+\textbf{Người dùng:}
+\begin{itemize}
+    \item Đọc sách PDF trực tuyến
+    \item Tìm kiếm và lọc sách
+    \item Quản lý bộ sưu tập
+    \item Gợi ý sách AI-powered
+    \item Theo dõi tiến độ đọc
+\end{itemize}
+
+\column{0.5\textwidth}
+\textbf{Admin:}
+\begin{itemize}
+    \item Dashboard thống kê
+    \item Quản lý sách (CRUD)
+    \item Quản lý người dùng
+    \item Quản lý thể loại
+\end{itemize}
+\end{columns}
+\end{frame}
+
+% Section 2: Kiến trúc
+\section{Kiến trúc hệ thống}
+
+\begin{frame}
+\frametitle{Microservices Architecture}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{architecture-diagram.png}
+\end{center}
+\begin{itemize}
+    \item \textbf{API Gateway} (Port 3000): Routing, Rate Limiting
+    \item \textbf{4 Services}: Auth, Book, User, ML
+    \item \textbf{Database}: PostgreSQL + Redis
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Services Overview}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Service} & \textbf{Port} & \textbf{Technology} \\
+\hline
+Frontend & 5173 & React + Vite \\
+API Gateway & 3000 & Express.js \\
+Auth Service & 3001 & Express.js \\
+Book Service & 3002 & Express.js \\
+User Service & 3003 & Express.js \\
+ML Service & 8000 & FastAPI (Python) \\
+PostgreSQL & 5432 & PostgreSQL 16 \\
+Redis & 6379 & Redis 7 \\
+\hline
+\end{tabular}
+\end{table}
+\end{frame}
+
+% Section 3: Tech Stack
+\section{Tech Stack}
+
+\begin{frame}
+\frametitle{Frontend \& Backend}
+\textbf{Frontend:}
+\begin{itemize}
+    \item React 18 + Vite
+    \item TailwindCSS
+    \item React Router, Recharts
+\end{itemize}
+
+\vspace{0.5cm}
+\textbf{Backend:}
+\begin{itemize}
+    \item Node.js 20 + Express.js
+    \item Prisma ORM
+    \item JWT Authentication
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{ML/AI \& DevOps}
+\textbf{ML/AI:}
+\begin{itemize}
+    \item FastAPI (Python)
+    \item scikit-learn, numpy, pandas
+    \item Collaborative Filtering, Content-based Filtering
+\end{itemize}
+
+\vspace{0.5cm}
+\textbf{DevOps:}
+\begin{itemize}
+    \item Docker, Docker Compose
+    \item Kubernetes (EKS/K3s)
+    \item Terraform, CloudFormation
+    \item GitHub Actions, Jenkins
+    \item ArgoCD (GitOps)
+\end{itemize}
+\end{frame}
+
+% Section 4: CI/CD Pipeline
+\section{CI/CD Pipeline}
+
+\begin{frame}
+\frametitle{CI/CD Flow}
+\begin{enumerate}
+    \item \textbf{Source} → Pull Request
+    \item \textbf{CI (PR checks)}: lint → unit test → typecheck → static analysis
+    \item \textbf{Image Build \& Scan}: multi-stage Docker build → Trivy scan → push to registry
+    \item \textbf{Infrastructure}: terraform plan/apply (staging)
+    \item \textbf{Deploy Staging}: deploy to K8s → integration/e2e tests
+    \item \textbf{Promote to Prod}: manual approval → blue/green deploy → smoke tests
+    \item \textbf{GitOps}: ArgoCD sync from Git repo
+    \item \textbf{Rollback}: automatic on failing healthchecks
+\end{enumerate}
+\end{frame}
+
+\begin{frame}
+\frametitle{Smart Build}
+\textbf{Vấn đề:}
+\begin{itemize}
+    \item Trong Microservices, sửa 1 service không nên build lại toàn bộ
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Giải pháp:}
+\begin{itemize}
+    \item Path-filter trong CI/CD pipeline
+    \item Chỉ build service có thay đổi
+    \item Tối ưu thời gian build và tài nguyên
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Ví dụ:}
+\begin{lstlisting}[language=bash]
+if [ -d "backend/services/auth-service" ]; then
+    build auth-service
+fi
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}
+\frametitle{GitOps \& Image Tagging}
+\textbf{Quy trình:}
+\begin{enumerate}
+    \item GitHub Actions build Docker Image
+    \item Push image lên Harbor/ECR với tag mới
+    \item Dùng \texttt{yq} hoặc \texttt{kustomize} update image tag trong Git repo
+    \item ArgoCD phát hiện thay đổi và sync về cluster
+    \item Tự động deploy version mới
+\end{enumerate}
+
+\vspace{0.3cm}
+\textbf{Lợi ích:}
+\begin{itemize}
+    \item Không cần \texttt{kubectl apply} thủ công
+    \item Tất cả thay đổi được track trong Git
+    \item Dễ rollback và audit
+\end{itemize}
+\end{frame}
+
+% Section 5: Infrastructure
+\section{Infrastructure}
+
+\begin{frame}
+\frametitle{Infrastructure as Code}
+\textbf{Terraform:}
+\begin{itemize}
+    \item VPC với Public/Private Subnets
+    \item NAT Gateway cho Private Subnets
+    \item EC2 instances (3 nodes: 1 Master, 2 Workers)
+    \item Security Groups
+    \item EKS hoặc K3s cluster
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Ansible:}
+\begin{itemize}
+    \item Configuration Management
+    \item Deploy K3s lên 3 môi trường (Dev, Staging, Prod)
+    \item Setup Harbor, ArgoCD, monitoring tools
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Monitoring \& Observability}
+\textbf{Stack:}
+\begin{itemize}
+    \item \textbf{Prometheus}: Metrics collection
+    \item \textbf{Grafana}: Visualization dashboards
+    \item \textbf{Loki}: Log aggregation
+    \item \textbf{Alertmanager}: Alerting
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Metrics theo dõi:}
+\begin{itemize}
+    \item Service health và uptime
+    \item Request rate và latency
+    \item Error rates
+    \item Resource usage (CPU, Memory)
+    \item ML model performance
+\end{itemize}
+\end{frame}
+
+% Section 6: MLOps
+\section{MLOps}
+
+\begin{frame}
+\frametitle{ML Service}
+\textbf{Tính năng:}
+\begin{itemize}
+    \item \textbf{Recommendations}: Gợi ý sách dựa trên Collaborative Filtering
+    \item \textbf{Similar Books}: Tìm sách tương tự dựa trên nội dung
+    \item \textbf{Reading Time Estimation}: Ước tính thời gian đọc
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{MLOps Pipeline (Planned):}
+\begin{enumerate}
+    \item Model training CI
+    \item Model registry (MLflow)
+    \item Model packaging
+    \item Canary deploy
+    \item Monitoring metrics \& data drift
+\end{enumerate}
+\end{frame}
+
+% Section 7: Security
+\section{Security}
+
+\begin{frame}
+\frametitle{Security Measures}
+\textbf{Application:}
+\begin{itemize}
+    \item JWT authentication với refresh tokens
+    \item Password hashing (bcrypt, 12 rounds)
+    \item Rate limiting (100 requests/15min)
+    \item CORS configuration
+    \item Security headers (Helmet)
+    \item Input validation
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Infrastructure:}
+\begin{itemize}
+    \item Security Groups (chỉ cho phép IP cụ thể)
+    \item Private Subnets với NAT Gateway
+    \item Container scanning (Trivy)
+    \item IaC scanning (Checkov)
+    \item Code quality (SonarQube)
+\end{itemize}
+\end{frame}
+
+% Section 8: Demo
+\section{Demo}
+
+\begin{frame}
+\frametitle{Demo Features}
+\begin{enumerate}
+    \item \textbf{User Flow}: Đăng ký → Đăng nhập → Tìm sách → Đọc sách
+    \item \textbf{Admin Flow}: Dashboard → Quản lý sách → Quản lý users
+    \item \textbf{ML Features}: Recommendations → Similar books
+    \item \textbf{CI/CD}: Show pipeline logs → Smart build demo
+    \item \textbf{GitOps}: Show ArgoCD sync
+    \item \textbf{Monitoring}: Show Grafana dashboards
+\end{enumerate}
+\end{frame}
+
+% Section 9: Kết quả
+\section{Kết quả \& Đánh giá}
+
+\begin{frame}
+\frametitle{Đã hoàn thành}
+\textbf{Application:}
+\begin{itemize}
+    \item ✅ 4 Microservices hoạt động ổn định
+    \item ✅ Frontend đầy đủ tính năng
+    \item ✅ ML Service với 3 APIs
+    \item ✅ Admin panel hoàn chỉnh
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{DevOps:}
+\begin{itemize}
+    \item ✅ Docker Compose setup
+    \item ✅ CI/CD pipeline cơ bản
+    \item ✅ Terraform infrastructure
+    \item ✅ Kubernetes manifests
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Đang phát triển}
+\textbf{CI/CD:}
+\begin{itemize}
+    \item 🔄 Smart Build với path-filter
+    \item 🔄 ArgoCD Image Updater
+    \item 🔄 Blue/Green deployment
+    \item 🔄 Automated rollback
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Infrastructure:}
+\begin{itemize}
+    \item 🔄 AWS deployment (EKS/K3s)
+    \item 🔄 Harbor/Artifactory setup
+    \item 🔄 Complete monitoring stack
+    \item 🔄 Ansible scripts
+\end{itemize}
+\end{frame}
+
+% Section 10: Hướng phát triển
+\section{Hướng phát triển}
+
+\begin{frame}
+\frametitle{Hướng phát triển tương lai}
+\textbf{Features:}
+\begin{itemize}
+    \item Reviews \& Ratings system
+    \item Notifications system
+    \item Advanced search filters
+    \item Social features (sharing, comments)
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Technical:}
+\begin{itemize}
+    \item Redis caching implementation
+    \item E2E testing với Playwright
+    \item Load testing
+    \item MLflow integration
+    \item Model versioning và monitoring
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Rollback Strategy}
+\textbf{Khi deploy lỗi:}
+\begin{enumerate}
+    \item Healthcheck fails → tự động rollback
+    \item ArgoCD phát hiện và revert về version cũ
+    \item Hoặc manual rollback qua ArgoCD UI
+    \item Audit logs được lưu lại
+\end{enumerate}
+
+\vspace{0.3cm}
+\textbf{Blue/Green Deployment:}
+\begin{itemize}
+    \item Deploy version mới (Green) song song với version cũ (Blue)
+    \item Test Green environment
+    \item Switch traffic sang Green
+    \item Nếu lỗi → switch lại Blue ngay lập tức
+\end{itemize}
+\end{frame}
+
+% Section 11: Kết luận
+\section{Kết luận}
+
+\begin{frame}
+\frametitle{Kết luận}
+\begin{itemize}
+    \item Dự án đã xây dựng thành công hệ thống \textbf{enterprise-grade} với kiến trúc microservices
+    \item Áp dụng đầy đủ quy trình \textbf{DevOps} và \textbf{MLOps}
+    \item Tuân thủ best practices về security, monitoring, và CI/CD
+    \item Sẵn sàng scale và deploy lên production
+\end{itemize}
+
+\vspace{0.5cm}
+\textbf{Điểm mạnh:}
+\begin{itemize}
+    \item Kiến trúc rõ ràng, dễ maintain
+    \item CI/CD pipeline tự động hóa
+    \item Security và monitoring đầy đủ
+    \item Code quality tốt
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Cảm ơn}
+\begin{center}
+\Large
+\textbf{Cảm ơn thầy/cô và các bạn đã lắng nghe!}
+
+\vspace{1cm}
+\textbf{Q \& A}
+\end{center}
+\end{frame}
+
+\end{document}
+

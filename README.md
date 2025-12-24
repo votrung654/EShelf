@@ -5,8 +5,9 @@
 [![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> **Đồ án môn học IE104 - UIT**  
-> Website đọc sách eBooks với kiến trúc microservices, CI/CD pipeline và MLOps.
+> **Đồ án môn học NT548 - DevOps & MLOps**  
+> **Trường Đại học Công nghệ Thông tin (UIT)**  
+> Nền tảng đọc sách điện tử với kiến trúc microservices, CI/CD pipeline và MLOps.
 
 ---
 
@@ -15,89 +16,48 @@
 - [Giới thiệu](#giới-thiệu)
 - [Kiến trúc hệ thống](#kiến-trúc-hệ-thống)
 - [Tech Stack](#tech-stack)
-- [Hướng dẫn chạy dự án](#hướng-dẫn-chạy-dự-án)
-- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-- [Trạng thái dự án](#trạng-thái-dự-án)
-- [API Documentation](#api-documentation)
+- [Quick Start](#quick-start)
+- [DevOps & MLOps](#devops--mlops)
+- [Tài liệu](#tài-liệu)
+- [Team](#team)
 
 ---
 
 ## Giới thiệu
 
-**eShelf** là nền tảng đọc sách điện tử được xây dựng với kiến trúc microservices, áp dụng đầy đủ quy trình DevOps và MLOps chuyên nghiệp.
+**eShelf** là nền tảng đọc sách điện tử được xây dựng với kiến trúc microservices, áp dụng quy trình DevOps và MLOps.
 
 ### Tính năng chính
 
-**Người dùng:**
 - Đọc sách PDF trực tuyến
-- Tìm kiếm và lọc sách theo thể loại
-- Đánh giá và review sách
-- Lưu bộ sưu tập và sách yêu thích
-- Theo dõi tiến độ đọc
-- Gợi ý sách thông minh (AI-powered)
-
-**Admin:**
-- Dashboard thống kê
-- Quản lý sách (CRUD)
-- Quản lý người dùng
-- Quản lý thể loại
-
-**DevOps:**
-- Infrastructure as Code (Terraform, CloudFormation)
-- CI/CD Pipeline (GitHub Actions, Jenkins)
-- Kubernetes deployment với GitOps (ArgoCD)
-- Monitoring (Prometheus, Grafana, Loki)
-- Security scanning (Checkov, Trivy, SonarQube)
-
-**MLOps:**
-- Recommendation system
-- Model tracking với MLflow
-- Automated model deployment
-- Model performance monitoring
+- Tìm kiếm và lọc sách theo thể loại, tác giả
+- Quản lý bộ sưu tập và sách yêu thích
+- Theo dõi tiến độ đọc sách
+- Gợi ý sách dựa trên AI/ML
+- Admin panel (quản lý sách, người dùng, thể loại)
 
 ---
 
 ## Kiến trúc hệ thống
 
-### Microservices Architecture
-
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React + Vite)                   │
-│                      http://localhost:5173                   │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   API Gateway (Express)                      │
-│                      http://localhost:3000                   │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-       ┌─────────────────────┼─────────────────────┬──────────┐
-       ▼                     ▼                     ▼          ▼
-┌──────────┐         ┌──────────┐         ┌──────────┐  ┌──────────┐
-│   Auth   │         │   Book   │         │   User   │  │    ML    │
-│ Service  │         │ Service  │         │ Service  │  │ Service  │
-│  :3001   │         │  :3002   │         │  :3003   │  │  :8000   │
-└──────────┘         └──────────┘         └──────────┘  └──────────┘
-      │                     │                     │          │
-      └─────────────────────┼─────────────────────┴──────────┘
-                            ▼
-                  ┌──────────────────┐
-                  │   PostgreSQL     │
-                  │   Redis Cache    │
-                  └──────────────────┘
+Frontend (React) → API Gateway → Microservices → Database
+                                    │
+                                    ├─ Auth Service
+                                    ├─ Book Service
+                                    ├─ User Service
+                                    └─ ML Service
 ```
 
 ### Services
 
 | Service | Port | Technology | Description |
 |---------|------|------------|-------------|
-| Frontend | 5173 | React + Vite | Web UI |
+| Frontend | 5173 | React 18 + Vite | Web UI |
 | API Gateway | 3000 | Express.js | API routing, rate limiting |
 | Auth Service | 3001 | Express.js | JWT authentication |
 | Book Service | 3002 | Express.js | Book CRUD, search |
-| User Service | 3003 | Express.js | Profile, favorites, collections, users (admin) |
+| User Service | 3003 | Express.js | Profile, favorites, collections |
 | ML Service | 8000 | FastAPI | Recommendations, similarity |
 | PostgreSQL | 5432 | PostgreSQL 16 | Primary database |
 | Redis | 6379 | Redis 7 | Caching |
@@ -107,445 +67,133 @@
 ## Tech Stack
 
 ### Frontend
-- **Framework:** React 18 + Vite
-- **Styling:** TailwindCSS
-- **Routing:** React Router
-- **State:** React Context
-- **Icons:** Lucide React
-- **Charts:** Recharts
+- React 18, Vite, TailwindCSS, React Router
 
 ### Backend
-- **Runtime:** Node.js 20
-- **Framework:** Express.js
-- **Authentication:** JWT + bcrypt
-- **Validation:** express-validator
-- **ORM:** Prisma
+- Node.js 20, Express.js, Prisma ORM, PostgreSQL, Redis
 
 ### ML/AI
-- **Framework:** FastAPI (Python)
-- **ML Libraries:** scikit-learn, numpy, pandas
-- **Algorithms:** Collaborative Filtering, Content-based Filtering
-
-### Database
-- **Primary:** PostgreSQL 16
-- **Cache:** Redis 7
-- **ORM:** Prisma
+- Python 3.11, FastAPI, scikit-learn
 
 ### DevOps
 - **IaC:** Terraform, CloudFormation
-- **CI/CD:** GitHub Actions, Jenkins
+- **CI/CD:** GitHub Actions, Jenkins, AWS CodePipeline
 - **Containers:** Docker, Docker Compose
-- **Orchestration:** Kubernetes (EKS/K3s)
+- **Orchestration:** Kubernetes (K3s/EKS)
 - **GitOps:** ArgoCD
-- **Registry:** Harbor / AWS ECR
-
-### Monitoring
-- **Metrics:** Prometheus
-- **Visualization:** Grafana
-- **Logging:** Loki
-- **Alerting:** Alertmanager
-
-### Security
-- **IaC Scan:** Checkov
-- **Container Scan:** Trivy
-- **Code Quality:** SonarQube
-- **DAST:** OWASP ZAP
+- **Registry:** Harbor
+- **Monitoring:** Prometheus, Grafana, Loki, Alertmanager
+- **Security:** Checkov, Trivy, SonarQube
 
 ---
 
-## Hướng dẫn chạy dự án
+## Quick Start
 
 ### Prerequisites
 
-- Node.js >= 18
+- Node.js >= 20
 - Python >= 3.11
 - Docker & Docker Compose
-- Git
 
-### 1. Clone Repository
+### Installation
 
 ```bash
-git clone https://github.com/votrung654/eShelf.git
+# 1. Clone repository
+git clone https://github.com/your-org/eShelf.git
 cd eShelf
-```
 
-### 2. Chạy Frontend
+# 2. Start Backend
+cd backend
+docker-compose up -d
 
-```bash
-# Install dependencies
+# 3. Start Frontend
+cd ..
 npm install
-
-# Start development server
 npm run dev
 ```
 
-Frontend sẽ chạy tại: **http://localhost:5173**
-
-### 3. Chạy Backend (Docker Compose - Recommended)
-
-```bash
-cd backend
-docker-compose up -d
-```
-
-Tất cả services sẽ tự động start:
-- API Gateway: http://localhost:3000
-- Auth Service: http://localhost:3001
-- Book Service: http://localhost:3002
-- User Service: http://localhost:3003
-- ML Service: http://localhost:8000
-- PostgreSQL: localhost:5432
-- Redis: localhost:6379
-
-### 4. Verify Services
-
-```bash
-# Check all services
-curl http://localhost:3000/health  # API Gateway
-curl http://localhost:3001/health  # Auth Service
-curl http://localhost:3002/health  # Book Service
-curl http://localhost:3003/health  # User Service
-curl http://localhost:8000/health  # ML Service
-```
-
-### 5. Access Application
+### Access
 
 - **Frontend:** http://localhost:5173
 - **API Gateway:** http://localhost:3000
 - **ML API Docs:** http://localhost:8000/docs
 
----
+### Default Accounts
 
-## Cấu trúc thư mục
-
-```
-eShelf/
-├── .github/workflows/        # CI/CD pipelines
-│   ├── ci.yml               # Frontend/Backend CI
-│   └── terraform.yml        # Infrastructure pipeline
-│
-├── backend/
-│   ├── services/
-│   │   ├── api-gateway/     # Port 3000 - API routing
-│   │   ├── auth-service/    # Port 3001 - Authentication
-│   │   ├── book-service/    # Port 3002 - Book management
-│   │   ├── user-service/    # Port 3003 - User management
-│   │   └── ml-service/      # Port 8000 - ML recommendations
-│   ├── database/
-│   │   └── prisma/          # Database schema
-│   └── docker-compose.yml  # All services orchestration
-│
-├── infrastructure/
-│   └── terraform/
-│       ├── modules/         # Reusable modules
-│       │   ├── vpc/
-│       │   ├── ec2/
-│       │   └── security-groups/
-│       └── environments/
-│           └── dev/         # Dev environment config
-│
-├── src/                     # Frontend source
-│   ├── admin/              # Admin panel
-│   ├── components/         # Reusable components
-│   ├── context/            # React contexts
-│   ├── pages/              # Page components
-│   ├── services/           # API client
-│   └── styles/
-│
-├── public/                  # Static assets
-│   ├── demo/               # Screenshots
-│   ├── images/             # Images
-│   └── pdfs/               # Sample books
-│
-└── scripts/                 # Utility scripts
-```
+- **Admin:** `admin@eshelf.com` / `Admin123!`
+- **User:** `user@eshelf.com` / `User123!`
 
 ---
 
-## Trạng thái dự án
+## DevOps & MLOps
 
-### Đã hoàn thành
+### Infrastructure as Code
 
-**Frontend:**
-- ✅ Giao diện người dùng với React + Vite
-- ✅ Tìm kiếm và lọc sách (tìm kiếm cơ bản và nâng cao)
-- ✅ Quản lý bộ sưu tập (tạo, xóa, thêm/xóa sách)
-- ✅ Lịch sử đọc (theo dõi tiến độ, lưu tự động)
-- ✅ Yêu thích sách (thêm/xóa, hiển thị trong profile)
-- ✅ Dark mode
-- ✅ Kết nối với backend API (tất cả chức năng chính)
-- ✅ Admin panel (quản lý sách - CRUD)
-- ✅ ML Recommendations (hiển thị gợi ý sách)
-- ✅ Similar Books (sách tương tự)
+- **Terraform:** 3-node K3s cluster (1 master + 2 workers) trên AWS
+- **CloudFormation:** VPC, EC2, CodePipeline
+- **Ansible:** K3s cluster setup và configuration management
 
-**Backend:**
-- ✅ Kiến trúc microservices (4 services: Auth, Book, User, ML)
-- ✅ API Gateway với proxy routing và rate limiting
-- ✅ Auth Service (JWT authentication, refresh tokens)
-- ✅ Book Service (CRUD, search với filters, genres)
-- ✅ User Service (Profile, favorites, collections, history - đã migrate sang Prisma)
-- ✅ ML Service (Recommendations, similarity, reading time estimation)
-- ✅ Database schema với Prisma (PostgreSQL)
-- ✅ Docker Compose setup
-- ✅ ISBN-to-UUID conversion logic
+### CI/CD Pipeline
 
-**Database:**
-- ✅ Prisma ORM với PostgreSQL
-- ✅ Schema đầy đủ (Users, Books, Genres, Favorites, Collections, ReadingHistory, Reviews)
-- ✅ Migrations và seed data
+- **GitHub Actions:**
+  - Smart Build (chỉ build service thay đổi)
+  - Frontend/Backend CI (lint, test, build)
+  - Security scanning (Trivy, Checkov)
+  - Terraform plan/apply
+  - MLOps workflows (model training, deployment)
+  - Deploy với rollback
 
-**ML-AI:**
-- ✅ Recommendation API (tích hợp với frontend)
-- ✅ Similar books API (tích hợp với frontend)
-- ✅ Reading time estimation API (tích hợp với frontend Profile page)
+- **AWS CodePipeline:** Automated deployment pipeline
 
-### Đang phát triển / Cần hoàn thiện
+### Kubernetes Deployment
 
-**Frontend:**
-- ✅ Admin Dashboard (đã tích hợp API cho books và users)
-- ✅ Estimate Reading Time tích hợp với ML Service
-- 🔄 ReadingProgress component (có thể vẫn dùng localStorage cho một số mục đích)
+- **K3s Cluster:** 3 nodes (1 master + 2 workers)
+- **Kustomize:** Staging/Prod overlays
+- **ArgoCD:** GitOps deployment
+- **Harbor:** Container registry
 
-**Backend:**
-- ✅ Admin API endpoint để lấy danh sách users (GET, PUT, DELETE)
-- ✅ ProfileController đã migrate sang Prisma
-- ✅ Users Controller với đầy đủ CRUD cho Admin
-- 🔄 Hoàn thiện error handling và validation
-- 🔄 Unit tests và integration tests
+### Monitoring Stack
 
-**DevOps:**
-- 🔄 Smart Build (path-filter trong CI/CD)
-- 🔄 GitOps với ArgoCD
-- 🔄 Image tagging tự động
-- 🔄 Multi-environment deployment (Dev, Staging, Prod)
-- 🔄 Monitoring setup (Prometheus, Grafana, Loki)
+- **Prometheus:** Metrics collection
+- **Grafana:** Visualization dashboards
+- **Loki:** Log aggregation
+- **Alertmanager:** Alerting
 
-**MLOps:**
-- 🔄 MLflow integration
-- 🔄 Model versioning
-- 🔄 Model performance monitoring
+### MLOps
 
-### Dự kiến làm (theo yêu cầu môn học)
+- **MLflow:** Model tracking và registry
+- **Model Training:** Automated training pipeline
+- **Model Deployment:** Canary deployment với rollback
 
-**Infrastructure (Lab 1):**
-- 📋 Deploy lên AWS (EKS hoặc K3s trên EC2)
-- 📋 Setup Harbor/Artifactory cho artifact management
-- 📋 Ansible scripts cho configuration management
-- 📋 Complete monitoring stack
+### Security
 
-**CI/CD (Lab 2 & Đồ án):**
-- 📋 Smart Build với path-filter
-- 📋 ArgoCD Image Updater
-- 📋 Blue/Green deployment
-- 📋 Automated rollback
-- 📋 PR checks: lint → unit test → typecheck → static analysis → build artefact
-- 📋 Image Build & Scan: multi-stage Docker build → container scan (Trivy/Clair) → push to registry
-- 📋 Infrastructure as Code: terraform plan/apply (staging) + cloud resources
-- 📋 Config Management: Ansible hoặc Helm charts / kustomize
-- 📋 Deploy Staging: deploy image to staging (K8s/ECS/Swarm) → run integration / e2e tests
-- 📋 Promote to Prod: manual approval → deploy to prod (blue/green or canary) → smoke tests
-- 📋 Observability & Alerts: Prometheus + Grafana + Loki + Alertmanager
-- 📋 GitOps: push deployment manifests to infra repo → ArgoCD/Flux sync to cluster
-- 📋 Rollback / Post-deploy: automatic rollback on failing healthchecks + retention & audit logs
-
-**MLOps (Đồ án):**
-- 📋 Model training CI → model registry (MLflow) → CI for model packaging → Canary deploy model service → monitoring model metrics & data drift
-
-**Security:**
-- 📋 Complete security scanning pipeline
-- 📋 Secrets management
-- 📋 Network policies
-
-**Testing:**
-- 📋 E2E tests
-- 📋 Load testing
-- 📋 Security testing
+- **IaC Scanning:** Checkov
+- **Container Scanning:** Trivy
+- **Code Quality:** SonarQube
 
 ---
 
-## API Documentation
+## Tài liệu
 
-### Authentication
-
-```bash
-# Register
-POST http://localhost:3000/api/auth/register
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "Password123!",
-  "username": "johndoe",
-  "name": "John Doe"
-}
-
-# Login
-POST http://localhost:3000/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "password": "Password123!"
-}
-
-# Response
-{
-  "success": true,
-  "data": {
-    "user": { ... },
-    "accessToken": "eyJhbG...",
-    "refreshToken": "eyJhbG..."
-  }
-}
-```
-
-### Books
-
-```bash
-# Get all books
-GET http://localhost:3000/api/books?page=1&limit=20
-
-# Search books
-GET http://localhost:3000/api/books/search?q=Harry&genre=Fantasy
-
-# Get book by ID
-GET http://localhost:3000/api/books/9780099908401
-
-# Create book (Admin only)
-POST http://localhost:3000/api/books
-Authorization: Bearer <access_token>
-Content-Type: application/json
-
-{
-  "title": "New Book",
-  "author": ["Author Name"],
-  "genres": ["Fiction"],
-  "year": 2024
-}
-```
-
-### ML Recommendations
-
-```bash
-# Get personalized recommendations
-POST http://localhost:3000/api/ml/recommendations
-Content-Type: application/json
-
-{
-  "user_id": "user123",
-  "n_items": 10
-}
-
-# Get similar books
-POST http://localhost:3000/api/ml/similar
-Content-Type: application/json
-
-{
-  "book_id": "9780099908401",
-  "n_items": 6
-}
-
-# Estimate reading time
-POST http://localhost:3000/api/ml/estimate-time
-Content-Type: application/json
-
-{
-  "pages": 300,
-  "genre": "Văn Học"
-}
-```
-
-Xem full API docs: http://localhost:8000/docs (ML Service)
-
----
-
-## Docker Commands
-
-```bash
-# Build all services
-cd backend
-docker-compose build
-
-# Start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop all services
-docker-compose down
-
-# Rebuild specific service
-docker-compose up -d --build auth-service
-```
-
----
-
-## Testing
-
-```bash
-# Frontend
-npm test
-
-# Backend services
-cd backend/services/auth-service && npm test
-cd backend/services/book-service && npm test
-
-# Infrastructure
-bash scripts/test-infrastructure.sh
-```
-
----
-
-## Monitoring
-
-### Prometheus Metrics
-- Service health and uptime
-- Request rate and latency
-- Error rates
-- Resource usage
-
-### Grafana Dashboards
-- Application metrics
-- Infrastructure metrics
-- Kubernetes metrics
-- ML model performance
-
-### Loki Logs
-- Centralized logging
-- Log aggregation from all services
-- Query and search logs
-
----
-
-## Security
-
-- **Authentication:** JWT with access/refresh tokens
-- **Password:** Hashed with bcrypt (12 rounds)
-- **Rate Limiting:** 100 requests per 15 minutes
-- **CORS:** Configured for allowed origins
-- **Headers:** Security headers with Helmet
-- **Validation:** Input validation on all endpoints
-- **Scanning:** Container and code security scanning
-
----
-
-## Documentation
-
-| Document | Description |
-|----------|-------------|
-| [yeucaumonhoc.md](yeucaumonhoc.md) | Course requirements |
-| [gopygiangvien.md](gopygiangvien.md) | Instructor feedback |
+- [Setup Guide](docs/SETUP_GUIDE.md) - Hướng dẫn setup chi tiết
+- [Architecture](docs/ARCHITECTURE.md) - Kiến trúc hệ thống
+- [Ansible README](infrastructure/ansible/README.md) - K3s setup với Ansible
+- [ArgoCD README](infrastructure/kubernetes/argocd/README.md) - GitOps deployment
+- [Harbor README](infrastructure/kubernetes/harbor/README.md) - Container registry
+- [MLOps README](infrastructure/kubernetes/mlops/README.md) - MLOps workflows
+- [CodePipeline README](infrastructure/cloudformation/pipeline/README.md) - AWS CodePipeline
+- [Yêu cầu môn học](yeucaumonhoc.md) - Lab 1, Lab 2, Đồ án
+- [Góp ý giảng viên](gopygiangvien.md) - Feedback và yêu cầu
 
 ---
 
 ## Team
 
-| MSSV | Họ Tên |Phân công|
-|------|--------|--------|
-| 23521809 | Lê Văn Vũ | |
-| 22521571 | Võ Đình Trung | |
-| 22521587| Trương Phúc Trường | |
+| MSSV | Họ Tên | Phân công |
+|------|--------|-----------|
+| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps |
+| 22521571 | Võ Đình Trung | Backend, ML Service, Database |
+| 22521587 | Trương Phúc Trường | Infrastructure, CI/CD, Testing |
 
 ---
 
@@ -555,38 +203,6 @@ MIT License - For educational purposes only.
 
 ---
 
-## Acknowledgments
-
-- Instructor: [Tên giảng viên]
-- Course: IE104 - DevOps & MLOps
-- University: UIT (Đại học Công nghệ Thông tin)
-
----
-
 ## Contact
 
 **Lê Văn Vũ** - [GitHub](https://github.com/levanvux)
-
----
-
-## Quick Start (TL;DR)
-
-```bash
-# 1. Clone
-git clone https://github.com/levanvux/eShelf.git && cd eShelf
-
-# 2. Start Backend
-cd backend && docker-compose up -d && cd ..
-
-# 3. Start Frontend
-npm install && npm run dev
-
-# 4. Open browser
-# http://localhost:5173
-```
-
-**Default credentials for testing:**
-- Email: `user@eshelf.com`
-- Password: `User123!`
-
-(Register new account if needed)

@@ -1,0 +1,74 @@
+---
+- name: Install K3s Worker Nodes
+  hosts: workers
+  become: yes
+  vars:
+    k3s_version: "latest"
+    k3s_master_ip: "{{ hostvars[groups['master'][0]]['ansible_default_ipv4']['address'] }}"
+    k3s_token: "{{ hostvars[groups['master'][0]]['k3s_token_output']['stdout'] | default('changeme-token-12345') }}"
+  
+  tasks:
+    - name: Update system packages
+      package:
+        name: "*"
+        state: latest
+      when: ansible_os_family == "RedHat"
+    
+    - name: Install required packages
+      package:
+        name:
+          - curl
+          - wget
+          - vim
+          - net-tools
+        state: present
+    
+    - name: Disable swap
+      shell: |
+        swapoff -a
+        sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+      ignore_errors: yes
+    
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - br_netfilter
+        - overlay
+    
+    - name: Configure sysctl
+      sysctl:
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+        sysctl_set: yes
+        reload: yes
+      loop:
+        - { key: 'net.bridge.bridge-nf-call-iptables', value: '1' }
+        - { key: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
+        - { key: 'net.ipv4.ip_forward', value: '1' }
+    
+    - name: Install K3s agent
+      shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION={{ k3s_version }} K3S_URL=https://{{ k3s_master_ip }}:6443 K3S_TOKEN={{ k3s_token }} sh -s - agent \
+          --node-ip {{ ansible_default_ipv4.address }}
+      args:
+        creates: /usr/local/bin/k3s
+    
+    - name: Wait for K3s agent to be ready
+      wait_for:
+        path: /var/lib/rancher/k3s/agent
+        timeout: 300
+    
+    - name: Verify worker registration
+      command: /usr/local/bin/k3s kubectl get nodes --server=https://{{ k3s_master_ip }}:6443 --kubeconfig=/etc/rancher/k3s/k3s.yaml
+      register: worker_nodes
+      changed_when: false
+      ignore_errors: yes
+    
+    - name: Display cluster nodes
+      debug:
+        var: worker_nodes.stdout_lines
+      when: worker_nodes.rc == 0
+

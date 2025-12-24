@@ -1,0 +1,134 @@
+name: MLOps Model Deployment Pipeline
+
+on:
+  workflow_run:
+    workflows: ["MLOps Model Training Pipeline"]
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      model_version:
+        description: 'Model version to deploy'
+        required: true
+        default: 'latest'
+
+jobs:
+  package-model:
+    name: Package ML Model
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        working-directory: backend/services/ml-service
+        run: |
+          pip install mlflow boto3
+      
+      - name: Download model from MLflow
+        working-directory: backend/services/ml-service
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI || 'http://mlflow:5000' }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          python -c "
+          import mlflow
+          mlflow.set_tracking_uri('${{ env.MLFLOW_TRACKING_URI }}')
+          
+          # Get latest model version
+          client = mlflow.tracking.MlflowClient()
+          model_name = 'recommender-model'
+          latest_version = client.get_latest_versions(model_name, stages=['None'])[0]
+          
+          print(f'Latest model version: {latest_version.version}')
+          print(f'Model URI: {latest_version.source}')
+          "
+      
+      - name: Build ML Service Image
+        working-directory: backend/services/ml-service
+        run: |
+          docker build -t eshelf/ml-service:${{ github.sha }} .
+          docker tag eshelf/ml-service:${{ github.sha }} eshelf/ml-service:latest
+      
+      - name: Scan ML Service Image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: eshelf/ml-service:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+      
+      - name: Push to Registry
+        if: success()
+        working-directory: backend/services/ml-service
+        env:
+          DOCKER_REGISTRY: ${{ secrets.DOCKER_REGISTRY_URL }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_REGISTRY_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_REGISTRY_PASSWORD }}
+        run: |
+          echo "${{ secrets.DOCKER_REGISTRY_PASSWORD }}" | docker login ${{ secrets.DOCKER_REGISTRY_URL }} -u ${{ secrets.DOCKER_REGISTRY_USERNAME }} --password-stdin
+          docker tag eshelf/ml-service:${{ github.sha }} ${{ secrets.DOCKER_REGISTRY_URL }}/eshelf/ml-service:${{ github.sha }}
+          docker tag eshelf/ml-service:${{ github.sha }} ${{ secrets.DOCKER_REGISTRY_URL }}/eshelf/ml-service:latest
+          docker push ${{ secrets.DOCKER_REGISTRY_URL }}/eshelf/ml-service:${{ github.sha }}
+          docker push ${{ secrets.DOCKER_REGISTRY_URL }}/eshelf/ml-service:latest
+  
+  canary-deploy:
+    name: Canary Deploy Model Service
+    runs-on: ubuntu-latest
+    needs: package-model
+    if: success()
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+      
+      - name: Configure kubectl
+        run: |
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > kubeconfig
+          export KUBECONFIG=./kubeconfig
+          kubectl get nodes
+      
+      - name: Deploy Canary
+        run: |
+          export KUBECONFIG=./kubeconfig
+          # Deploy canary version (10% traffic)
+          kubectl set image deployment/ml-service ml-service=${{ secrets.DOCKER_REGISTRY_URL }}/eshelf/ml-service:${{ github.sha }} -n eshelf-prod
+          kubectl scale deployment ml-service-canary --replicas=1 -n eshelf-prod || true
+      
+      - name: Run Smoke Tests
+        run: |
+          export KUBECONFIG=./kubeconfig
+          # Wait for canary to be ready
+          kubectl wait --for=condition=available --timeout=300s deployment/ml-service-canary -n eshelf-prod
+          
+          # Run smoke tests
+          curl -f http://ml-service-canary.eshelf-prod.svc.cluster.local:8000/health || exit 1
+      
+      - name: Promote to Production
+        if: success()
+        run: |
+          export KUBECONFIG=./kubeconfig
+          # Scale up production
+          kubectl set image deployment/ml-service ml-service=${{ secrets.DOCKER_REGISTRY_URL }}/eshelf/ml-service:${{ github.sha }} -n eshelf-prod
+          kubectl rollout status deployment/ml-service -n eshelf-prod
+          
+          # Scale down canary
+          kubectl scale deployment ml-service-canary --replicas=0 -n eshelf-prod || true
+      
+      - name: Rollback on Failure
+        if: failure()
+        run: |
+          export KUBECONFIG=./kubeconfig
+          kubectl rollout undo deployment/ml-service -n eshelf-prod
+          kubectl scale deployment ml-service-canary --replicas=0 -n eshelf-prod || true
+

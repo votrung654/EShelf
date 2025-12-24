@@ -14,14 +14,19 @@ export function AuthProvider({ children }) {
       const storedUser = localStorage.getItem('user');
 
       if (token && storedUser) {
-        setUser(JSON.parse(storedUser));
-        
         try {
-           const res = await authAPI.getCurrentUser();
-           if(res.success) setUser(res.data);
+          // Try to get current user to validate token
+          const res = await authAPI.getCurrentUser();
+          if (res.success) {
+            setUser(res.data);
+          } else {
+            // Token invalid, clear storage
+            localStorage.clear();
+          }
         } catch (err) {
-           console.error("Token invalid:", err);
-           logout();
+          console.error("Token invalid or expired:", err);
+          // Clear expired/invalid tokens
+          localStorage.clear();
         }
       }
       setIsLoading(false);
@@ -49,9 +54,19 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error('Login failed:', error);
+      
+      // Handle timeout/network errors
+      if (error.isTimeout || error.isNetworkError) {
+        return {
+          success: false,
+          message: error.message || 'Kết nối bị gián đoạn. Vui lòng thử lại.'
+        };
+      }
+      
+      // Handle other errors
       return { 
         success: false, 
-        message: error.response?.data?.message || 'Đăng nhập thất bại' 
+        message: error.response?.data?.message || error.message || 'Đăng nhập thất bại' 
       };
     }
   };

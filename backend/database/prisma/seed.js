@@ -67,14 +67,17 @@ async function main() {
       console.error('Error loading book data:', error.message);
     }
 
-    // Create genres from book data
+    // Create books and genres
     if (bookData.length > 0) {
+      const booksToCreate = bookData.slice(0, 50);
       const genreSet = new Set();
-      bookData.forEach(book => {
+      
+      // Collect genres only from books that will be created
+      booksToCreate.forEach(book => {
         (book.genres || []).forEach(genre => genreSet.add(genre));
       });
 
-      console.log(`\nCreating ${genreSet.size} genres...`);
+      console.log(`\nCreating ${genreSet.size} genres from ${booksToCreate.length} books...`);
       for (const genreName of genreSet) {
         const slug = genreName.toLowerCase()
           .replace(/\s+/g, '-')
@@ -91,10 +94,10 @@ async function main() {
       }
       console.log(`Created ${genreSet.size} genres`);
 
-      // Create books (first 50 only)
-      console.log(`\nCreating books (first 50)...`);
+      // Create books
+      console.log(`\nCreating ${booksToCreate.length} books...`);
       let booksCreated = 0;
-      for (const bookItem of bookData.slice(0, 50)) {
+      for (const bookItem of booksToCreate) {
         try {
           const book = await prisma.book.upsert({
             where: { isbn: bookItem.isbn },

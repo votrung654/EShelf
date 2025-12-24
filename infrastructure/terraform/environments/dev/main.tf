@@ -63,29 +63,37 @@ module "vpc" {
 module "security_groups" {
   source = "../../modules/security-groups"
 
-  project           = local.project
-  environment       = local.environment
-  vpc_id            = module.vpc.vpc_id
-  allowed_ssh_cidrs = var.allowed_ssh_cidrs
-  tags              = local.common_tags
+  project            = local.project
+  environment        = local.environment
+  vpc_id             = module.vpc.vpc_id
+  vpc_cidr           = var.vpc_cidr
+  allowed_ssh_cidrs  = var.allowed_ssh_cidrs
+  create_k3s_cluster = var.create_k3s_cluster
+  tags               = local.common_tags
 }
 
 # EC2 Module
 module "ec2" {
   source = "../../modules/ec2"
 
-  project               = local.project
-  environment           = local.environment
-  create_key_pair       = var.create_key_pair
-  public_key            = var.public_key
-  bastion_instance_type = var.bastion_instance_type
-  app_instance_type     = var.app_instance_type
-  app_instance_count    = var.app_instance_count
-  public_subnet_id      = module.vpc.public_subnet_ids[0]
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  bastion_sg_id         = module.security_groups.bastion_sg_id
-  app_sg_id             = module.security_groups.app_sg_id
-  tags                  = local.common_tags
+  project                 = local.project
+  environment             = local.environment
+  create_key_pair         = var.create_key_pair
+  public_key              = var.public_key
+  bastion_instance_type   = var.bastion_instance_type
+  app_instance_type        = var.app_instance_type
+  app_instance_count       = var.app_instance_count
+  create_k3s_cluster      = var.create_k3s_cluster
+  k3s_master_instance_type = var.k3s_master_instance_type
+  k3s_worker_instance_type = var.k3s_worker_instance_type
+  k3s_worker_count         = var.k3s_worker_count
+  public_subnet_id         = module.vpc.public_subnet_ids[0]
+  private_subnet_ids       = module.vpc.private_subnet_ids
+  bastion_sg_id            = module.security_groups.bastion_sg_id
+  app_sg_id                = module.security_groups.app_sg_id
+  k3s_master_sg_id         = var.create_k3s_cluster ? module.security_groups.k3s_master_sg_id : ""
+  k3s_worker_sg_id         = var.create_k3s_cluster ? module.security_groups.k3s_worker_sg_id : ""
+  tags                     = local.common_tags
 }
 
 

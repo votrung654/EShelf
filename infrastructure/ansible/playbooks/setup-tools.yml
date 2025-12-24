@@ -1,0 +1,40 @@
+---
+- name: Setup Tools on K3s Cluster
+  hosts: k3s_cluster
+  become: yes
+  
+  tasks:
+    - name: Install Helm
+      shell: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        creates: /usr/local/bin/helm
+    
+    - name: Install kustomize
+      shell: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        mv kustomize /usr/local/bin/
+      args:
+        creates: /usr/local/bin/kustomize
+    
+    - name: Install yq
+      shell: |
+        wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        chmod +x /usr/local/bin/yq
+      args:
+        creates: /usr/local/bin/yq
+    
+    - name: Verify tools installation
+      command: "{{ item }} --version"
+      loop:
+        - helm
+        - kustomize
+        - yq
+      register: tools_version
+      changed_when: false
+    
+    - name: Display tools versions
+      debug:
+        msg: "{{ item.item }}: {{ item.stdout }}"
+      loop: "{{ tools_version.results }}"
+

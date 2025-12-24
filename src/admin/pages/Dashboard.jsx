@@ -27,17 +27,29 @@ export default function Dashboard() {
       const [booksRes, genresRes, usersRes] = await Promise.all([
         booksAPI.getAll(1, 1000),
         genresAPI.getAll(),
-        usersAPI.getAll(1, 1).catch(() => ({ success: false, data: { pagination: { total: 0 } } }))
+        usersAPI.getAll(1, 10).catch(() => ({ success: false, data: { users: [], pagination: { total: 0 } } }))
       ]);
 
       const books = booksRes.success && booksRes.data ? booksRes.data.books : [];
       const genres = genresRes.success && genresRes.data ? genresRes.data : [];
-      // Handle both response formats: data.pagination.total or pagination.total
+      
       const totalUsers = usersRes.success 
         ? (usersRes.data?.pagination?.total ?? usersRes.pagination?.total ?? 0)
         : 0;
 
-      // Calculate genre distribution from books
+      const users = usersRes.success && usersRes.data?.users 
+        ? usersRes.data.users 
+        : (usersRes.success && usersRes.data ? usersRes.data : []);
+
+      const recentUsersList = Array.isArray(users) 
+        ? users.slice(0, 5).map(user => ({
+            id: user.id,
+            name: user.name || user.username || 'N/A',
+            email: user.email,
+            createdAt: user.createdAt
+          }))
+        : [];
+
       const genreCounts = {};
       books.forEach(book => {
         if (Array.isArray(book.genres)) {
@@ -69,8 +81,7 @@ export default function Dashboard() {
         totalGenres: genres.length,
       });
 
-      // TODO: Load users from API when available
-      setRecentUsers([]);
+      setRecentUsers(recentUsersList);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
     } finally {
@@ -242,11 +253,36 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
             Người dùng đăng ký gần đây
           </h3>
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>Chức năng đang phát triển</p>
-            <p className="text-sm mt-1">Cần thêm API endpoint để lấy danh sách users</p>
-          </div>
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+              <p className="mt-2">Đang tải...</p>
+            </div>
+          ) : recentUsers.length > 0 ? (
+            <div className="space-y-3">
+              {recentUsers.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                      {(user.name || user.email || 'U').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-800 dark:text-white">{user.name || user.email}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {formatTimeAgo(user.createdAt)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>Chưa có người dùng</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
