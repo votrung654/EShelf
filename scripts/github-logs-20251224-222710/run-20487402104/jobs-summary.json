@@ -1,0 +1,9 @@
+﻿{
+    "Id":  "58872507194",
+    "Name":  "update-manifests",
+    "Steps":  "[",
+    "StartedAt":  "2025-12-24T13:40:11Z",
+    "CompletedAt":  "2025-12-24T13:40:19Z",
+    "Conclusion":  "failure",
+    "Status":  "completed"
+}

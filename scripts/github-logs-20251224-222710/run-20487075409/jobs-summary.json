@@ -1,0 +1,74 @@
+﻿[
+    {
+        "Id":  "58871576424",
+        "Name":  "changes",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T13:20:32Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T13:20:31Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:35Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T13:20:32Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:36Z\",\"conclusion\":\"success\",\"name\":\"Run dorny/paths-filter@v2\",\"number\":3,\"startedAt\":\"2025-12-24T13:20:35Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:36Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":6,\"startedAt\":\"2025-12-24T13:20:36Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:36Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":7,\"startedAt\":\"2025-12-24T13:20:36Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T13:20:31Z",
+        "CompletedAt":  "2025-12-24T13:20:37Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58871584502",
+        "Name":  "build-frontend",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T13:20:43Z\",\"conclusion\":\"failure\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T13:20:42Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T13:20:42Z",
+        "CompletedAt":  "2025-12-24T13:20:44Z",
+        "Conclusion":  "failure",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58871584505",
+        "Name":  "build-auth-service",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T13:20:40Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T13:20:39Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:43Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T13:20:40Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:21:03Z\",\"conclusion\":\"success\",\"name\":\"Build Docker image\",\"number\":3,\"startedAt\":\"2025-12-24T13:20:43Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:21:03Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":6,\"startedAt\":\"2025-12-24T13:21:03Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:21:03Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":7,\"startedAt\":\"2025-12-24T13:21:03Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T13:20:39Z",
+        "CompletedAt":  "2025-12-24T13:21:04Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58871584511",
+        "Name":  "build-user-service",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T13:20:41Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T13:20:40Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:44Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T13:20:41Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:48Z\",\"conclusion\":\"success\",\"name\":\"Setup Docker Buildx\",\"number\":3,\"startedAt\":\"2025-12-24T13:20:44Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:49Z\",\"conclusion\":\"failure\",\"name\":\"Build Docker image\",\"number\":4,\"startedAt\":\"2025-12-24T13:20:48Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:49Z\",\"conclusion\":\"success\",\"name\":\"Post Setup Docker Buildx\",\"number\":7,\"startedAt\":\"2025-12-24T13:20:49Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:49Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":8,\"startedAt\":\"2025-12-24T13:20:49Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:49Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":9,\"startedAt\":\"2025-12-24T13:20:49Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T13:20:39Z",
+        "CompletedAt":  "2025-12-24T13:20:51Z",
+        "Conclusion":  "failure",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58871584579",
+        "Name":  "build-ml-service",
+        "Steps":  "[]",
+        "StartedAt":  "2025-12-24T13:20:37Z",
+        "CompletedAt":  "2025-12-24T13:20:37Z",
+        "Conclusion":  "skipped",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58871584581",
+        "Name":  "build-api-gateway",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T13:20:41Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T13:20:40Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:44Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T13:20:41Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:53Z\",\"conclusion\":\"success\",\"name\":\"Build Docker image\",\"number\":3,\"startedAt\":\"2025-12-24T13:20:44Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:53Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":6,\"startedAt\":\"2025-12-24T13:20:53Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:20:53Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":7,\"startedAt\":\"2025-12-24T13:20:53Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T13:20:39Z",
+        "CompletedAt":  "2025-12-24T13:20:55Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58871584750",
+        "Name":  "build-book-service",
+        "Steps":  "[]",
+        "StartedAt":  "2025-12-24T13:20:37Z",
+        "CompletedAt":  "2025-12-24T13:20:37Z",
+        "Conclusion":  "skipped",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58871610222",
+        "Name":  "summary",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T13:21:07Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T13:21:07Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:21:08Z\",\"conclusion\":\"success\",\"name\":\"Build Summary\",\"number\":2,\"startedAt\":\"2025-12-24T13:21:07Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:21:08Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":3,\"startedAt\":\"2025-12-24T13:21:08Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T13:21:07Z",
+        "CompletedAt":  "2025-12-24T13:21:09Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    }
+]

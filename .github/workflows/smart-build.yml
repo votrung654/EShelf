@@ -183,6 +183,7 @@ jobs:
         continue-on-error: false
       
       - name: Upload artifacts
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
@@ -191,46 +192,88 @@ jobs:
   # Build API Gateway (only if changed)
   build-api-gateway:
     needs: changes
-    if: needs.changes.outputs.api-gateway == 'true'
+    if: needs.changes.outputs.api-gateway == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build Docker image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      
+      - name: Build and push Docker image
         run: |
-          docker build -t eshelf/api-gateway:${{ github.sha }} backend/services/api-gateway/
-          docker tag eshelf/api-gateway:${{ github.sha }} eshelf/api-gateway:latest
+          IMAGE_TAG="${{ github.sha }}"
+          REGISTRY="${{ secrets.HARBOR_REGISTRY }}"
+          docker build -t $REGISTRY/eshelf/api-gateway:$IMAGE_TAG backend/services/api-gateway/
+          docker tag $REGISTRY/eshelf/api-gateway:$IMAGE_TAG $REGISTRY/eshelf/api-gateway:latest
+          docker push $REGISTRY/eshelf/api-gateway:$IMAGE_TAG
+          docker push $REGISTRY/eshelf/api-gateway:latest
 
   # Build Auth Service (only if changed)
   build-auth-service:
     needs: changes
-    if: needs.changes.outputs.auth-service == 'true'
+    if: needs.changes.outputs.auth-service == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build Docker image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      
+      - name: Build and push Docker image
         run: |
-          docker build -t eshelf/auth-service:${{ github.sha }} backend/services/auth-service/
-          docker tag eshelf/auth-service:${{ github.sha }} eshelf/auth-service:latest
+          IMAGE_TAG="${{ github.sha }}"
+          REGISTRY="${{ secrets.HARBOR_REGISTRY }}"
+          docker build -t $REGISTRY/eshelf/auth-service:$IMAGE_TAG backend/services/auth-service/
+          docker tag $REGISTRY/eshelf/auth-service:$IMAGE_TAG $REGISTRY/eshelf/auth-service:latest
+          docker push $REGISTRY/eshelf/auth-service:$IMAGE_TAG
+          docker push $REGISTRY/eshelf/auth-service:latest
 
   # Build Book Service (only if changed)
   build-book-service:
     needs: changes
-    if: needs.changes.outputs.book-service == 'true'
+    if: needs.changes.outputs.book-service == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build Docker image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      
+      - name: Build and push Docker image
         run: |
-          docker build -t eshelf/book-service:${{ github.sha }} backend/services/book-service/
-          docker tag eshelf/book-service:${{ github.sha }} eshelf/book-service:latest
+          IMAGE_TAG="${{ github.sha }}"
+          REGISTRY="${{ secrets.HARBOR_REGISTRY }}"
+          docker build -t $REGISTRY/eshelf/book-service:$IMAGE_TAG backend/services/book-service/
+          docker tag $REGISTRY/eshelf/book-service:$IMAGE_TAG $REGISTRY/eshelf/book-service:latest
+          docker push $REGISTRY/eshelf/book-service:$IMAGE_TAG
+          docker push $REGISTRY/eshelf/book-service:latest
 
   # Build User Service (only if changed)
   build-user-service:
     needs: changes
-    if: needs.changes.outputs.user-service == 'true'
+    if: needs.changes.outputs.user-service == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -238,24 +281,49 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: Build Docker image
+      - name: Login to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      
+      - name: Build and push Docker image
         run: |
-          docker build -f backend/services/user-service/Dockerfile -t eshelf/user-service:${{ github.sha }} backend/
-          docker tag eshelf/user-service:${{ github.sha }} eshelf/user-service:latest
+          IMAGE_TAG="${{ github.sha }}"
+          REGISTRY="${{ secrets.HARBOR_REGISTRY }}"
+          docker build -f backend/services/user-service/Dockerfile -t $REGISTRY/eshelf/user-service:$IMAGE_TAG backend/
+          docker tag $REGISTRY/eshelf/user-service:$IMAGE_TAG $REGISTRY/eshelf/user-service:latest
+          docker push $REGISTRY/eshelf/user-service:$IMAGE_TAG
+          docker push $REGISTRY/eshelf/user-service:latest
         continue-on-error: false
 
   # Build ML Service (only if changed)
   build-ml-service:
     needs: changes
-    if: needs.changes.outputs.ml-service == 'true'
+    if: needs.changes.outputs.ml-service == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       
-      - name: Build Docker image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Harbor
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      
+      - name: Build and push Docker image
         run: |
-          docker build -t eshelf/ml-service:${{ github.sha }} backend/services/ml-service/
-          docker tag eshelf/ml-service:${{ github.sha }} eshelf/ml-service:latest
+          IMAGE_TAG="${{ github.sha }}"
+          REGISTRY="${{ secrets.HARBOR_REGISTRY }}"
+          docker build -t $REGISTRY/eshelf/ml-service:$IMAGE_TAG backend/services/ml-service/
+          docker tag $REGISTRY/eshelf/ml-service:$IMAGE_TAG $REGISTRY/eshelf/ml-service:latest
+          docker push $REGISTRY/eshelf/ml-service:$IMAGE_TAG
+          docker push $REGISTRY/eshelf/ml-service:latest
 
   # Summary
   summary:

@@ -1,0 +1,74 @@
+﻿[
+    {
+        "Id":  "58874901663",
+        "Name":  "changes",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T14:28:59Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T14:28:57Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:02Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T14:28:59Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:02Z\",\"conclusion\":\"success\",\"name\":\"Run dorny/paths-filter@v2\",\"number\":3,\"startedAt\":\"2025-12-24T14:29:02Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:03Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":6,\"startedAt\":\"2025-12-24T14:29:02Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:03Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":7,\"startedAt\":\"2025-12-24T14:29:03Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T14:28:57Z",
+        "CompletedAt":  "2025-12-24T14:29:04Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58874909790",
+        "Name":  "build-api-gateway",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T14:29:08Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T14:29:07Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:11Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T14:29:08Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:20Z\",\"conclusion\":\"success\",\"name\":\"Build Docker image\",\"number\":3,\"startedAt\":\"2025-12-24T14:29:11Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:20Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":6,\"startedAt\":\"2025-12-24T14:29:20Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:20Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":7,\"startedAt\":\"2025-12-24T14:29:20Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T14:29:07Z",
+        "CompletedAt":  "2025-12-24T14:29:21Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58874909794",
+        "Name":  "build-frontend",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T14:29:07Z\",\"conclusion\":\"failure\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T14:29:07Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T14:29:06Z",
+        "CompletedAt":  "2025-12-24T14:29:08Z",
+        "Conclusion":  "failure",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58874909800",
+        "Name":  "build-auth-service",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T14:29:08Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T14:29:08Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:13Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T14:29:08Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:32Z\",\"conclusion\":\"success\",\"name\":\"Build Docker image\",\"number\":3,\"startedAt\":\"2025-12-24T14:29:13Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:32Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":6,\"startedAt\":\"2025-12-24T14:29:32Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:32Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":7,\"startedAt\":\"2025-12-24T14:29:32Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T14:29:07Z",
+        "CompletedAt":  "2025-12-24T14:29:34Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58874909807",
+        "Name":  "build-book-service",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T14:29:08Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T14:29:08Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:11Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T14:29:08Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:29Z\",\"conclusion\":\"success\",\"name\":\"Build Docker image\",\"number\":3,\"startedAt\":\"2025-12-24T14:29:11Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:30Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":6,\"startedAt\":\"2025-12-24T14:29:29Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:30Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":7,\"startedAt\":\"2025-12-24T14:29:30Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T14:29:07Z",
+        "CompletedAt":  "2025-12-24T14:29:31Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58874909967",
+        "Name":  "build-user-service",
+        "Steps":  "[]",
+        "StartedAt":  "2025-12-24T14:29:05Z",
+        "CompletedAt":  "2025-12-24T14:29:05Z",
+        "Conclusion":  "skipped",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58874909990",
+        "Name":  "build-ml-service",
+        "Steps":  "[]",
+        "StartedAt":  "2025-12-24T14:29:05Z",
+        "CompletedAt":  "2025-12-24T14:29:05Z",
+        "Conclusion":  "skipped",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58874931698",
+        "Name":  "summary",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T14:29:37Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T14:29:37Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:37Z\",\"conclusion\":\"success\",\"name\":\"Build Summary\",\"number\":2,\"startedAt\":\"2025-12-24T14:29:37Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T14:29:37Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":3,\"startedAt\":\"2025-12-24T14:29:37Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T14:29:36Z",
+        "CompletedAt":  "2025-12-24T14:29:39Z",
+        "Conclusion":  "success",
+        "Status":  "completed"
+    }
+]

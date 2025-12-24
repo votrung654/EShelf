@@ -1,0 +1,38 @@
+﻿[
+    {
+        "Id":  "58872196354",
+        "Name":  "Security Scan",
+        "Steps":  "[{\"completedAt\":\"2025-12-24T13:33:37Z\",\"conclusion\":\"success\",\"name\":\"Set up job\",\"number\":1,\"startedAt\":\"2025-12-24T13:33:29Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:33:41Z\",\"conclusion\":\"success\",\"name\":\"Run actions/checkout@v4\",\"number\":2,\"startedAt\":\"2025-12-24T13:33:37Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:33:50Z\",\"conclusion\":\"success\",\"name\":\"Run Trivy filesystem scan\",\"number\":3,\"startedAt\":\"2025-12-24T13:33:41Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:33:51Z\",\"conclusion\":\"failure\",\"name\":\"Upload Trivy results\",\"number\":4,\"startedAt\":\"2025-12-24T13:33:50Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:33:52Z\",\"conclusion\":\"success\",\"name\":\"Post Upload Trivy results\",\"number\":6,\"startedAt\":\"2025-12-24T13:33:51Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:33:52Z\",\"conclusion\":\"success\",\"name\":\"Post Run Trivy filesystem scan\",\"number\":7,\"startedAt\":\"2025-12-24T13:33:52Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:33:52Z\",\"conclusion\":\"success\",\"name\":\"Post Run actions/checkout@v4\",\"number\":8,\"startedAt\":\"2025-12-24T13:33:52Z\",\"status\":\"completed\"},{\"completedAt\":\"2025-12-24T13:33:52Z\",\"conclusion\":\"success\",\"name\":\"Complete job\",\"number\":9,\"startedAt\":\"2025-12-24T13:33:52Z\",\"status\":\"completed\"}]",
+        "StartedAt":  "2025-12-24T13:33:28Z",
+        "CompletedAt":  "2025-12-24T13:33:55Z",
+        "Conclusion":  "failure",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58872196397",
+        "Name":  "Backend CI",
+        "Steps":  "[]",
+        "StartedAt":  "2025-12-24T13:33:26Z",
+        "CompletedAt":  "2025-12-24T13:33:25Z",
+        "Conclusion":  "skipped",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58872196447",
+        "Name":  "Frontend CI",
+        "Steps":  "[]",
+        "StartedAt":  "2025-12-24T13:33:26Z",
+        "CompletedAt":  "2025-12-24T13:33:25Z",
+        "Conclusion":  "skipped",
+        "Status":  "completed"
+    },
+    {
+        "Id":  "58872196524",
+        "Name":  "Docker Build",
+        "Steps":  "[]",
+        "StartedAt":  "2025-12-24T13:33:26Z",
+        "CompletedAt":  "2025-12-24T13:33:25Z",
+        "Conclusion":  "skipped",
+        "Status":  "completed"
+    }
+]

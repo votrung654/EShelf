@@ -140,21 +140,28 @@ npm run dev
     - Path-based filtering để detect service changes
     - Code change analysis để phân biệt comment vs code
     - Tiết kiệm thời gian và tài nguyên CI/CD
+  - **Pull Request Pipeline:** Chỉ test, scan, lint (không deploy) khi tạo PR
+  - **Push to Main Pipeline:** Build image, push to Harbor, deploy khi merge vào main
   - Frontend/Backend CI (lint, test, build)
   - Security scanning (Trivy, Checkov, SonarQube)
-  - Terraform plan/apply
+  - Code quality scanning với SonarQube
+  - Terraform plan/apply cho 3 environments (dev, staging, prod)
   - MLOps workflows (model training, deployment)
   - Automated rollback
-  - Update Kubernetes manifests với image tags
+  - Update Kubernetes manifests với image tags từ Harbor registry
+
+- **Jenkins:** Pipeline trên Kubernetes với SonarQube integration
 
 - **AWS CodePipeline:** Automated deployment pipeline
 
 ### Kubernetes Deployment
 
-- **K3s Cluster:** 3 nodes (1 master + 2 workers) trên AWS
-- **Kustomize:** Staging/Prod overlays
-- **ArgoCD:** GitOps deployment với Application manifests
-- **Harbor:** Container registry với Helm
+- **K3s Cluster:** 3 nodes (1 master + 2 workers) trên AWS (dev, staging, prod)
+- **Kustomize:** Environment-specific overlays (dev, staging, prod)
+- **ArgoCD:** GitOps deployment với Application manifests và Image Updater
+- **Harbor:** Container registry thay thế DockerHub
+- **Jenkins:** CI/CD pipeline trên Kubernetes
+- **SonarQube:** Code quality analysis trên Kubernetes
 
 ### Monitoring Stack
 
@@ -171,9 +178,10 @@ npm run dev
 
 ### Security
 
-- **IaC Scanning:** Checkov
-- **Container Scanning:** Trivy
-- **Code Quality:** SonarQube
+- **IaC Scanning:** Checkov cho Terraform/CloudFormation
+- **Container Scanning:** Trivy cho Docker images
+- **Code Quality:** SonarQube integration trong PR và Jenkins pipeline
+- **Pre-deployment gates:** Security checks trước khi deploy
 
 ---
 

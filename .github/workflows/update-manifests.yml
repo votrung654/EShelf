@@ -27,32 +27,30 @@ jobs:
       - name: Update image tags
         run: |
           IMAGE_TAG="${{ github.sha }}"
+          REGISTRY="${{ secrets.HARBOR_REGISTRY }}"
           
-          # Check which services were built in Smart Build Pipeline
-          # For now, update all services that might have been built
-          # Update base deployment (Kustomize sẽ override trong overlays)
           if [ -f "infrastructure/kubernetes/base/api-gateway-deployment.yaml" ]; then
-            yq eval ".spec.template.spec.containers[0].image = \"eshelf/api-gateway:${IMAGE_TAG}\"" \
+            yq eval ".spec.template.spec.containers[0].image = \"${REGISTRY}/eshelf/api-gateway:${IMAGE_TAG}\"" \
               -i infrastructure/kubernetes/base/api-gateway-deployment.yaml
           fi
           
           if [ -f "infrastructure/kubernetes/base/auth-service-deployment.yaml" ]; then
-            yq eval ".spec.template.spec.containers[0].image = \"eshelf/auth-service:${IMAGE_TAG}\"" \
+            yq eval ".spec.template.spec.containers[0].image = \"${REGISTRY}/eshelf/auth-service:${IMAGE_TAG}\"" \
               -i infrastructure/kubernetes/base/auth-service-deployment.yaml
           fi
           
           if [ -f "infrastructure/kubernetes/base/book-service-deployment.yaml" ]; then
-            yq eval ".spec.template.spec.containers[0].image = \"eshelf/book-service:${IMAGE_TAG}\"" \
+            yq eval ".spec.template.spec.containers[0].image = \"${REGISTRY}/eshelf/book-service:${IMAGE_TAG}\"" \
               -i infrastructure/kubernetes/base/book-service-deployment.yaml
           fi
           
           if [ -f "infrastructure/kubernetes/base/user-service-deployment.yaml" ]; then
-            yq eval ".spec.template.spec.containers[0].image = \"eshelf/user-service:${IMAGE_TAG}\"" \
+            yq eval ".spec.template.spec.containers[0].image = \"${REGISTRY}/eshelf/user-service:${IMAGE_TAG}\"" \
               -i infrastructure/kubernetes/base/user-service-deployment.yaml
           fi
           
           if [ -f "infrastructure/kubernetes/base/ml-service-deployment.yaml" ]; then
-            yq eval ".spec.template.spec.containers[0].image = \"eshelf/ml-service:${IMAGE_TAG}\"" \
+            yq eval ".spec.template.spec.containers[0].image = \"${REGISTRY}/eshelf/ml-service:${IMAGE_TAG}\"" \
               -i infrastructure/kubernetes/base/ml-service-deployment.yaml
           fi
       

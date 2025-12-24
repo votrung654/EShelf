@@ -423,9 +423,49 @@ paths:
 \textbf{Điểm mạnh:}
 \begin{itemize}
     \item Kiến trúc rõ ràng, dễ maintain
-    \item CI/CD pipeline tự động hóa
-    \item Security và monitoring đầy đủ
-    \item Code quality tốt
+    \item CI/CD pipeline tự động hóa với Smart Build System
+    \item Security và monitoring đầy đủ (Trivy, SonarQube, Prometheus)
+    \item GitOps với ArgoCD và Image Updater
+    \item 3 môi trường (dev, staging, prod) với Terraform
+    \item Harbor registry thay thế DockerHub
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Hướng phát triển tương lai}
+\textbf{Infrastructure:}
+\begin{itemize}
+    \item Migrate sang AWS EKS cho production scale
+    \item Multi-region deployment cho high availability
+    \item Auto-scaling policies dựa trên metrics
+    \item Cost optimization với Reserved Instances và Spot Instances
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{CI/CD:}
+\begin{itemize}
+    \item Canary và Blue-Green deployment automation
+    \item Advanced rollback strategies với database migration
+    \item Performance testing trong pipeline
+    \item Chaos engineering để test resilience
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{MLOps:}
+\begin{itemize}
+    \item A/B testing framework cho model comparison
+    \item Model versioning và lineage tracking
+    \item Real-time model monitoring và drift detection
+    \item Automated retraining pipeline
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Security:}
+\begin{itemize}
+    \item Zero-trust network architecture
+    \item Secrets rotation automation
+    \item Compliance automation (SOC 2, ISO 27001)
+    \item Advanced threat detection
 \end{itemize}
 \end{frame}
 

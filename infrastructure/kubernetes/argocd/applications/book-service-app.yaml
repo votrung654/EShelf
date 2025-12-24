@@ -3,6 +3,12 @@ kind: Application
 metadata:
   name: book-service
   namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: book-service=harbor.yourdomain.com/eshelf/book-service
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    argocd-image-updater.argoproj.io/write-back-target: kustomization
+    argocd-image-updater.argoproj.io/kustomize-image-name: book-service
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -13,7 +19,9 @@ spec:
     path: infrastructure/kubernetes/overlays/prod
     kustomize:
       images:
-        - eshelf/book-service:latest
+        - name: book-service
+          newName: harbor.yourdomain.com/eshelf/book-service
+          newTag: latest
   destination:
     server: https://kubernetes.default.svc
     namespace: eshelf-prod
