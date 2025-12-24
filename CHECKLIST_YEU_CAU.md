@@ -306,11 +306,24 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 7. **Documentation:** Đầy đủ, đã dịch sang tiếng Việt
 8. **Tests:** Có test scripts, 25/25 tests pass
 
+### Bổ Sung Mới (Từ Yêu Cầu Giảng Viên)
+
+- [x] **PR vs Push Separation:** PR-only pipeline (test/scan only), Push pipeline (build/deploy)
+- [x] **Harbor Registry:** Thay thế DockerHub hoàn toàn, có deployment và setup scripts
+- [x] **SonarQube Integration:** Deployment trên K8s, GitHub Actions integration, PR scanning
+- [x] **Jenkins on Kubernetes:** Deployment manifests với RBAC, PVC, Service, Ingress
+- [x] **ArgoCD Image Updater:** Annotations trong tất cả applications, automatic image tag updates
+- [x] **Terraform 3 Environments:** Dev, staging, prod với S3 backend, environment-specific configs
+- [x] **AWS Resource Management:** Auto shutdown/startup scripts để tối ưu chi phí
+- [x] **Documentation:** ROLLBACK_SCENARIOS.md, ARCHITECTURE_DEEP_DIVE.md, updated guides
+
 ### Cần Lưu Ý
 
 1. **AWS Credentials:** Cần cấu hình để chạy Terraform/CloudFormation thực tế
 2. **Kubernetes Cluster:** Cần setup K3s cluster để deploy thực tế
-3. **Registry Credentials:** Cần cấu hình Harbor/Docker Hub credentials trong workflows
+3. **Harbor Credentials:** Cần cấu hình Harbor credentials trong GitHub Secrets và K8s
+4. **SonarQube Token:** Cần generate token và thêm vào GitHub Secrets
+5. **S3 Backend:** Cần tạo S3 bucket và DynamoDB table cho Terraform state
 4. **GitHub Secrets:** Cần setup secrets cho CI/CD workflows
 5. **Integration Tests:** Có thể thêm e2e tests vào workflows
 
