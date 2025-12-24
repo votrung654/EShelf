@@ -57,7 +57,7 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -var="public_key=" -input=false -no-color
+        run: terraform plan -var="public_key=dummy" -var="create_k3s_cluster=false" -input=false -no-color
         continue-on-error: true
 
   terraform-apply:
