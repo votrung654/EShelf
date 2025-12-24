@@ -27,13 +27,9 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 // Rate limiting
 app.use(rateLimiter);
 
-// ==========================================
 // Proxy Configuration
-// ==========================================
 
 // Auth Service
-// Note: http-proxy-middleware automatically forwards the raw request body
-// We don't need to parse it here, let the proxy forward the stream
 app.use('/api/auth', createProxyMiddleware({
   target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
   changeOrigin: true,
@@ -65,8 +61,7 @@ app.use(['/api/books', '/api/genres'], createProxyMiddleware({
   changeOrigin: true,
 }));
 
-// User Service - separate routes for reliability
-// Default to localhost for local development, can be overridden via env var
+// User Service
 const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3003';
 
 const userServiceProxyOptions = {
@@ -100,7 +95,6 @@ app.use('/api/reading-history', createProxyMiddleware(userServiceProxyOptions));
 app.use('/api/collections', createProxyMiddleware(userServiceProxyOptions));
 
 // ML Service
-// Note: ML Service uses root paths, so pathRewrite removes /api/ml prefix
 app.use('/api/ml', createProxyMiddleware({
   target: process.env.ML_SERVICE_URL || 'http://ml-service:8000',
   changeOrigin: true,
@@ -108,8 +102,6 @@ app.use('/api/ml', createProxyMiddleware({
     '^/api/ml': '',
   },
 }));
-
-// ==========================================
 
 // Health Check
 app.get('/health', (req, res) => {

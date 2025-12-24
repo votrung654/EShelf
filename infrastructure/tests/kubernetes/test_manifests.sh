@@ -14,12 +14,11 @@ echo "=========================================="
 
 # Check if kubectl is installed
 if ! command -v kubectl &> /dev/null; then
-    echo "⚠️  kubectl not found. Installing kubeval..."
-    # Try to install kubeval for validation
+    echo "WARN: kubectl not found. Installing kubeval..."
     if command -v kubeval &> /dev/null; then
-        echo "✅ kubeval found"
+        echo "PASS: kubeval found"
     else
-        echo "⚠️  kubeval not found. Skipping detailed validation."
+        echo "WARN: kubeval not found. Skipping detailed validation."
     fi
 fi
 
@@ -27,23 +26,23 @@ fi
 echo ""
 echo "Test 1: Validate Base Manifests"
 if [ -f "$K8S_DIR/base/kustomization.yaml" ]; then
-    echo "✅ Base kustomization.yaml exists"
+    echo "PASS: Base kustomization.yaml exists"
     
     # Check if kustomize is available
     if command -v kustomize &> /dev/null; then
         cd "$K8S_DIR/base"
         kustomize build . > /dev/null
         if [ $? -eq 0 ]; then
-            echo "✅ Base kustomization build successful"
+            echo "PASS: Base kustomization build successful"
         else
-            echo "❌ Base kustomization build failed"
+            echo "FAIL: Base kustomization build failed"
             exit 1
         fi
     else
-        echo "⚠️  kustomize not found. Skipping build test."
+        echo "WARN: kustomize not found. Skipping build test."
     fi
 else
-    echo "❌ Base kustomization.yaml not found"
+    echo "FAIL: Base kustomization.yaml not found"
     exit 1
 fi
 
@@ -51,20 +50,20 @@ fi
 echo ""
 echo "Test 2: Validate Staging Overlay"
 if [ -f "$K8S_DIR/overlays/staging/kustomization.yaml" ]; then
-    echo "✅ Staging kustomization.yaml exists"
+    echo "PASS: Staging kustomization.yaml exists"
     
     if command -v kustomize &> /dev/null; then
         cd "$K8S_DIR/overlays/staging"
         kustomize build . > /dev/null
         if [ $? -eq 0 ]; then
-            echo "✅ Staging kustomization build successful"
+            echo "PASS: Staging kustomization build successful"
         else
-            echo "❌ Staging kustomization build failed"
+            echo "FAIL: Staging kustomization build failed"
             exit 1
         fi
     fi
 else
-    echo "❌ Staging kustomization.yaml not found"
+    echo "FAIL: Staging kustomization.yaml not found"
     exit 1
 fi
 
@@ -72,20 +71,20 @@ fi
 echo ""
 echo "Test 3: Validate Prod Overlay"
 if [ -f "$K8S_DIR/overlays/prod/kustomization.yaml" ]; then
-    echo "✅ Prod kustomization.yaml exists"
+    echo "PASS: Prod kustomization.yaml exists"
     
     if command -v kustomize &> /dev/null; then
         cd "$K8S_DIR/overlays/prod"
         kustomize build . > /dev/null
         if [ $? -eq 0 ]; then
-            echo "✅ Prod kustomization build successful"
+            echo "PASS: Prod kustomization build successful"
         else
-            echo "❌ Prod kustomization build failed"
+            echo "FAIL: Prod kustomization build failed"
             exit 1
         fi
     fi
 else
-    echo "❌ Prod kustomization.yaml not found"
+    echo "FAIL: Prod kustomization.yaml not found"
     exit 1
 fi
 
@@ -95,15 +94,15 @@ echo "Test 4: Check Service Deployments"
 SERVICES=("api-gateway" "auth-service" "book-service" "user-service" "ml-service")
 for service in "${SERVICES[@]}"; do
     if [ -f "$K8S_DIR/base/${service}-deployment.yaml" ]; then
-        echo "✅ ${service} deployment exists"
+        echo "PASS: ${service} deployment exists"
     else
-        echo "❌ ${service} deployment not found"
+        echo "FAIL: ${service} deployment not found"
         exit 1
     fi
 done
 
 echo ""
 echo "=========================================="
-echo "✅ All Kubernetes manifest tests passed!"
+echo "PASS: All Kubernetes manifest tests passed!"
 echo "=========================================="
 

@@ -1,9 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// ==========================================
-// 1. GET ALL BOOKS (Trang chủ)
-// ==========================================
+// GET ALL BOOKS
 exports.getAllBooks = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -15,7 +13,6 @@ exports.getAllBooks = async (req, res) => {
     const orderBy = {};
     orderBy[sortBy] = order;
 
-    // Lấy dữ liệu và đếm tổng song song
     const [books, total] = await Promise.all([
       prisma.book.findMany({
         skip,
@@ -30,7 +27,6 @@ exports.getAllBooks = async (req, res) => {
       prisma.book.count()
     ]);
 
-    // Format dữ liệu trả về cho Frontend
     res.json({
       success: true,
       data: {
@@ -52,9 +48,7 @@ exports.getAllBooks = async (req, res) => {
   }
 };
 
-// ==========================================
-// 2. SEARCH BOOKS (Tìm kiếm nâng cao)
-// ==========================================
+// SEARCH BOOKS
 exports.searchBooks = async (req, res) => {
   try {
     const { q, genre, year, fromYear, toYear, language, page = 1, limit = 20 } = req.query;
@@ -62,10 +56,8 @@ exports.searchBooks = async (req, res) => {
     
     console.log('Search request params:', { q, genre, year, fromYear, toYear, language, page, limit });
     
-    // Xây dựng điều kiện lọc (Where clause)
     const where = {};
 
-    // Tìm kiếm text (Title, ISBN, Description)
     if (q) {
       where.OR = [
         { title: { contains: q, mode: 'insensitive' } },
@@ -74,7 +66,6 @@ exports.searchBooks = async (req, res) => {
       ];
     }
 
-    // Lọc theo thể loại
     if (genre && genre !== 'all') {
       where.genres = {
         some: {
@@ -88,7 +79,6 @@ exports.searchBooks = async (req, res) => {
       };
     }
 
-    // Lọc theo năm (hỗ trợ cả year cụ thể và range fromYear-toYear)
     if (year) {
       where.publishedYear = parseInt(year);
     } else if (fromYear || toYear) {
@@ -105,14 +95,12 @@ exports.searchBooks = async (req, res) => {
       }
     }
     
-    // Lọc theo ngôn ngữ
     if (language) {
       where.language = { equals: language, mode: 'insensitive' };
     }
 
     console.log('Where clause:', JSON.stringify(where, null, 2));
 
-    // Nếu không có bất kỳ điều kiện nào, trả về mảng rỗng thay vì tất cả sách
     const hasAnyFilter = q || (genre && genre !== 'all') || year || fromYear || toYear || language;
     if (!hasAnyFilter) {
       console.log('No filters provided, returning empty array');
@@ -166,9 +154,7 @@ exports.searchBooks = async (req, res) => {
   }
 };
 
-// ==========================================
-// 3. GET BOOK BY ID (Chi tiết sách)
-// ==========================================
+// GET BOOK BY ID
 exports.getBookById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -195,7 +181,6 @@ exports.getBookById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Không tìm thấy sách' });
     }
 
-    // Tăng lượt xem (View Count)
     await prisma.book.update({
       where: { id: book.id },
       data: { viewCount: { increment: 1 } }
@@ -206,7 +191,6 @@ exports.getBookById = async (req, res) => {
       data: {
         ...book,
         genres: book.genres.map(bg => bg.genre.name),
-        // Trả về viewCount mới
         viewCount: book.viewCount + 1 
       }
     });
@@ -216,9 +200,7 @@ exports.getBookById = async (req, res) => {
   }
 };
 
-// ==========================================
-// 4. GET FEATURED & POPULAR (Gợi ý)
-// ==========================================
+// GET FEATURED & POPULAR
 exports.getFeaturedBooks = async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 10;
@@ -258,9 +240,7 @@ exports.getPopularBooks = async (req, res) => {
   }
 };
 
-// ==========================================
-// 5. REVIEWS & RATINGS
-// ==========================================
+// REVIEWS & RATINGS
 exports.getBookReviews = async (req, res) => {
   try {
     const { id } = req.params;
@@ -306,7 +286,6 @@ exports.addReview = async (req, res) => {
       include: { user: { select: { id: true, username: true, name: true } } }
     });
 
-    // Tính toán lại điểm trung bình cho sách
     const agg = await prisma.review.aggregate({
       where: { bookId: book.id },
       _avg: { rating: true },
@@ -328,15 +307,12 @@ exports.addReview = async (req, res) => {
   }
 };
 
-// ==========================================
-// 6. ADMIN OPERATIONS (Create, Update, Delete)
-// ==========================================
+// ADMIN OPERATIONS
 exports.createBook = async (req, res) => {
   try {
     const bookData = req.body;
     const genreIds = bookData.genreIds || [];
     
-    // Xử lý authors (đảm bảo là mảng)
     let authors = bookData.authors || bookData.author || [];
     if (!Array.isArray(authors)) authors = [authors];
 
@@ -370,7 +346,6 @@ exports.updateBook = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
     
-    // Xử lý genre update phức tạp hơn (xóa cũ thêm mới), tạm thời chỉ update thông tin cơ bản
     const updatedBook = await prisma.book.update({
       where: { id },
       data: {

@@ -176,17 +176,17 @@ Redis & 6379 & Redis 7 \\
 \vspace{0.3cm}
 \textbf{Giải pháp:}
 \begin{itemize}
-    \item Path-filter trong CI/CD pipeline
+    \item Path-filter trong GitHub Actions workflow
     \item Chỉ build service có thay đổi
     \item Tối ưu thời gian build và tài nguyên
 \end{itemize}
 
 \vspace{0.3cm}
-\textbf{Ví dụ:}
-\begin{lstlisting}[language=bash]
-if [ -d "backend/services/auth-service" ]; then
-    build auth-service
-fi
+\textbf{Implementation:}
+\begin{lstlisting}[language=yaml]
+paths:
+  - 'backend/services/api-gateway/**'
+  - '.github/workflows/smart-build.yml'
 \end{lstlisting}
 \end{frame}
 
@@ -267,13 +267,13 @@ fi
 \end{itemize}
 
 \vspace{0.3cm}
-\textbf{MLOps Pipeline (Planned):}
+\textbf{MLOps Pipeline:}
 \begin{enumerate}
-    \item Model training CI
+    \item Model training CI (GitHub Actions)
     \item Model registry (MLflow)
-    \item Model packaging
-    \item Canary deploy
-    \item Monitoring metrics \& data drift
+    \item Model packaging và deployment
+    \item Canary deployment với rollback
+    \item Monitoring metrics
 \end{enumerate}
 \end{frame}
 
@@ -325,19 +325,25 @@ fi
 \frametitle{Đã hoàn thành}
 \textbf{Application:}
 \begin{itemize}
-    \item ✅ 4 Microservices hoạt động ổn định
-    \item ✅ Frontend đầy đủ tính năng
-    \item ✅ ML Service với 3 APIs
-    \item ✅ Admin panel hoàn chỉnh
+    \item 4 Microservices hoạt động ổn định
+    \item Frontend đầy đủ tính năng
+    \item ML Service với 3 APIs
+    \item Admin panel hoàn chỉnh
 \end{itemize}
 
 \vspace{0.3cm}
 \textbf{DevOps:}
 \begin{itemize}
-    \item ✅ Docker Compose setup
-    \item ✅ CI/CD pipeline cơ bản
-    \item ✅ Terraform infrastructure
-    \item ✅ Kubernetes manifests
+    \item Docker Compose setup
+    \item CI/CD pipeline với Smart Build (path-filter)
+    \item Terraform infrastructure (3-node K3s cluster)
+    \item Kubernetes manifests với Kustomize overlays
+    \item ArgoCD GitOps deployment
+    \item Harbor container registry
+    \item Monitoring stack (Prometheus, Grafana, Loki)
+    \item Ansible playbooks cho K3s
+    \item Automated rollback
+    \item MLOps workflows (MLflow, model training/deployment)
 \end{itemize}
 \end{frame}
 
@@ -345,19 +351,15 @@ fi
 \frametitle{Đang phát triển}
 \textbf{CI/CD:}
 \begin{itemize}
-    \item 🔄 Smart Build với path-filter
-    \item 🔄 ArgoCD Image Updater
-    \item 🔄 Blue/Green deployment
-    \item 🔄 Automated rollback
+    \item Blue/Green deployment
+    \item ArgoCD Image Updater tự động
 \end{itemize}
 
 \vspace{0.3cm}
 \textbf{Infrastructure:}
 \begin{itemize}
-    \item 🔄 AWS deployment (EKS/K3s)
-    \item 🔄 Harbor/Artifactory setup
-    \item 🔄 Complete monitoring stack
-    \item 🔄 Ansible scripts
+    \item AWS deployment thực tế (EKS/K3s)
+    \item Load testing và performance tuning
 \end{itemize}
 \end{frame}
 

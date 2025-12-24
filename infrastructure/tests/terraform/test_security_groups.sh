@@ -18,9 +18,9 @@ cd "$TERRAFORM_DIR"
 echo ""
 echo "Test 1: Check Security Groups Module"
 if [ -f "../../modules/security-groups/main.tf" ]; then
-    echo "✅ Security Groups module exists"
+    echo "PASS: Security Groups module exists"
 else
-    echo "❌ Security Groups module not found"
+    echo "FAIL: Security Groups module not found"
     exit 1
 fi
 
@@ -31,9 +31,9 @@ cd ../../modules/security-groups
 terraform init -backend=false
 terraform validate
 if [ $? -eq 0 ]; then
-    echo "✅ Security Groups module validation successful"
+    echo "PASS: Security Groups module validation successful"
 else
-    echo "❌ Security Groups module validation failed"
+    echo "FAIL: Security Groups module validation failed"
     exit 1
 fi
 
@@ -41,13 +41,13 @@ fi
 echo ""
 echo "Test 3: Check K3s Security Groups"
 if grep -q "k3s_master" main.tf && grep -q "k3s_worker" main.tf; then
-    echo "✅ K3s security groups defined"
+    echo "PASS: K3s security groups defined"
 else
-    echo "⚠️  K3s security groups not found (may be conditional)"
+    echo "WARN: K3s security groups not found (may be conditional)"
 fi
 
 echo ""
 echo "=========================================="
-echo "✅ All Security Groups tests passed!"
+echo "PASS: All Security Groups tests passed!"
 echo "=========================================="
 

@@ -99,7 +99,7 @@ Frontend (React) → API Gateway → Microservices → Database
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-org/EShelf.git
+git clone https://github.com/votrung654/EShelf.git
 cd EShelf
 
 # 2. Start Backend
@@ -136,21 +136,22 @@ npm run dev
 ### CI/CD Pipeline
 
 - **GitHub Actions:**
-  - Smart Build (chỉ build service thay đổi)
+  - Smart Build (chỉ build service thay đổi với path-filter)
   - Frontend/Backend CI (lint, test, build)
-  - Security scanning (Trivy, Checkov)
+  - Security scanning (Trivy, Checkov, SonarQube)
   - Terraform plan/apply
   - MLOps workflows (model training, deployment)
-  - Deploy với rollback
+  - Automated rollback
+  - Update Kubernetes manifests với image tags
 
 - **AWS CodePipeline:** Automated deployment pipeline
 
 ### Kubernetes Deployment
 
-- **K3s Cluster:** 3 nodes (1 master + 2 workers)
+- **K3s Cluster:** 3 nodes (1 master + 2 workers) trên AWS
 - **Kustomize:** Staging/Prod overlays
-- **ArgoCD:** GitOps deployment
-- **Harbor:** Container registry
+- **ArgoCD:** GitOps deployment với Application manifests
+- **Harbor:** Container registry với Helm
 
 ### Monitoring Stack
 
@@ -161,8 +162,8 @@ npm run dev
 
 ### MLOps
 
-- **MLflow:** Model tracking và registry
-- **Model Training:** Automated training pipeline
+- **MLflow:** Model tracking và registry (deployment ready)
+- **Model Training:** Automated training pipeline (GitHub Actions)
 - **Model Deployment:** Canary deployment với rollback
 
 ### Security

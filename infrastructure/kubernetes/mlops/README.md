@@ -32,7 +32,7 @@ MLflow cần S3-compatible storage cho artifacts. Bạn có thể dùng:
 - AWS S3
 - MinIO (self-hosted)
 
-Cập nhật `mlflow-deployment.yaml` với S3 credentials của bạn.
+Cập nhật `mlflow-deployment.yaml` với S3 credentials.
 
 ### 3. Thiết lập GitHub Secrets
 

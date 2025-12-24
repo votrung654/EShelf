@@ -18,9 +18,9 @@ cd "$TERRAFORM_DIR"
 echo ""
 echo "Test 1: Check EC2 Module"
 if [ -f "../../modules/ec2/main.tf" ]; then
-    echo "✅ EC2 module exists"
+    echo "PASS: EC2 module exists"
 else
-    echo "❌ EC2 module not found"
+    echo "FAIL: EC2 module not found"
     exit 1
 fi
 
@@ -31,9 +31,9 @@ cd ../../modules/ec2
 terraform init -backend=false
 terraform validate
 if [ $? -eq 0 ]; then
-    echo "✅ EC2 module validation successful"
+    echo "PASS: EC2 module validation successful"
 else
-    echo "❌ EC2 module validation failed"
+    echo "FAIL: EC2 module validation failed"
     exit 1
 fi
 
@@ -44,14 +44,14 @@ cd "$TERRAFORM_DIR"
 terraform init -backend=false
 terraform validate -var="public_key=dummy" -var="create_k3s_cluster=true"
 if [ $? -eq 0 ]; then
-    echo "✅ EC2 variables validation successful"
+    echo "PASS: EC2 variables validation successful"
 else
-    echo "❌ EC2 variables validation failed"
+    echo "FAIL: EC2 variables validation failed"
     exit 1
 fi
 
 echo ""
 echo "=========================================="
-echo "✅ All EC2 tests passed!"
+echo "PASS: All EC2 tests passed!"
 echo "=========================================="
 

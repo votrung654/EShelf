@@ -45,10 +45,10 @@ echo "Test Results: $PASSED passed, $FAILED failed"
 echo "=========================================="
 
 if [ $FAILED -eq 0 ]; then
-    echo "✅ All tests passed!"
+    echo "PASS: All tests passed!"
     exit 0
 else
-    echo "❌ Some tests failed"
+    echo "FAIL: Some tests failed"
     exit 1
 fi
 

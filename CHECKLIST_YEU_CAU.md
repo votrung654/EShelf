@@ -6,11 +6,11 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 
 ---
 
-## Lab 1: Infrastructure as Code ✅
+## Lab 1: Infrastructure as Code
 
 ### Yêu cầu: Terraform và CloudFormation
 
-#### VPC (3 điểm) ✅
+#### VPC (3 điểm)
 - [x] **Subnets:** Public Subnet (kết nối Internet Gateway) và Private Subnet (dùng NAT Gateway)
   - File: `infrastructure/terraform/modules/vpc/main.tf`
   - Có public_subnets và private_subnets
@@ -21,7 +21,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `infrastructure/terraform/modules/security-groups/main.tf`
   - Có security groups cho bastion, app, K3s
 
-#### Route Tables (2 điểm) ✅
+#### Route Tables (2 điểm)
 - [x] **Public Route Table:** Định tuyến qua Internet Gateway
   - File: `infrastructure/terraform/modules/vpc/main.tf`
   - Có `aws_route_table.public`
@@ -29,12 +29,12 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `infrastructure/terraform/modules/vpc/main.tf`
   - Có `aws_route_table.private`
 
-#### NAT Gateway (1 điểm) ✅
+#### NAT Gateway (1 điểm)
 - [x] Cho phép Private Subnet kết nối Internet
   - File: `infrastructure/terraform/modules/vpc/main.tf`
   - Có `aws_nat_gateway` và `aws_eip`
 
-#### EC2 (2 điểm) ✅
+#### EC2 (2 điểm)
 - [x] **Instances trong Public và Private Subnet:**
   - File: `infrastructure/terraform/modules/ec2/main.tf`
   - Có bastion (public), app instances (private), K3s cluster (master public, workers private)
@@ -43,7 +43,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 - [x] **Private instance truy cập từ Public instance:**
   - Security groups cho phép SSH từ bastion
 
-#### Security Groups (2 điểm) ✅
+#### Security Groups (2 điểm)
 - [x] **Public EC2 Security Group:** Chỉ SSH từ IP cụ thể
   - File: `infrastructure/terraform/modules/security-groups/main.tf`
   - Có `allowed_ssh_cidrs` variable
@@ -51,7 +51,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `infrastructure/terraform/modules/security-groups/main.tf`
   - Có rule cho phép từ bastion security group
 
-#### Yêu cầu Module (2 điểm) ✅
+#### Yêu cầu Module (2 điểm)
 - [x] **Các dịch vụ viết dưới dạng module:**
   - `infrastructure/terraform/modules/vpc/` - VPC module
   - `infrastructure/terraform/modules/ec2/` - EC2 module
@@ -60,21 +60,21 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - Security groups đầy đủ
   - Không hardcode IPs (dùng variables)
 
-#### Test Cases ✅
+#### Test Cases
 - [x] Có test cases trong `infrastructure/tests/terraform/`
 - [x] PowerShell test script: `scripts/test-devops.ps1` (25/25 tests pass)
 
-#### CloudFormation ✅
+#### CloudFormation
 - [x] **VPC Stack:** `infrastructure/cloudformation/templates/vpc-stack.yaml`
 - [x] **EC2 Stack:** `infrastructure/cloudformation/templates/ec2-stack.yaml`
 
-**Kết luận Lab 1:** ✅ **ĐẠT** - Có đủ Terraform modules và CloudFormation templates
+**Kết luận Lab 1:** ĐẠT - Có đủ Terraform modules và CloudFormation templates
 
 ---
 
-## Lab 2: CI/CD Automation ✅
+## Lab 2: CI/CD Automation
 
-### 1. Terraform + GitHub Actions (3 điểm) ✅
+### 1. Terraform + GitHub Actions (3 điểm)
 
 - [x] **Terraform triển khai AWS services:**
   - Có đủ VPC, Route Tables, NAT Gateway, EC2, Security Groups
@@ -85,7 +85,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `.github/workflows/terraform.yml`
   - Có bước Checkov security scanning
 
-### 2. CloudFormation + CodePipeline (3 điểm) ✅
+### 2. CloudFormation + CodePipeline (3 điểm)
 
 - [x] **CloudFormation triển khai AWS services:**
   - Có VPC và EC2 stacks
@@ -94,9 +94,8 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - Có Source, Build, Deploy stages
 - [x] **CodeBuild với cfn-lint:**
   - CodePipeline stack có CodeBuild projects
-  - (Có thể thêm cfn-lint vào buildspec)
 
-### 3. Jenkins + Microservices CI/CD (4 điểm) ✅
+### 3. Jenkins + Microservices CI/CD (4 điểm)
 
 - [x] **Jenkins pipeline:**
   - File: `jenkins/Jenkinsfile`
@@ -110,20 +109,20 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 - [x] **Deploy lên Docker/Kubernetes:**
   - Jenkinsfile có Docker build và K8s deploy
 
-**Kết luận Lab 2:** ✅ **ĐẠT** - Có đủ GitHub Actions, CodePipeline, và Jenkins
+**Kết luận Lab 2:** ĐẠT - Có đủ GitHub Actions, CodePipeline, và Jenkins
 
 ---
 
-## Đồ án: Advanced CI/CD & MLOps ✅
+## Đồ án: Advanced CI/CD & MLOps
 
-### CI/CD Pipeline ✅
+### CI/CD Pipeline
 
-#### Source → Pull Request ✅
+#### Source → Pull Request
 - [x] **CI (PR checks):**
   - File: `.github/workflows/ci.yml`
   - Có lint, unit test, typecheck, static analysis, build artifact
 
-#### Image Build & Scan ✅
+#### Image Build & Scan
 - [x] **Multi-stage Docker build:**
   - Có Dockerfiles cho tất cả services
 - [x] **Container scan (Trivy):**
@@ -132,14 +131,14 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 - [x] **Push to registry:**
   - Workflows có push to registry (cần config secrets)
 
-#### Infrastructure as Code ✅
+#### Infrastructure as Code
 - [x] **Terraform plan/apply (staging):**
   - File: `.github/workflows/terraform.yml`
 - [x] **Cloud resources:**
   - Terraform modules có VPC, EC2, Security Groups
   - (Có thể thêm RDS, ECR, EKS nếu cần)
 
-#### Config Management ✅
+#### Config Management
 - [x] **Ansible:**
   - File: `infrastructure/ansible/playbooks/`
   - Có setup K3s cluster
@@ -147,13 +146,13 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `infrastructure/kubernetes/overlays/`
   - Có staging và prod overlays
 
-#### Deploy Staging ✅
+#### Deploy Staging
 - [x] **Deploy image to staging (K8s):**
   - File: `infrastructure/kubernetes/overlays/staging/`
 - [x] **Integration/e2e tests:**
   - (Có thể thêm vào workflow)
 
-#### Promote to Prod ✅
+#### Promote to Prod
 - [x] **Manual approval:**
   - File: `.github/workflows/deploy-rollback.yml`
   - Có workflow_dispatch với manual trigger
@@ -164,7 +163,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `.github/workflows/deploy-rollback.yml`
   - Có health checks
 
-#### Observability & Alerts ✅
+#### Observability & Alerts
 - [x] **Prometheus:**
   - File: `infrastructure/kubernetes/monitoring/prometheus/`
 - [x] **Grafana:**
@@ -174,7 +173,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 - [x] **Alertmanager:**
   - File: `infrastructure/kubernetes/monitoring/alertmanager/`
 
-#### GitOps ✅
+#### GitOps
 - [x] **ArgoCD:**
   - File: `infrastructure/kubernetes/argocd/applications/`
   - Có applications cho tất cả services
@@ -182,14 +181,14 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `.github/workflows/update-manifests.yml`
   - Có logic update manifests
 
-#### Rollback / Post-deploy ✅
+#### Rollback / Post-deploy
 - [x] **Automatic rollback:**
   - File: `.github/workflows/deploy-rollback.yml`
   - Có rollback logic khi health checks fail
 - [x] **Retention & audit logs:**
   - (Có thể thêm vào monitoring)
 
-#### MLOps ✅
+#### MLOps
 - [x] **Model training CI:**
   - File: `.github/workflows/mlops-model-training.yml`
 - [x] **Model registry (MLflow):**
@@ -203,13 +202,13 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - MLflow có tracking
   - Prometheus có thể scrape ML service metrics
 
-**Kết luận Đồ án:** ✅ **ĐẠT** - Có đủ các thành phần yêu cầu
+**Kết luận Đồ án:** ĐẠT - Có đủ các thành phần yêu cầu
 
 ---
 
-## Góp ý Giảng Viên ✅
+## Góp ý Giảng Viên
 
-### 1. Kiến trúc Hạ tầng ✅
+### 1. Kiến trúc Hạ tầng
 
 - [x] **3 Node Cluster (1 Master, 2 Worker):**
   - Terraform có `k3s_worker_count = 2`
@@ -223,7 +222,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `infrastructure/ansible/playbooks/k3s-master.yml`
   - File: `infrastructure/ansible/playbooks/k3s-worker.yml`
 
-### 2. CI/CD & Pipeline ✅
+### 2. CI/CD & Pipeline
 
 - [x] **Smart Build (path-filter):**
   - File: `.github/workflows/smart-build.yml`
@@ -249,12 +248,12 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - PR: chỉ lint, test, build (không deploy)
   - Push to main: build image, push, deploy
 
-### 3. Monitoring ✅
+### 3. Monitoring
 
 - [x] **Prometheus + Grafana + Loki:**
   - Có đầy đủ manifests trong `infrastructure/kubernetes/monitoring/`
 
-### 4. Báo cáo & Demo ✅
+### 4. Báo cáo & Demo
 
 - [x] **Architecture Diagram:**
   - File: `docs/ARCHITECTURE.md`
@@ -265,13 +264,13 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
   - File: `DEMO_GUIDE.md`
   - Tất cả bằng tiếng Việt
 
-**Kết luận Góp ý Giảng Viên:** ✅ **ĐẠT** - Đáp ứng đủ yêu cầu
+**Kết luận Góp ý Giảng Viên:** ĐẠT - Đáp ứng đủ yêu cầu
 
 ---
 
 ## Tổng Kết
 
-### Điểm Mạnh ✅
+### Điểm Mạnh
 
 1. **Code Structure:** Rõ ràng, có modules, không hardcode
 2. **CI/CD:** Đầy đủ workflows, có Smart Build, GitOps
@@ -282,7 +281,7 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 7. **Documentation:** Đầy đủ, đã dịch sang tiếng Việt
 8. **Tests:** Có test scripts, 25/25 tests pass
 
-### Cần Lưu Ý ⚠️
+### Cần Lưu Ý
 
 1. **AWS Credentials:** Cần cấu hình để chạy Terraform/CloudFormation thực tế
 2. **Kubernetes Cluster:** Cần setup K3s cluster để deploy thực tế
@@ -292,12 +291,12 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 
 ### Kết Luận Cuối Cùng
 
-✅ **PROJECT ĐÁP ỨNG ĐẦY ĐỦ YÊU CẦU**
+**PROJECT ĐÁP ỨNG ĐẦY ĐỦ YÊU CẦU**
 
-- Lab 1: ✅ Đạt
-- Lab 2: ✅ Đạt  
-- Đồ án: ✅ Đạt
-- Góp ý giảng viên: ✅ Đạt
+- Lab 1: Đạt
+- Lab 2: Đạt  
+- Đồ án: Đạt
+- Góp ý giảng viên: Đạt
 
 Tất cả code đã được tạo, cấu trúc rõ ràng, documentation đầy đủ. Sẵn sàng để demo và nộp bài.
 
@@ -311,5 +310,4 @@ Tất cả code đã được tạo, cấu trúc rõ ràng, documentation đầy
 4. **Chuẩn bị demo:** Theo `DEMO_GUIDE.md`
 5. **Quay video:** Theo kịch bản trong `DEMO_GUIDE.md`
 
-Chúc bạn thành công! 🎉
 

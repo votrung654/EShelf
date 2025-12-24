@@ -33,7 +33,7 @@
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/your-org/eShelf.git
+git clone https://github.com/votrung654/EShelf.git
 cd eShelf
 ```
 
@@ -139,7 +139,7 @@ aws cloudformation create-stack \
 
 #### Cập nhật Inventory
 
-Sửa `infrastructure/ansible/inventory/dev.ini`:
+Cập nhật `infrastructure/ansible/inventory/dev.ini`:
 ```ini
 [master]
 k3s-master ansible_host=<MASTER_IP> ansible_user=ec2-user
@@ -207,8 +207,8 @@ aws cloudformation create-stack \
   --stack-name eshelf-codepipeline \
   --template-body file://codepipeline-stack.yaml \
   --parameters \
-    ParameterKey=GitHubOwner,ParameterValue=your-org \
-    ParameterKey=GitHubRepo,ParameterValue=eShelf \
+    ParameterKey=GitHubOwner,ParameterValue=votrung654 \
+    ParameterKey=GitHubRepo,ParameterValue=EShelf \
     ParameterKey=GitHubToken,ParameterValue=ghp_xxx \
   --capabilities CAPABILITY_NAMED_IAM
 ```
@@ -239,7 +239,7 @@ kubectl port-forward svc/grafana -n monitoring 3000:3000
 
 ### 3. Cấu hình cảnh báo
 
-Sửa `infrastructure/kubernetes/monitoring/prometheus/alerts.yaml` và apply:
+Cập nhật `infrastructure/kubernetes/monitoring/prometheus/alerts.yaml` và apply:
 ```bash
 kubectl apply -f infrastructure/kubernetes/monitoring/prometheus/alerts.yaml
 ```

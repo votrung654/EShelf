@@ -14,7 +14,7 @@ ansible-galaxy collection install -r requirements.yml
 
 ### 1. Cập nhật Inventory
 
-Sửa `inventory/dev.ini` (hoặc staging/prod) và thay thế:
+Cập nhật `inventory/dev.ini` (hoặc staging/prod) và thay thế:
 - `CHANGE_ME_MASTER_IP` bằng IP của master node
 - `CHANGE_ME_WORKER1_IP` bằng IP của worker 1
 - `CHANGE_ME_WORKER2_IP` bằng IP của worker 2

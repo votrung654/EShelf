@@ -615,7 +615,6 @@ const BookDetail = () => {
               <MessageSquareMore />{" "}
               {`${comments.length} comment${comments.length !== 1 && "s"}`}
             </p>
-            {/* Replace Heart button với version mới */}
             <button
               onClick={handleToggleFavoriteReal}
               disabled={isFavoriteLoading || !isAuthenticated}

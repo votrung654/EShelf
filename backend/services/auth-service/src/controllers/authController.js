@@ -5,8 +5,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-// In-memory storage for refresh tokens
-// Note: Use Redis in production
+// In-memory storage for refresh tokens (use Redis in production)
 const refreshTokens = new Map();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
