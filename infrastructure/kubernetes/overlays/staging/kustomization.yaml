@@ -58,7 +58,7 @@ configMapGenerator:
       - NODE_ENV=staging
       - LOG_LEVEL=info
 
-commonLabels:
+labels:
   environment: staging
   app.kubernetes.io/name: eshelf
 
