@@ -113,7 +113,12 @@ app.use('/api/ml', createProxyMiddleware({
 
 // Health Check
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', service: 'API Gateway' });
+  res.status(200).json({ 
+    status: 'OK', 
+    service: 'API Gateway',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Error handling
@@ -124,6 +129,7 @@ if (require.main === module) {
   const server = app.listen(PORT, () => {
     console.log(`API Gateway running on port ${PORT}`);
     console.log(`Routes configured: /api/auth, /api/books, /api/genres, /api/users, /api/favorites, /api/collections, /api/reading-history, /api/ml`);
+    console.log(`Health check available at: /health`);
   });
 }
 
