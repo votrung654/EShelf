@@ -7,14 +7,14 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=3000
-      - AUTH_SERVICE_URL=http://auth-service:3001
-      - BOOK_SERVICE_URL=http://book-service:3002
-      - USER_SERVICE_URL=http://user-service:3003
-      - ML_SERVICE_URL=http://ml-service:8000
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://auth-service:3001}
+      - BOOK_SERVICE_URL=${BOOK_SERVICE_URL:-http://book-service:3002}
+      - USER_SERVICE_URL=${USER_SERVICE_URL:-http://user-service:3003}
+      - ML_SERVICE_URL=${ML_SERVICE_URL:-http://ml-service:8000}
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       - auth-service
       - book-service
@@ -29,12 +29,13 @@ services:
     ports:
       - "3001:3001"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=3001
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret}
-      # 👇 ĐÃ THÊM: Kết nối DB (host là 'postgres', không phải localhost)
-      - DATABASE_URL=postgresql://eshelf:eshelf123@postgres:5432/eshelf?schema=public
+      # 👇 Kết nối DB sử dụng biến môi trường
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-eshelf}:${POSTGRES_PASSWORD:-eshelf123}@postgres:5432/${POSTGRES_DB:-eshelf}?schema=public}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       - postgres
     networks:
@@ -46,11 +47,12 @@ services:
     ports:
       - "3002:3002"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=3002
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      # 👇 ĐÃ THÊM: Kết nối DB
-      - DATABASE_URL=postgresql://eshelf:eshelf123@postgres:5432/eshelf?schema=public
+      # 👇 Kết nối DB sử dụng biến môi trường
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-eshelf}:${POSTGRES_PASSWORD:-eshelf123}@postgres:5432/${POSTGRES_DB:-eshelf}?schema=public}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     volumes:
       - ../src/data:/app/data:ro
     depends_on:
@@ -66,11 +68,12 @@ services:
     ports:
       - "3003:3003"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=${NODE_ENV:-development}
       - PORT=3003
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      # 👇 ĐÃ THÊM: Kết nối DB
-      - DATABASE_URL=postgresql://eshelf:eshelf123@postgres:5432/eshelf?schema=public
+      # 👇 Kết nối DB sử dụng biến môi trường
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-eshelf}:${POSTGRES_PASSWORD:-eshelf123}@postgres:5432/${POSTGRES_DB:-eshelf}?schema=public}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
       - postgres
     networks:
@@ -92,9 +95,9 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=eshelf
+      - POSTGRES_USER=${POSTGRES_USER:-eshelf}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-eshelf123}
-      - POSTGRES_DB=eshelf
+      - POSTGRES_DB=${POSTGRES_DB:-eshelf}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
