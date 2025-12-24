@@ -192,9 +192,9 @@ npm run dev
 
 | MSSV | Họ Tên | Phân công |
 |------|--------|-----------|
-| 22521571 | Võ Đình Trung | Backend, ML Service, Database |
-| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps |
-| 22521587 | Trương Phúc Trường | Infrastructure, CI/CD, Testing |
+| 22521571 | Võ Đình Trung | Frontend, Backend, ML Service, Database, CI/CD, Testing|
+| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps, Database |
+| 22521587 | Trương Phúc Trường | Backend, Infrastructure, CI/CD, Testing |
 
 ---
 
@@ -202,8 +202,3 @@ npm run dev
 
 MIT License - For educational purposes only.
 
----
-
-## Contact
-
-**Lê Văn Vũ** - [GitHub](https://github.com/levanvux)
