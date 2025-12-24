@@ -58,4 +58,3 @@ output "ansible_inventory_info" {
     worker2_ip = module.ec2.k3s_worker_private_ips[1]
   } : null
 }
-

@@ -95,4 +95,3 @@ module "ec2" {
   k3s_worker_sg_id         = var.create_k3s_cluster ? module.security_groups.k3s_worker_sg_id : ""
   tags                     = local.common_tags
 }
-
