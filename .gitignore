@@ -22,3 +22,15 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Sensitive credentials and configuration files
+aws-academy-credentials.txt
+*.credentials
+*.secrets
+.env
+.env.local
+.env.*.local
+terraform.tfvars
+*.pem
+*.key
+!*.example.*
