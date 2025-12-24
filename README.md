@@ -136,7 +136,10 @@ npm run dev
 ### CI/CD Pipeline
 
 - **GitHub Actions:**
-  - Smart Build (chỉ build service thay đổi với path-filter)
+  - **Smart Build System:** Chỉ build khi có code changes thực sự (tự động bỏ qua comment/whitespace changes)
+    - Path-based filtering để detect service changes
+    - Code change analysis để phân biệt comment vs code
+    - Tiết kiệm thời gian và tài nguyên CI/CD
   - Frontend/Backend CI (lint, test, build)
   - Security scanning (Trivy, Checkov, SonarQube)
   - Terraform plan/apply
@@ -178,6 +181,7 @@ npm run dev
 
 - [Setup Guide](docs/SETUP_GUIDE.md) - Hướng dẫn setup chi tiết
 - [Architecture](docs/ARCHITECTURE.md) - Kiến trúc hệ thống
+- [Demo Guide](DEMO_GUIDE.md) - Hướng dẫn demo project
 - [Ansible README](infrastructure/ansible/README.md) - K3s setup với Ansible
 - [ArgoCD README](infrastructure/kubernetes/argocd/README.md) - GitOps deployment
 - [Harbor README](infrastructure/kubernetes/harbor/README.md) - Container registry
@@ -186,15 +190,44 @@ npm run dev
 - [Yêu cầu môn học](yeucaumonhoc.md) - Lab 1, Lab 2, Đồ án
 - [Góp ý giảng viên](gopygiangvien.md) - Feedback và yêu cầu
 
+### Scripts tiện ích
+
+- `scripts/get-github-logs.ps1` - Lấy logs từ GitHub Actions (PowerShell)
+- `scripts/get-github-logs.sh` - Lấy logs từ GitHub Actions (Bash)
+- `scripts/check-service-changes.sh` - Smart build: Kiểm tra service có code changes thực sự
+- `scripts/check-code-changes.sh` - Smart build: Kiểm tra file có code changes thực sự
+- `scripts/test-changes.ps1` - Test script để validate tất cả thay đổi
+- `scripts/test-smart-build.ps1` - Test smart build logic
+
+**Sử dụng:**
+```bash
+# PowerShell
+.\scripts\get-github-logs.ps1
+
+# Bash
+chmod +x scripts/get-github-logs.sh
+./scripts/get-github-logs.sh
+
+# Test smart build locally
+./scripts/check-service-changes.sh backend/services/api-gateway HEAD~1
+
+# Với GitHub CLI trực tiếp
+gh run list --status failure
+gh run view <RUN_ID> --log
+gh run view <RUN_ID> --log --job <JOB_ID>
+```
+
+**Xem thêm:** [Smart Build Documentation](scripts/README-SMART-BUILD.md)
+
 ---
 
 ## Team
 
 | MSSV | Họ Tên | Phân công |
 |------|--------|-----------|
-| 22521571 | Võ Đình Trung | Frontend, Backend, ML Service, Database, CI/CD, Testing|
-| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps, Database |
-| 22521587 | Trương Phúc Trường | Backend, Infrastructure, CI/CD, Testing |
+| 22521571 | Võ Đình Trung | Frontend, Backend, ML Service, Database, CI/CD, Testing, Report|
+| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps, Database, Testing, Video demo |
+| 22521587 | Trương Phúc Trường | Backend, Infrastructure, CI/CD, Testing, Slide |
 
 ---
 
