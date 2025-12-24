@@ -1,6 +1,6 @@
 # eShelf - Enterprise eBook Platform
 
-[![CI/CD Pipeline](https://github.com/levanvux/eShelf/workflows/CI/badge.svg)](https://github.com/levanvux/eShelf/actions)
+[![CI/CD Pipeline](https://github.com/votrung654/eShelf/workflows/CI/badge.svg)](https://github.com/votrung654/eShelf/actions)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
