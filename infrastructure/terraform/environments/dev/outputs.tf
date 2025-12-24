@@ -1,4 +1,4 @@
-# Development Environment Outputs
+﻿# Development Environment Outputs
 
 output "vpc_id" {
   description = "VPC ID"
