@@ -1,6 +1,6 @@
-# eShelf - Enterprise eBook Platform
+# EShelf - Enterprise eBook Platform
 
-[![CI/CD Pipeline](https://github.com/votrung654/eShelf/workflows/CI/badge.svg)](https://github.com/votrung654/eShelf/actions)
+[![CI/CD Pipeline](https://github.com/votrung654/EShelf/actions/workflows/ci.yml/badge.svg)](https://github.com/votrung654/EShelf/actions)
 [![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC)](https://www.terraform.io/)
 [![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5)](https://kubernetes.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -25,7 +25,7 @@
 
 ## Giới thiệu
 
-**eShelf** là nền tảng đọc sách điện tử được xây dựng với kiến trúc microservices, áp dụng quy trình DevOps và MLOps.
+**EShelf** là nền tảng đọc sách điện tử được xây dựng với kiến trúc microservices, áp dụng quy trình DevOps và MLOps.
 
 ### Tính năng chính
 
@@ -99,8 +99,8 @@ Frontend (React) → API Gateway → Microservices → Database
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/your-org/eShelf.git
-cd eShelf
+git clone https://github.com/your-org/EShelf.git
+cd EShelf
 
 # 2. Start Backend
 cd backend
@@ -120,8 +120,8 @@ npm run dev
 
 ### Default Accounts
 
-- **Admin:** `admin@eshelf.com` / `Admin123!`
-- **User:** `user@eshelf.com` / `User123!`
+- **Admin:** `admin@EShelf.com` / `Admin123!`
+- **User:** `user@EShelf.com` / `User123!`
 
 ---
 

@@ -6,6 +6,8 @@ on:
     types:
       - completed
     branches: [main]
+  # Also allow manual trigger for testing
+  workflow_dispatch:
 
 jobs:
   update-manifests:
@@ -26,13 +28,13 @@ jobs:
         run: |
           IMAGE_TAG="${{ github.sha }}"
           
-          # Update staging manifests
+          # Update base deployment (Kustomize sẽ override trong overlays)
           yq eval ".spec.template.spec.containers[0].image = \"eshelf/api-gateway:${IMAGE_TAG}\"" \
-            -i infrastructure/kubernetes/overlays/staging/api-gateway-deployment.yaml
+            -i infrastructure/kubernetes/base/api-gateway-deployment.yaml
           
-          # Update production manifests (if needed)
-          # yq eval ".spec.template.spec.containers[0].image = \"eshelf/api-gateway:${IMAGE_TAG}\"" \
-          #   -i infrastructure/kubernetes/overlays/prod/api-gateway-deployment.yaml
+          # Update other services if they were built
+          # Note: Kustomize overlays use patches, so we update base manifests
+          # The overlays will apply patches on top of these base images
       
       - name: Commit changes
         run: |

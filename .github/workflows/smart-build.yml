@@ -3,8 +3,16 @@ name: Smart Build Pipeline
 on:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - 'README.md'
+      - '*.md'
+      - 'docs/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - '*.md'
+      - 'docs/**'
 
 jobs:
   # Detect changes
