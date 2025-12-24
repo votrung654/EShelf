@@ -249,11 +249,18 @@ kubectl apply -f infrastructure/kubernetes/monitoring/prometheus/alerts.yaml
 ### 1. Cài đặt Harbor
 
 ```bash
+kubectl create namespace harbor
 helm repo add harbor https://helm.goharbor.io
 helm install harbor harbor/harbor -f infrastructure/kubernetes/harbor/harbor-values.yaml -n harbor
 ```
 
-### 2. Truy cập Harbor
+### 2. Đợi Harbor sẵn sàng
+
+```bash
+kubectl wait --for=condition=available --timeout=600s deployment/harbor-core -n harbor
+```
+
+### 3. Truy cập Harbor
 
 ```bash
 kubectl port-forward svc/harbor-core -n harbor 8080:80
@@ -261,11 +268,207 @@ kubectl port-forward svc/harbor-core -n harbor 8080:80
 # Mặc định: admin/Harbor12345
 ```
 
-### 3. Tạo Project
+### 4. Tạo Project
 
 1. Đăng nhập Harbor UI
 2. Tạo project: `eshelf`
-3. Cập nhật CI/CD để sử dụng Harbor registry
+3. Cấu hình permissions cho CI/CD
+
+### 5. Setup Credentials
+
+```bash
+# Sử dụng script
+./scripts/setup-harbor-credentials.sh
+
+# Hoặc manual
+kubectl create secret docker-registry harbor-registry-secret \
+  --docker-server=harbor.yourdomain.com \
+  --docker-username=admin \
+  --docker-password=Harbor12345 \
+  --namespace=default
+```
+
+### 6. Cấu hình GitHub Secrets
+
+Thêm vào GitHub repository secrets:
+- `HARBOR_REGISTRY`: harbor.yourdomain.com
+- `HARBOR_USERNAME`: admin
+- `HARBOR_PASSWORD`: Harbor12345
+
+## Thiết lập Jenkins
+
+### 1. Deploy Jenkins
+
+```bash
+kubectl apply -f infrastructure/kubernetes/jenkins/namespace.yaml
+kubectl apply -f infrastructure/kubernetes/jenkins/deployment.yaml
+kubectl apply -f infrastructure/kubernetes/jenkins/service.yaml
+kubectl apply -f infrastructure/kubernetes/jenkins/ingress.yaml
+```
+
+### 2. Đợi Jenkins sẵn sàng
+
+```bash
+kubectl wait --for=condition=available --timeout=300s deployment/jenkins -n jenkins
+```
+
+### 3. Lấy mật khẩu admin
+
+```bash
+kubectl exec -n jenkins deployment/jenkins -- cat /var/jenkins_home/secrets/initialAdminPassword
+```
+
+### 4. Truy cập Jenkins
+
+```bash
+kubectl port-forward svc/jenkins -n jenkins 8080:8080
+# Truy cập: http://localhost:8080
+# Username: admin
+# Password: (từ bước 3)
+```
+
+### 5. Cấu hình Pipeline
+
+1. Install recommended plugins
+2. Create new pipeline job
+3. Point to `jenkins/Jenkinsfile` trong repository
+4. Configure SonarQube và Harbor credentials
+
+## Thiết lập SonarQube
+
+### 1. Deploy SonarQube
+
+```bash
+kubectl apply -f infrastructure/kubernetes/sonarqube/namespace.yaml
+kubectl apply -f infrastructure/kubernetes/sonarqube/deployment.yaml
+kubectl apply -f infrastructure/kubernetes/sonarqube/service.yaml
+kubectl apply -f infrastructure/kubernetes/sonarqube/ingress.yaml
+```
+
+### 2. Đợi SonarQube sẵn sàng
+
+```bash
+kubectl wait --for=condition=available --timeout=600s deployment/sonarqube -n sonarqube
+```
+
+### 3. Truy cập SonarQube
+
+```bash
+kubectl port-forward svc/sonarqube -n sonarqube 9000:9000
+# Truy cập: http://localhost:9000
+# Default: admin/admin (đổi password lần đầu)
+```
+
+### 4. Generate Token
+
+1. User → My Account → Security
+2. Generate Token
+3. Copy token để dùng trong GitHub Actions
+
+### 5. Cấu hình GitHub Secrets
+
+Thêm vào GitHub repository secrets:
+- `SONAR_TOKEN`: (token từ bước 4)
+- `SONAR_HOST_URL`: http://sonarqube:9000 (hoặc external URL)
+
+## Thiết lập Terraform Environments
+
+### 1. Cấu hình S3 Backend (cho remote state)
+
+```bash
+# Tạo S3 bucket và DynamoDB table
+aws s3 mb s3://eshelf-terraform-state
+aws dynamodb create-table \
+  --table-name eshelf-terraform-locks \
+  --attribute-definitions AttributeName=LockID,AttributeType=S \
+  --key-schema AttributeName=LockID,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+
+### 2. Setup Dev Environment
+
+```bash
+cd infrastructure/terraform/environments/dev
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars với values của bạn
+terraform init
+terraform plan
+```
+
+### 3. Setup Staging Environment
+
+```bash
+cd ../staging
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars
+terraform init
+terraform plan
+```
+
+### 4. Setup Prod Environment
+
+```bash
+cd ../prod
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars
+terraform init
+terraform plan
+```
+
+### 5. Apply Infrastructure
+
+```bash
+# Dev
+cd dev
+terraform apply
+
+# Staging (sau khi dev tested)
+cd ../staging
+terraform apply
+
+# Prod (sau khi staging tested)
+cd ../prod
+terraform apply
+```
+
+## Cấu hình ArgoCD Image Updater
+
+### 1. Install ArgoCD Image Updater
+
+```bash
+kubectl apply -f infrastructure/kubernetes/argocd/image-updater-config.yaml
+```
+
+### 2. Verify Applications có Annotations
+
+```bash
+kubectl get application -n argocd -o yaml | grep argocd-image-updater
+```
+
+### 3. Test Image Update
+
+1. Push new image to Harbor
+2. ArgoCD Image Updater sẽ detect
+3. Update manifest trong Git repo
+4. ArgoCD sync changes
+
+## AWS Resource Management
+
+### Tắt Resources (để tránh tính tiền)
+
+```bash
+./scripts/aws-shutdown.sh dev
+# Hoặc
+./scripts/aws-shutdown.sh staging
+```
+
+### Bật Resources
+
+```bash
+./scripts/aws-startup.sh dev
+# Hoặc
+./scripts/aws-startup.sh staging
+```
 
 ## Xử lý sự cố
 

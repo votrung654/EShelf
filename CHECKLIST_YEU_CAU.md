@@ -111,6 +111,21 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 
 **Kết luận Lab 2:** ĐẠT - Có đủ GitHub Actions, CodePipeline, và Jenkins
 
+### 4. PR-only Pipeline và SonarQube (Bổ sung)
+
+- [x] **PR-only pipeline:**
+  - File: `.github/workflows/pr-only.yml`
+  - Chỉ chạy test, scan, lint khi tạo PR
+  - Không deploy trong PR
+- [x] **SonarQube integration:**
+  - File: `.github/workflows/sonarqube-scan.yml`
+  - SonarQube deployment: `infrastructure/kubernetes/sonarqube/`
+  - Code quality scanning trong PR
+- [x] **Harbor migration:**
+  - Tất cả workflows sử dụng Harbor thay DockerHub
+  - Harbor deployment: `infrastructure/kubernetes/harbor/`
+  - Credentials setup script: `scripts/setup-harbor-credentials.sh`
+
 ---
 
 ## Đồ án: Advanced CI/CD & MLOps
@@ -126,31 +141,41 @@ Tài liệu này kiểm tra xem code của project eShelf đã đáp ứng đủ
 - [x] **Multi-stage Docker build:**
   - Có Dockerfiles cho tất cả services
 - [x] **Container scan (Trivy):**
-  - File: `.github/workflows/ci.yml`
+  - File: `.github/workflows/ci.yml`, `.github/workflows/pr-only.yml`
   - Có Trivy scanning
-- [x] **Push to registry:**
-  - Workflows có push to registry (cần config secrets)
+- [x] **Push to Harbor registry:**
+  - Tất cả workflows push to Harbor (thay DockerHub)
+  - Harbor deployment: `infrastructure/kubernetes/harbor/`
+  - Credentials setup: `scripts/setup-harbor-credentials.sh`
 
 #### Infrastructure as Code
-- [x] **Terraform plan/apply (staging):**
+- [x] **Terraform plan/apply (3 environments):**
   - File: `.github/workflows/terraform.yml`
+  - Environments: dev, staging, prod
+  - S3 backend cho remote state
 - [x] **Cloud resources:**
   - Terraform modules có VPC, EC2, Security Groups
-  - (Có thể thêm RDS, ECR, EKS nếu cần)
+  - 3-node K3s cluster (1 master + 2 workers)
+  - Auto shutdown/startup scripts: `scripts/aws-shutdown.sh`, `scripts/aws-startup.sh`
 
 #### Config Management
 - [x] **Ansible:**
   - File: `infrastructure/ansible/playbooks/`
-  - Có setup K3s cluster
+  - Có setup K3s cluster cho 3 environments
 - [x] **Kustomize:**
   - File: `infrastructure/kubernetes/overlays/`
-  - Có staging và prod overlays
+  - Có dev, staging và prod overlays
+  - Environment-specific configurations
 
 #### Deploy Staging
 - [x] **Deploy image to staging (K8s):**
   - File: `infrastructure/kubernetes/overlays/staging/`
+  - Images từ Harbor registry
 - [x] **Integration/e2e tests:**
   - (Có thể thêm vào workflow)
+- [x] **ArgoCD Image Updater:**
+  - Annotations trong ArgoCD applications
+  - Tự động update image tags khi có image mới
 
 #### Promote to Prod
 - [x] **Manual approval:**

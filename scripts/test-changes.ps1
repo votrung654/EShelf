@@ -15,7 +15,11 @@ Write-Host "[Test 1] Validating YAML syntax..." -ForegroundColor Yellow
 $yamlFiles = @(
     ".github/workflows/smart-build.yml",
     ".github/workflows/ci.yml",
-    ".github/workflows/mlops-model-training.yml"
+    ".github/workflows/pr-only.yml",
+    ".github/workflows/sonarqube-scan.yml",
+    ".github/workflows/mlops-model-training.yml",
+    "infrastructure/kubernetes/jenkins/deployment.yaml",
+    "infrastructure/kubernetes/sonarqube/deployment.yaml"
 )
 
 foreach ($file in $yamlFiles) {
@@ -107,6 +111,87 @@ if ($smartBuildContent -match 'check-service-changes.sh') {
     $success += "Smart build script integrated"
 } else {
     $errors += "Smart build script not integrated"
+}
+
+# Test 8: Check PR-only pipeline
+Write-Host "[Test 8] Checking PR-only pipeline..." -ForegroundColor Yellow
+if (Test-Path ".github/workflows/pr-only.yml") {
+    $prOnlyContent = Get-Content ".github/workflows/pr-only.yml" -Raw
+    if ($prOnlyContent -match 'pull_request:' -and $prOnlyContent -notmatch 'docker build') {
+        $success += "PR-only pipeline configured (no deploy in PR)"
+    } else {
+        $warnings += "PR-only pipeline may have deploy steps"
+    }
+} else {
+    $errors += "PR-only pipeline not found"
+}
+
+# Test 9: Check Harbor migration
+Write-Host "[Test 9] Checking Harbor migration..." -ForegroundColor Yellow
+$workflowFiles = Get-ChildItem -Path ".github/workflows" -Filter "*.yml"
+$harborRefs = 0
+$dockerHubRefs = 0
+foreach ($file in $workflowFiles) {
+    $content = Get-Content $file.FullName -Raw
+    if ($content -match 'HARBOR_REGISTRY' -or $content -match 'harbor\.yourdomain\.com') {
+        $harborRefs++
+    }
+    if ($content -match 'docker\.io/eshelf' -and $content -notmatch 'registry-1\.docker\.io') {
+        $dockerHubRefs++
+    }
+}
+if ($harborRefs -gt 0) {
+    $success += "Harbor registry configured in workflows"
+}
+if ($dockerHubRefs -gt 0) {
+    $warnings += "Found DockerHub references (should use Harbor)"
+}
+
+# Test 10: Check ArgoCD Image Updater
+Write-Host "[Test 10] Checking ArgoCD Image Updater..." -ForegroundColor Yellow
+$appFiles = Get-ChildItem -Path "infrastructure/kubernetes/argocd/applications" -Filter "*.yaml"
+$annotatedApps = 0
+foreach ($app in $appFiles) {
+    $content = Get-Content $app.FullName -Raw
+    if ($content -match 'argocd-image-updater\.argoproj\.io/image-list') {
+        $annotatedApps++
+    }
+}
+if ($annotatedApps -ge 4) {
+    $success += "ArgoCD Image Updater annotations added ($annotatedApps apps)"
+} else {
+    $warnings += "Some ArgoCD apps missing Image Updater annotations"
+}
+
+# Test 11: Check Terraform environments
+Write-Host "[Test 11] Checking Terraform environments..." -ForegroundColor Yellow
+$terraformEnvs = @("dev", "staging", "prod")
+$validEnvs = 0
+foreach ($env in $terraformEnvs) {
+    $envPath = "infrastructure/terraform/environments/$env"
+    if (Test-Path $envPath) {
+        if ((Test-Path "$envPath/main.tf") -and (Test-Path "$envPath/variables.tf")) {
+            $validEnvs++
+        }
+    }
+}
+if ($validEnvs -eq 3) {
+    $success += "All 3 Terraform environments configured"
+} else {
+    $errors += "Missing Terraform environments (found $validEnvs/3)"
+}
+
+# Test 12: Check Jenkins and SonarQube deployments
+Write-Host "[Test 12] Checking Jenkins and SonarQube..." -ForegroundColor Yellow
+if (Test-Path "infrastructure/kubernetes/jenkins/deployment.yaml") {
+    $success += "Jenkins deployment manifest exists"
+} else {
+    $errors += "Jenkins deployment manifest not found"
+}
+if (Test-Path "infrastructure/kubernetes/sonarqube/deployment.yaml") {
+    $success += "SonarQube deployment manifest exists"
+} else {
+    $errors += "SonarQube deployment manifest not found"
 }
 
 # Test 7: Verify no runtime code changes

@@ -52,13 +52,13 @@ Hệ thống Smart Build được thiết kế để **chỉ build khi có thay 
 
 ## Các Trường Hợp Được Xử Lý
 
-### ✅ Sẽ Build:
+### Sẽ Build:
 - Thay đổi code thực sự (function, class, logic)
 - Thay đổi config files (package.json, Dockerfile, .env, etc.)
 - Thay đổi dependencies
 - Thay đổi build scripts
 
-### ❌ Không Build:
+### Không Build:
 - Chỉ thay đổi comment
 - Chỉ thay đổi whitespace
 - Chỉ format code (không thay đổi logic)
