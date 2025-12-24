@@ -58,7 +58,7 @@ configMapGenerator:
       - NODE_ENV=production
       - LOG_LEVEL=warn
 
-labels:
+commonLabels:
   environment: production
   app.kubernetes.io/name: eshelf
 
