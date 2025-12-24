@@ -59,4 +59,3 @@ output "ansible_inventory_info" {
   } : null
 }
 
-

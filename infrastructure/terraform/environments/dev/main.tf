@@ -96,4 +96,3 @@ module "ec2" {
   tags                     = local.common_tags
 }
 
-
