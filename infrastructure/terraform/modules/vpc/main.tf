@@ -52,6 +52,7 @@ resource "aws_subnet" "private" {
 }
 
 # Elastic IP for NAT Gateway
+# checkov:skip=CKV2_AWS_19:EIP is attached to NAT Gateway, not EC2 instance
 resource "aws_eip" "nat" {
   count  = var.enable_nat_gateway ? 1 : 0
   domain = "vpc"

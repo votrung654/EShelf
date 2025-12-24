@@ -1,6 +1,7 @@
 # Security Groups Module for eShelf
 
 # Bastion Security Group
+# checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
 resource "aws_security_group" "bastion" {
   name        = "${var.project}-bastion-sg-${var.environment}"
   description = "Security group for bastion host"
@@ -30,6 +31,7 @@ resource "aws_security_group" "bastion" {
 }
 
 # Application Security Group
+# checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
 resource "aws_security_group" "app" {
   name        = "${var.project}-app-sg-${var.environment}"
   description = "Security group for application servers"
@@ -77,6 +79,7 @@ resource "aws_security_group" "app" {
 }
 
 # ALB Security Group
+# checkov:skip=CKV2_AWS_5:Security group is attached to ALB via module references
 resource "aws_security_group" "alb" {
   name        = "${var.project}-alb-sg-${var.environment}"
   description = "Security group for Application Load Balancer"
