@@ -134,9 +134,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
-        working-directory: backend
         run: |
-          docker build -f services/${{ matrix.service }}/Dockerfile -t eshelf/${{ matrix.service }}:${{ github.sha }} .
+          if [ "${{ matrix.service }}" = "user-service" ]; then
+            # user-service uses shared database/prisma, build from backend/
+            docker build -f backend/services/user-service/Dockerfile -t eshelf/${{ matrix.service }}:${{ github.sha }} backend/
+          else
+            # Other services have prisma in service directory, build from service directory
+            docker build -t eshelf/${{ matrix.service }}:${{ github.sha }} backend/services/${{ matrix.service }}/
+          fi
           docker tag eshelf/${{ matrix.service }}:${{ github.sha }} eshelf/${{ matrix.service }}:latest
 
       - name: Upload Docker image artifact

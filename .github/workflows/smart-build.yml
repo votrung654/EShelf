@@ -197,9 +197,8 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Build Docker image
-        working-directory: backend/services/api-gateway
         run: |
-          docker build -t eshelf/api-gateway:${{ github.sha }} .
+          docker build -t eshelf/api-gateway:${{ github.sha }} backend/services/api-gateway/
           docker tag eshelf/api-gateway:${{ github.sha }} eshelf/api-gateway:latest
 
   # Build Auth Service (only if changed)
@@ -211,9 +210,8 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Build Docker image
-        working-directory: backend/services/auth-service
         run: |
-          docker build -t eshelf/auth-service:${{ github.sha }} .
+          docker build -t eshelf/auth-service:${{ github.sha }} backend/services/auth-service/
           docker tag eshelf/auth-service:${{ github.sha }} eshelf/auth-service:latest
 
   # Build Book Service (only if changed)
@@ -225,9 +223,8 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Build Docker image
-        working-directory: backend/services/book-service
         run: |
-          docker build -t eshelf/book-service:${{ github.sha }} .
+          docker build -t eshelf/book-service:${{ github.sha }} backend/services/book-service/
           docker tag eshelf/book-service:${{ github.sha }} eshelf/book-service:latest
 
   # Build User Service (only if changed)
@@ -242,9 +239,8 @@ jobs:
         uses: docker/setup-buildx-action@v3
       
       - name: Build Docker image
-        working-directory: backend
         run: |
-          docker build -f services/user-service/Dockerfile -t eshelf/user-service:${{ github.sha }} .
+          docker build -f backend/services/user-service/Dockerfile -t eshelf/user-service:${{ github.sha }} backend/
           docker tag eshelf/user-service:${{ github.sha }} eshelf/user-service:latest
         continue-on-error: false
 
@@ -257,9 +253,8 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Build Docker image
-        working-directory: backend/services/ml-service
         run: |
-          docker build -t eshelf/ml-service:${{ github.sha }} .
+          docker build -t eshelf/ml-service:${{ github.sha }} backend/services/ml-service/
           docker tag eshelf/ml-service:${{ github.sha }} eshelf/ml-service:latest
 
   # Summary
