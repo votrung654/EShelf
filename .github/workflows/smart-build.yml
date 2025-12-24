@@ -7,27 +7,42 @@ on:
       - 'README.md'
       - '*.md'
       - 'docs/**'
+      - '.gitignore'
+      - 'presentation.tex'
+      - 'CHECKLIST_YEU_CAU.md'
+      - 'DEMO_GUIDE.md'
+      - 'yeucaumonhoc.md'
+      - 'gopygiangvien.md'
   pull_request:
     branches: [main]
     paths-ignore:
       - 'README.md'
       - '*.md'
       - 'docs/**'
+      - '.gitignore'
+      - 'presentation.tex'
+      - 'CHECKLIST_YEU_CAU.md'
+      - 'DEMO_GUIDE.md'
+      - 'yeucaumonhoc.md'
+      - 'gopygiangvien.md'
 
 jobs:
   # Detect changes
   changes:
     runs-on: ubuntu-latest
     outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      api-gateway: ${{ steps.filter.outputs.api-gateway }}
-      auth-service: ${{ steps.filter.outputs.auth-service }}
-      book-service: ${{ steps.filter.outputs.book-service }}
-      user-service: ${{ steps.filter.outputs.user-service }}
-      ml-service: ${{ steps.filter.outputs.ml-service }}
+      frontend: ${{ steps.code-check.outputs.frontend }}
+      api-gateway: ${{ steps.code-check.outputs.api-gateway }}
+      auth-service: ${{ steps.code-check.outputs.auth-service }}
+      book-service: ${{ steps.code-check.outputs.book-service }}
+      user-service: ${{ steps.code-check.outputs.user-service }}
+      ml-service: ${{ steps.code-check.outputs.ml-service }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Cần 2 commits để so sánh
       
+      # Bước 1: Filter paths (nhanh hơn)
       - uses: dorny/paths-filter@v2
         id: filter
         with:
@@ -48,6 +63,45 @@ jobs:
               - 'backend/services/user-service/**'
             ml-service:
               - 'backend/services/ml-service/**'
+      
+      # Bước 2: Check xem có code changes thực sự không (bỏ qua comment)
+      - name: Check for real code changes
+        id: code-check
+        run: |
+          chmod +x scripts/check-service-changes.sh
+          
+          # Base ref để so sánh
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_REF="${{ github.event.pull_request.base.sha }}"
+          else
+            BASE_REF="HEAD~1"
+          fi
+          
+          # Check từng service
+          check_service() {
+            local service_paths="$1"
+            local service_name="$2"
+            
+            if [ "${{ steps.filter.outputs.$service_name }}" = "true" ]; then
+              if ./scripts/check-service-changes.sh $service_paths "$BASE_REF"; then
+                echo "$service_name=true" >> $GITHUB_OUTPUT
+                echo "✓ $service_name: Real code changes detected"
+              else
+                echo "$service_name=false" >> $GITHUB_OUTPUT
+                echo "✗ $service_name: Only comment/whitespace changes, skipping build"
+              fi
+            else
+              echo "$service_name=false" >> $GITHUB_OUTPUT
+              echo "○ $service_name: No file changes"
+            fi
+          }
+          
+          check_service "src public index.html package.json vite.config.js" "frontend"
+          check_service "backend/services/api-gateway" "api-gateway"
+          check_service "backend/services/auth-service" "auth-service"
+          check_service "backend/services/book-service" "book-service"
+          check_service "backend/services/user-service" "user-service"
+          check_service "backend/services/ml-service" "ml-service"
 
   # Build Frontend (only if changed)
   build-frontend:
@@ -71,7 +125,7 @@ jobs:
         continue-on-error: false
       
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
           path: dist/
