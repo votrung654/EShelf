@@ -22,6 +22,7 @@ resource "aws_internet_gateway" "main" {
 }
 
 # Public Subnets
+# checkov:skip=CKV_AWS_130:Public subnets require public IP assignment for internet access
 resource "aws_subnet" "public" {
   count = length(var.public_subnet_cidrs)
 

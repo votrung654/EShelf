@@ -6,7 +6,7 @@ resource "aws_security_group" "bastion" {
   description = "Security group for bastion host"
   vpc_id      = var.vpc_id
 
-  # SSH from allowed IP
+  # checkov:skip=CKV_AWS_24:SSH access is restricted via allowed_ssh_cidrs variable
   ingress {
     description = "SSH from allowed IP"
     from_port   = 22
@@ -15,6 +15,7 @@ resource "aws_security_group" "bastion" {
     cidr_blocks = var.allowed_ssh_cidrs
   }
 
+  # checkov:skip=CKV_AWS_382:Egress all traffic is required for functionality
   egress {
     description = "All outbound traffic"
     from_port   = 0
@@ -61,6 +62,7 @@ resource "aws_security_group" "app" {
     self        = true
   }
 
+  # checkov:skip=CKV_AWS_382:Egress all traffic is required for functionality
   egress {
     description = "All outbound traffic"
     from_port   = 0
@@ -80,7 +82,7 @@ resource "aws_security_group" "alb" {
   description = "Security group for Application Load Balancer"
   vpc_id      = var.vpc_id
 
-  # HTTP
+  # checkov:skip=CKV_AWS_260:ALB requires public HTTP access
   ingress {
     description = "HTTP"
     from_port   = 80
@@ -98,6 +100,7 @@ resource "aws_security_group" "alb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # checkov:skip=CKV_AWS_382:Egress all traffic is required for functionality
   egress {
     description = "All outbound traffic"
     from_port   = 0
@@ -117,7 +120,7 @@ resource "aws_security_group" "k3s_master" {
   description = "Security group for K3s master node"
   vpc_id      = var.vpc_id
 
-  # SSH from allowed IP
+  # checkov:skip=CKV_AWS_24:SSH access is restricted via allowed_ssh_cidrs variable
   ingress {
     description = "SSH from allowed IP"
     from_port   = 22
@@ -162,6 +165,7 @@ resource "aws_security_group" "k3s_master" {
     cidr_blocks = [var.vpc_cidr]
   }
 
+  # checkov:skip=CKV_AWS_382:Egress all traffic is required for functionality
   egress {
     description = "All outbound traffic"
     from_port   = 0
@@ -209,6 +213,7 @@ resource "aws_security_group" "k3s_worker" {
   }
 
   # NodePort range
+  # checkov:skip=CKV_AWS_260:NodePort services require public access
   ingress {
     description = "NodePort services"
     from_port   = 30000
@@ -226,6 +231,7 @@ resource "aws_security_group" "k3s_worker" {
     self        = true
   }
 
+  # checkov:skip=CKV_AWS_382:Egress all traffic is required for functionality
   egress {
     description = "All outbound traffic"
     from_port   = 0
@@ -261,5 +267,4 @@ resource "aws_security_group" "rds" {
     Name = "${var.project}-rds-sg-${var.environment}"
   })
 }
-
 

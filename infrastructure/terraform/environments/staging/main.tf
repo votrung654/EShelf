@@ -35,7 +35,7 @@ provider "aws" {
 locals {
   project     = "eshelf"
   environment = "staging"
-  
+
   common_tags = {
     Project     = local.project
     Environment = local.environment
