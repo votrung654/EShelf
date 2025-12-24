@@ -16,6 +16,7 @@
     "backend:logs": "cd backend && docker-compose logs -f"
   },
   "dependencies": {
+    "axios": "^1.7.7",
     "cssnano": "^7.0.6",
     "lucide-react": "^0.453.0",
     "react": "^18.3.1",
