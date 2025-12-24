@@ -191,8 +191,8 @@ npm run dev
 
 | MSSV | Họ Tên | Phân công |
 |------|--------|-----------|
-| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps |
 | 22521571 | Võ Đình Trung | Backend, ML Service, Database |
+| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps |
 | 22521587 | Trương Phúc Trường | Infrastructure, CI/CD, Testing |
 
 ---
