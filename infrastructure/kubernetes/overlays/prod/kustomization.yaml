@@ -30,12 +30,27 @@ images:
   - name: eshelf/ml-service
     newTag: latest
 
-patchesStrategicMerge:
-  - api-gateway-patch.yaml
-  - auth-service-patch.yaml
-  - book-service-patch.yaml
-  - user-service-patch.yaml
-  - ml-service-patch.yaml
+patches:
+  - path: api-gateway-patch.yaml
+    target:
+      kind: Deployment
+      name: api-gateway
+  - path: auth-service-patch.yaml
+    target:
+      kind: Deployment
+      name: auth-service
+  - path: book-service-patch.yaml
+    target:
+      kind: Deployment
+      name: book-service
+  - path: user-service-patch.yaml
+    target:
+      kind: Deployment
+      name: user-service
+  - path: ml-service-patch.yaml
+    target:
+      kind: Deployment
+      name: ml-service
 
 configMapGenerator:
   - name: app-config
