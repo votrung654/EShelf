@@ -77,31 +77,89 @@ jobs:
             BASE_REF="HEAD~1"
           fi
           
-          # Check từng service
-          check_service() {
-            local service_paths="$1"
-            local service_name="$2"
-            
-            if [ "${{ steps.filter.outputs.$service_name }}" = "true" ]; then
-              if ./scripts/check-service-changes.sh $service_paths "$BASE_REF"; then
-                echo "$service_name=true" >> $GITHUB_OUTPUT
-                echo "✓ $service_name: Real code changes detected"
-              else
-                echo "$service_name=false" >> $GITHUB_OUTPUT
-                echo "✗ $service_name: Only comment/whitespace changes, skipping build"
-              fi
+          # Check frontend
+          if [ "${{ steps.filter.outputs.frontend }}" = "true" ]; then
+            if ./scripts/check-service-changes.sh src public index.html package.json vite.config.js "$BASE_REF"; then
+              echo "frontend=true" >> $GITHUB_OUTPUT
+              echo "✓ frontend: Real code changes detected"
             else
-              echo "$service_name=false" >> $GITHUB_OUTPUT
-              echo "○ $service_name: No file changes"
+              echo "frontend=false" >> $GITHUB_OUTPUT
+              echo "✗ frontend: Only comment/whitespace changes, skipping build"
             fi
-          }
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+            echo "○ frontend: No file changes"
+          fi
           
-          check_service "src public index.html package.json vite.config.js" "frontend"
-          check_service "backend/services/api-gateway" "api-gateway"
-          check_service "backend/services/auth-service" "auth-service"
-          check_service "backend/services/book-service" "book-service"
-          check_service "backend/services/user-service" "user-service"
-          check_service "backend/services/ml-service" "ml-service"
+          # Check api-gateway
+          if [ "${{ steps.filter.outputs.api-gateway }}" = "true" ]; then
+            if ./scripts/check-service-changes.sh backend/services/api-gateway "$BASE_REF"; then
+              echo "api-gateway=true" >> $GITHUB_OUTPUT
+              echo "✓ api-gateway: Real code changes detected"
+            else
+              echo "api-gateway=false" >> $GITHUB_OUTPUT
+              echo "✗ api-gateway: Only comment/whitespace changes, skipping build"
+            fi
+          else
+            echo "api-gateway=false" >> $GITHUB_OUTPUT
+            echo "○ api-gateway: No file changes"
+          fi
+          
+          # Check auth-service
+          if [ "${{ steps.filter.outputs.auth-service }}" = "true" ]; then
+            if ./scripts/check-service-changes.sh backend/services/auth-service "$BASE_REF"; then
+              echo "auth-service=true" >> $GITHUB_OUTPUT
+              echo "✓ auth-service: Real code changes detected"
+            else
+              echo "auth-service=false" >> $GITHUB_OUTPUT
+              echo "✗ auth-service: Only comment/whitespace changes, skipping build"
+            fi
+          else
+            echo "auth-service=false" >> $GITHUB_OUTPUT
+            echo "○ auth-service: No file changes"
+          fi
+          
+          # Check book-service
+          if [ "${{ steps.filter.outputs.book-service }}" = "true" ]; then
+            if ./scripts/check-service-changes.sh backend/services/book-service "$BASE_REF"; then
+              echo "book-service=true" >> $GITHUB_OUTPUT
+              echo "✓ book-service: Real code changes detected"
+            else
+              echo "book-service=false" >> $GITHUB_OUTPUT
+              echo "✗ book-service: Only comment/whitespace changes, skipping build"
+            fi
+          else
+            echo "book-service=false" >> $GITHUB_OUTPUT
+            echo "○ book-service: No file changes"
+          fi
+          
+          # Check user-service
+          if [ "${{ steps.filter.outputs.user-service }}" = "true" ]; then
+            if ./scripts/check-service-changes.sh backend/services/user-service "$BASE_REF"; then
+              echo "user-service=true" >> $GITHUB_OUTPUT
+              echo "✓ user-service: Real code changes detected"
+            else
+              echo "user-service=false" >> $GITHUB_OUTPUT
+              echo "✗ user-service: Only comment/whitespace changes, skipping build"
+            fi
+          else
+            echo "user-service=false" >> $GITHUB_OUTPUT
+            echo "○ user-service: No file changes"
+          fi
+          
+          # Check ml-service
+          if [ "${{ steps.filter.outputs.ml-service }}" = "true" ]; then
+            if ./scripts/check-service-changes.sh backend/services/ml-service "$BASE_REF"; then
+              echo "ml-service=true" >> $GITHUB_OUTPUT
+              echo "✓ ml-service: Real code changes detected"
+            else
+              echo "ml-service=false" >> $GITHUB_OUTPUT
+              echo "✗ ml-service: Only comment/whitespace changes, skipping build"
+            fi
+          else
+            echo "ml-service=false" >> $GITHUB_OUTPUT
+            echo "○ ml-service: No file changes"
+          fi
 
   # Build Frontend (only if changed)
   build-frontend:
