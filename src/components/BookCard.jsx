@@ -17,9 +17,6 @@ const BookCard = ({ book, isMLRecommendation = false }) => {
       if (!isAuthenticated || !bookIdentifier) return;
       
       try {
-        // Gọi API kiểm tra xem sách này đã like chưa
-        // Lưu ý: Backend cần endpoint check, hoặc ta có thể check từ list favorites đã load ở trang cha
-        // Ở đây giả sử gọi API check riêng lẻ
         const result = await favoritesAPI.check(bookIdentifier);
         if (result.success) {
              setIsFavorite(result.data.isFavorite);

@@ -32,29 +32,48 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(rateLimiter);
 
 // ==========================================
-// 👇 CẤU HÌNH PROXY (ĐÃ BỔ SUNG ĐẦY ĐỦ)
+// Proxy Configuration
 // ==========================================
 
-// 1. Auth Service
+// Auth Service
 app.use('/api/auth', createProxyMiddleware({
   target: process.env.AUTH_SERVICE_URL || 'http://auth-service:3001',
   changeOrigin: true,
 }));
 
-// 2. Book Service (Xử lý cả Books và Genres)
-// 👉 BỔ SUNG ROUTE GENRES VÀO ĐÂY
+// Book Service (handles both Books and Genres)
 app.use(['/api/books', '/api/genres'], createProxyMiddleware({
   target: process.env.BOOK_SERVICE_URL || 'http://book-service:3002',
   changeOrigin: true,
-  // Không cần pathRewrite vì Book Service thường được thiết kế để nhận /api/books
 }));
 
-// 3. User Service - Tách riêng từng route để đảm bảo hoạt động đúng
+// User Service - separate routes for reliability
+// Default to localhost for local development, can be overridden via env var
+const userServiceUrl = process.env.USER_SERVICE_URL || 'http://localhost:3003';
+
 const userServiceProxyOptions = {
-  target: process.env.USER_SERVICE_URL || 'http://user-service:3003',
+  target: userServiceUrl,
   changeOrigin: true,
-  timeout: 30000, // 30 seconds timeout
+  timeout: 30000,
   proxyTimeout: 30000,
+  onError: (err, req, res) => {
+    console.error('Proxy error to user-service:', err.message);
+    console.error('Target URL:', userServiceUrl);
+    console.error('Request URL:', req.url);
+    if (!res.headersSent) {
+      res.status(503).json({
+        success: false,
+        message: 'User service temporarily unavailable',
+        error: err.message
+      });
+    }
+  },
+  onProxyReq: (proxyReq, req, res) => {
+    console.log(`[Proxy] ${req.method} ${req.url} -> ${userServiceUrl}${req.url}`);
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    console.log(`[Proxy] Response: ${proxyRes.statusCode} for ${req.url}`);
+  }
 };
 
 app.use('/api/users', createProxyMiddleware(userServiceProxyOptions));
@@ -62,14 +81,13 @@ app.use('/api/favorites', createProxyMiddleware(userServiceProxyOptions));
 app.use('/api/reading-history', createProxyMiddleware(userServiceProxyOptions));
 app.use('/api/collections', createProxyMiddleware(userServiceProxyOptions));
 
-// 4. ML Service (Gợi ý sách)
-// 👉 QUAN TRỌNG: ML Service Python thường dùng đường dẫn gốc (/recommendations)
-// Nên ta cần pathRewrite để cắt bỏ chữ /api/ml đi
+// ML Service
+// Note: ML Service uses root paths, so pathRewrite removes /api/ml prefix
 app.use('/api/ml', createProxyMiddleware({
   target: process.env.ML_SERVICE_URL || 'http://ml-service:8000',
   changeOrigin: true,
   pathRewrite: {
-    '^/api/ml': '', // Biến /api/ml/recommendations thành /recommendations
+    '^/api/ml': '',
   },
 }));
 
@@ -86,7 +104,7 @@ app.use(errorHandler);
 // Start server
 if (require.main === module) {
   const server = app.listen(PORT, () => {
-    console.log(`🚀 API Gateway running on port ${PORT}`);
+    console.log(`API Gateway running on port ${PORT}`);
     console.log(`Routes configured: /api/auth, /api/books, /api/genres, /api/users, /api/favorites, /api/collections, /api/reading-history, /api/ml`);
   });
 }

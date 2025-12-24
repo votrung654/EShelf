@@ -35,21 +35,20 @@ const TestConnection = () => {
       addLog(`Kết quả trả về: ${JSON.stringify(res)}`, 'success');
       
       if (res.data && res.data.accessToken) {
-        addLog('✅ LOGIN THÀNH CÔNG! Token đã nhận được.', 'success');
+        addLog('LOGIN THÀNH CÔNG! Token đã nhận được.', 'success');
       } else {
-        addLog('⚠️ Login chạy được nhưng không thấy Token?', 'warning');
+        addLog('Login chạy được nhưng không thấy Token?', 'warning');
       }
     } catch (err) {
-      // Log chi tiết lỗi trả về từ Backend
       const backendError = err.response?.data;
-      addLog(`❌ LOGIN THẤT BẠI: ${JSON.stringify(backendError || err.message)}`, 'error');
+      addLog(`LOGIN THẤT BẠI: ${JSON.stringify(backendError || err.message)}`, 'error');
       console.error(err);
     }
   };
 
   return (
     <div style={{ padding: 20, fontFamily: 'monospace', backgroundColor: '#1e1e1e', color: '#fff', minHeight: '100vh' }}>
-      <h1>🛠️ BẢNG ĐIỀU KHIỂN DEBUG</h1>
+      <h1>BẢNG ĐIỀU KHIỂN DEBUG</h1>
       
       <div style={{ marginBottom: 20 }}>
         <button 

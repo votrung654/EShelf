@@ -1,13 +1,13 @@
 #!/bin/bash
 
 # Infrastructure Test Cases for Lab 1
-echo "🧪 Running Infrastructure Tests..."
+echo "Running Infrastructure Tests..."
 echo "=================================="
 
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 PASS=0
 FAIL=0
@@ -55,10 +55,10 @@ echo "=================================="
 echo "Test Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"
 
 if [ $FAIL -eq 0 ]; then
-    echo -e "${GREEN}✅ All tests passed!${NC}"
+    echo -e "${GREEN}[OK] All tests passed!${NC}"
     exit 0
 else
-    echo -e "${RED}❌ Some tests failed${NC}"
+    echo -e "${RED}[FAIL] Some tests failed${NC}"
     exit 1
 fi
 

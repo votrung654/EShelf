@@ -42,7 +42,7 @@ app.use(errorHandler);
 // Start server
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`🔐 Auth Service running on port ${PORT}`);
+    console.log(`Auth Service running on port ${PORT}`);
   });
 }
 

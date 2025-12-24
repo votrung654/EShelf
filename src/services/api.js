@@ -92,6 +92,11 @@ export const booksAPI = {
   // Reviews
   getReviews: (bookId) => api.get(`/books/${bookId}/reviews`),
   addReview: (bookId, data) => api.post(`/books/${bookId}/reviews`, data),
+  
+  // Admin operations
+  create: (data) => api.post('/books', data),
+  update: (id, data) => api.put(`/books/${id}`, data),
+  delete: (id) => api.delete(`/books/${id}`),
 };
 
 export const genresAPI = {
@@ -139,6 +144,13 @@ export const mlAPI = {
   getRecommendations: (userId, nItems = 10) => api.post('/ml/recommendations', { user_id: userId, n_items: nItems }),
   getSimilarBooks: (bookId, nItems = 6) => api.post('/ml/similar', { book_id: bookId, n_items: nItems }),
   estimateReadingTime: (pages, genre) => api.post('/ml/estimate-time', { pages, genre }),
+};
+
+export const usersAPI = {
+  getAll: (page = 1, limit = 50, search = '') => api.get(`/users?page=${page}&limit=${limit}&search=${search}`),
+  getById: (id) => api.get(`/users/${id}`),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
 };
 
 export default api;

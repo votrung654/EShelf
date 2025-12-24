@@ -55,7 +55,6 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const authController = require('../controllers/authController');
 
-// Lưu ý: Đảm bảo file middleware tên là 'auth.js' hoặc sửa đường dẫn bên dưới thành 'validateToken.js' tùy file bạn tạo
 const { validateToken } = require('../middleware/auth'); 
 
 const router = express.Router();
@@ -107,7 +106,7 @@ router.post('/login', loginValidation, validate, authController.login);
 router.post('/refresh', authController.refreshToken);
 router.post('/logout', authController.logout);
 
-// 3. User Info (QUAN TRỌNG: Dùng để fix lỗi 401 ở frontend)
+// User Info
 router.get('/me', validateToken, authController.getCurrentUser);
 
 // 4. Password management

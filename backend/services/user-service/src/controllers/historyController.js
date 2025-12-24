@@ -85,8 +85,6 @@ exports.saveReadingProgress = async (req, res) => {
 
     const progressPercent = Math.min(Math.round((currentPage / totalPages) * 100), 100);
     const finishedAt = currentPage >= totalPages ? new Date() : null;
-
-    // Prisma không hỗ trợ composite key trong upsert với @@unique, cần dùng findFirst + create/update
     const existing = await prisma.readingHistory.findFirst({
       where: {
         userId,

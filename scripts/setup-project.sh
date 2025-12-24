@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Setup script for eShelf project
-echo "🚀 Setting up eShelf project..."
+echo "Setting up eShelf project..."
 echo "================================"
 
 # Colors
@@ -12,17 +12,17 @@ NC='\033[0m'
 # Check prerequisites
 echo -e "${BLUE}Checking prerequisites...${NC}"
 
-command -v node >/dev/null 2>&1 || { echo "❌ Node.js is required but not installed."; exit 1; }
-command -v npm >/dev/null 2>&1 || { echo "❌ npm is required but not installed."; exit 1; }
-command -v docker >/dev/null 2>&1 || { echo "⚠️  Docker not found. Backend will need manual setup."; }
+command -v node >/dev/null 2>&1 || { echo "[ERROR] Node.js is required but not installed."; exit 1; }
+command -v npm >/dev/null 2>&1 || { echo "[ERROR] npm is required but not installed."; exit 1; }
+command -v docker >/dev/null 2>&1 || { echo "[WARNING] Docker not found. Backend will need manual setup."; }
 
-echo -e "${GREEN}✅ Prerequisites OK${NC}"
+echo -e "${GREEN}[OK] Prerequisites OK${NC}"
 echo ""
 
 # Install frontend dependencies
 echo -e "${BLUE}Installing frontend dependencies...${NC}"
 npm install
-echo -e "${GREEN}✅ Frontend dependencies installed${NC}"
+echo -e "${GREEN}[OK] Frontend dependencies installed${NC}"
 echo ""
 
 # Setup backend services
@@ -45,7 +45,7 @@ for service in "${services[@]}"; do
     cd - > /dev/null
 done
 
-echo -e "${GREEN}✅ Backend services setup complete${NC}"
+echo -e "${GREEN}[OK] Backend services setup complete${NC}"
 echo ""
 
 # Setup ML service
@@ -54,9 +54,9 @@ if command -v python3 >/dev/null 2>&1; then
     cd backend/services/ml-service
     pip install -r requirements.txt > /dev/null 2>&1
     cd - > /dev/null
-    echo -e "${GREEN}✅ ML service setup complete${NC}"
+    echo -e "${GREEN}[OK] ML service setup complete${NC}"
 else
-    echo "⚠️  Python not found. ML service needs manual setup."
+    echo "[WARNING] Python not found. ML service needs manual setup."
 fi
 echo ""
 
@@ -71,12 +71,12 @@ if [ -f ".env.example" ]; then
     fi
 fi
 cd - > /dev/null
-echo -e "${GREEN}✅ Database setup complete${NC}"
+echo -e "${GREEN}[OK] Database setup complete${NC}"
 echo ""
 
 # Summary
 echo "================================"
-echo -e "${GREEN}✅ Setup complete!${NC}"
+echo -e "${GREEN}[OK] Setup complete!${NC}"
 echo ""
 echo "Next steps:"
 echo "  1. Start frontend:  npm run dev"

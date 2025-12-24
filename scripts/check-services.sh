@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Check all eShelf services health
-echo "🏥 Checking eShelf services health..."
+echo "Checking eShelf services health..."
 echo "====================================="
 
 # Colors
@@ -17,10 +17,10 @@ check_service() {
     echo -n "Checking $name... "
     
     if curl -s -f "$url" > /dev/null 2>&1; then
-        echo -e "${GREEN}✅ OK${NC}"
+        echo -e "${GREEN}[OK]${NC}"
         return 0
     else
-        echo -e "${RED}❌ DOWN${NC}"
+        echo -e "${RED}[DOWN]${NC}"
         return 1
     fi
 }

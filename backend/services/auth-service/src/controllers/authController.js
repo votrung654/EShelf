@@ -66,12 +66,11 @@ exports.register = async (req, res) => {
     // 3. Tạo user mới trong DB
     const newUser = await prisma.user.create({
       data: {
-        // id: uuidv4(), // Prisma thường tự sinh UUID nếu schema để @default(uuid()), nhưng để chắc chắn ta tự sinh
         email,
         username,
         name: name || username,
-        passwordHash, // Lưu ý: Tên cột này phải khớp với schema.prisma (passwordHash hoặc password)
-        role: 'USER', // Mặc định là USER
+        passwordHash,
+        role: 'USER',
         emailVerified: false
       }
     });
@@ -256,7 +255,6 @@ exports.forgotPassword = async (req, res) => {
 // Reset Password (Mock)
 exports.resetPassword = async (req, res) => {
   try {
-    // Logic reset password cần lưu token vào DB hoặc Redis
     // Tạm thời trả về thành công
     res.json({
       success: true,

@@ -22,7 +22,6 @@ const BookDetail = () => {
   const { id } = useParams();
   const { user, isAuthenticated } = useAuth();
   
-  // State để lưu book data (có thể từ local JSON hoặc API)
   const [book, setBook] = useState(null);
   const [isLoadingBook, setIsLoadingBook] = useState(true);
   
@@ -34,14 +33,12 @@ const BookDetail = () => {
   const [isBookSaved, setIsBookSaved] = useState(false);
   const [readingProgress, setReadingProgress] = useState(null);
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
-  const [isFavoriteReal, setIsFavoriteReal] = useState(false); // Favorite từ backend
+  const [isFavoriteReal, setIsFavoriteReal] = useState(false);
 
-  // Load book data - thử local JSON trước, nếu không có thì fetch từ API
   useEffect(() => {
     const loadBook = async () => {
       setIsLoadingBook(true);
       
-      // Thử tìm trong local JSON trước (nếu id là ISBN)
       const localBook = bookDetails
         ? bookDetails.find((bookDetail) => bookDetail.isbn === id)
         : null;
@@ -52,14 +49,12 @@ const BookDetail = () => {
         return;
       }
       
-      // Nếu không tìm thấy trong local JSON, fetch từ API (có thể là UUID hoặc ISBN)
       try {
         const { booksAPI } = await import('../services/api');
         const bookResponse = await booksAPI.getById(id);
         if (bookResponse.success && bookResponse.data) {
           setBook({
             ...bookResponse.data,
-            // Đảm bảo có các field cần thiết
             author: bookResponse.data.authors || bookResponse.data.author || [],
             coverUrl: bookResponse.data.coverUrl || bookResponse.data.cover,
             cover: bookResponse.data.coverUrl || bookResponse.data.cover,
@@ -94,11 +89,8 @@ const BookDetail = () => {
         if (response.success && response.data) {
           setCollections(response.data);
 
-          // Check if book is in any collection
-          // Backend trả về books là array của UUIDs, nên cần fetch book từ backend để lấy UUID
           if (book) {
             let bookUUID = book.id;
-            // Nếu chưa có UUID, fetch từ backend
             if (!bookUUID && book.isbn) {
               try {
                 const { booksAPI } = await import('../services/api');
@@ -115,7 +107,6 @@ const BookDetail = () => {
               if (!c.books || !Array.isArray(c.books)) return false;
               return c.books.some(b => {
                 if (typeof b === 'string') {
-                  // Backend trả về UUID, nên check với bookUUID trước
                   return b === bookUUID || b === book.isbn || b === book.id;
                 }
                 return (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === book.isbn || (b.id || b.isbn) === book.id;
@@ -180,25 +171,18 @@ const BookDetail = () => {
       
       // Helper function để reload collections và update state
       const reloadCollectionsAndUpdateState = async (bookIdForFallback) => {
-        console.log('Reloading collections and updating state...');
         try {
           const reloadResponse = await collectionsAPI.getAll();
-          console.log('Reload response:', reloadResponse);
           if (reloadResponse.success && reloadResponse.data) {
-            console.log('Collections reloaded:', reloadResponse.data);
             setCollections(reloadResponse.data);
-            // Check lại xem book có trong collection không
-            // Backend trả về books là array của UUIDs, nên cần dùng book.id (UUID) để check
-            // Nếu book.id chưa có (chỉ có isbn), cần fetch book từ backend để lấy UUID
+            
             let bookUUID = book?.id;
             if (!bookUUID && book?.isbn) {
-              // Nếu chưa có UUID, fetch từ backend
               try {
                 const { booksAPI } = await import('../services/api');
                 const bookResponse = await booksAPI.getById(book.isbn);
                 if (bookResponse.success && bookResponse.data) {
                   bookUUID = bookResponse.data.id;
-                  console.log('Fetched book UUID:', bookUUID, 'from ISBN:', book.isbn);
                 }
               } catch (fetchError) {
                 console.error('Error fetching book UUID:', fetchError);
@@ -207,28 +191,17 @@ const BookDetail = () => {
             
             const currentBookId = bookUUID || book?.id || book?.isbn;
             const currentIsbn = book?.isbn;
-            console.log('Checking if book is saved. bookUUID:', bookUUID, 'currentBookId:', currentBookId, 'currentIsbn:', currentIsbn);
-            console.log('Collections to check:', reloadResponse.data.map(c => ({ id: c.id, name: c.name, books: c.books })));
             
             const isSaved = reloadResponse.data.some((c) => {
               if (!c.books || !Array.isArray(c.books)) {
-                console.log(`Collection ${c.id} has no books array`);
                 return false;
               }
-              console.log(`Checking collection ${c.id}, books:`, c.books);
-              const found = c.books.some(b => {
+              return c.books.some(b => {
                 if (typeof b === 'string') {
-                  // Backend trả về UUID, nên check với bookUUID trước
-                  const match = b === bookUUID || b === currentBookId || b === currentIsbn || b === book?.isbn || b === book?.id;
-                  if (match) console.log(`Found match in collection ${c.id}: string bookId "${b}" matches bookUUID "${bookUUID}" or currentBookId "${currentBookId}"`);
-                  return match;
+                  return b === bookUUID || b === currentBookId || b === currentIsbn || b === book?.isbn || b === book?.id;
                 }
-                const match = (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === currentBookId || (b.id || b.isbn) === currentIsbn || (b.id || b.isbn) === book?.isbn || (b.id || b.isbn) === book?.id;
-                if (match) console.log(`Found match in collection ${c.id}: object book`, b);
-                return match;
+                return (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === currentBookId || (b.id || b.isbn) === currentIsbn || (b.id || b.isbn) === book?.isbn || (b.id || b.isbn) === book?.id;
               });
-              if (found) console.log(`Book found in collection ${c.id}`);
-              return found;
             });
             console.log('Final isBookSaved:', isSaved);
             setIsBookSaved(isSaved);

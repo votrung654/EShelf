@@ -41,4 +41,14 @@ exports.validateToken = (req, res, next) => {
   }
 };
 
+exports.requireAdmin = (req, res, next) => {
+  if (!req.user || req.user.role !== 'ADMIN') {
+    return res.status(403).json({
+      success: false,
+      message: 'Không có quyền truy cập'
+    });
+  }
+  next();
+};
+
 

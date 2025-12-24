@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Start development environment without Docker
-echo "🚀 Starting eShelf Development Environment..."
+echo "Starting eShelf Development Environment..."
 
 # Start API Gateway
 echo "Starting API Gateway on port 3000..."
@@ -40,9 +40,9 @@ npm install > /dev/null 2>&1
 npm run dev &
 
 echo ""
-echo "✅ All services starting..."
+echo "[OK] All services starting..."
 echo ""
-echo "📍 URLs:"
+echo "URLs:"
 echo "   Frontend:    http://localhost:5173"
 echo "   API Gateway: http://localhost:3000"
 echo ""

@@ -30,11 +30,11 @@ const Reading = () => {
         await historyAPI.saveProgress({
           bookId: id,
           currentPage: 1,
-          totalPages: 1, // Không track được với iframe
+          totalPages: 1,
         });
       } catch (error) {
         console.error('Error saving reading progress:', error);
-        saved = false; // Reset nếu lỗi để có thể retry
+        saved = false;
       }
     };
 

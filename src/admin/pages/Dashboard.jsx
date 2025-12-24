@@ -5,9 +5,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend
 } from 'recharts';
-import bookDetailsData from '../../data/book-details.json';
-
-const USERS_KEY = 'eshelf_users';
+import { booksAPI, genresAPI, usersAPI } from '../../services/api';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -17,51 +15,67 @@ export default function Dashboard() {
   });
   const [genreData, setGenreData] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadRealData();
   }, []);
 
-  const loadRealData = () => {
-    // Real books data
-    const books = bookDetailsData || [];
-    
-    // Real users data from localStorage
-    const usersData = localStorage.getItem(USERS_KEY);
-    const users = usersData ? JSON.parse(usersData) : [];
-    
-    // Calculate real genre distribution
-    const genreCounts = {};
-    books.forEach(book => {
-      book.genres?.forEach(genre => {
-        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+  const loadRealData = async () => {
+    setIsLoading(true);
+    try {
+      const [booksRes, genresRes, usersRes] = await Promise.all([
+        booksAPI.getAll(1, 1000),
+        genresAPI.getAll(),
+        usersAPI.getAll(1, 1).catch(() => ({ success: false, data: { pagination: { total: 0 } } }))
+      ]);
+
+      const books = booksRes.success && booksRes.data ? booksRes.data.books : [];
+      const genres = genresRes.success && genresRes.data ? genresRes.data : [];
+      // Handle both response formats: data.pagination.total or pagination.total
+      const totalUsers = usersRes.success 
+        ? (usersRes.data?.pagination?.total ?? usersRes.pagination?.total ?? 0)
+        : 0;
+
+      // Calculate genre distribution from books
+      const genreCounts = {};
+      books.forEach(book => {
+        if (Array.isArray(book.genres)) {
+          book.genres.forEach(genre => {
+            const genreName = typeof genre === 'string' ? genre : genre.name;
+            if (genreName) {
+              genreCounts[genreName] = (genreCounts[genreName] || 0) + 1;
+            }
+          });
+        }
       });
-    });
-    
-    const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#EC4899', '#06B6D4'];
-    const genreChartData = Object.entries(genreCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 7)
-      .map(([name, value], idx) => ({
-        name: name.length > 15 ? name.substring(0, 15) + '...' : name,
-        fullName: name,
-        value,
-        color: colors[idx % colors.length],
-      }));
+      
+      const colors = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#EC4899', '#06B6D4'];
+      const genreChartData = Object.entries(genreCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 7)
+        .map(([name, value], idx) => ({
+          name: name.length > 15 ? name.substring(0, 15) + '...' : name,
+          fullName: name,
+          value,
+          color: colors[idx % colors.length],
+        }));
 
-    setGenreData(genreChartData);
-    
-    setStats({
-      totalBooks: books.length,
-      totalUsers: users.length,
-      totalGenres: Object.keys(genreCounts).length,
-    });
+      setGenreData(genreChartData);
+      
+      setStats({
+        totalBooks: books.length,
+        totalUsers: totalUsers,
+        totalGenres: genres.length,
+      });
 
-    // Recent registered users
-    const sortedUsers = [...users]
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .slice(0, 5);
-    setRecentUsers(sortedUsers);
+      // TODO: Load users from API when available
+      setRecentUsers([]);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const formatTimeAgo = (dateStr) => {
@@ -204,29 +218,16 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
             Sách trong thư viện
           </h3>
-          {bookDetailsData && bookDetailsData.length > 0 ? (
-            <div className="space-y-4">
-              {bookDetailsData.slice(0, 5).map((book, idx) => (
-                <div key={book.isbn} className="flex items-center gap-4">
-                  <span className="w-6 h-6 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
-                    {idx + 1}
-                  </span>
-                  <img
-                    src={book.coverUrl}
-                    alt={book.title}
-                    className="w-10 h-14 object-cover rounded"
-                    onError={(e) => { e.target.src = '/images/book-placeholder.svg'; }}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-800 dark:text-gray-200 truncate">
-                      {book.title}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {Array.isArray(book.author) ? book.author.join(', ') : book.author}
-                    </p>
-                  </div>
-                </div>
-              ))}
+          {isLoading ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+              <p className="mt-2">Đang tải...</p>
+            </div>
+          ) : stats.totalBooks > 0 ? (
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>{stats.totalBooks} sách trong hệ thống</p>
+              <p className="text-sm mt-1">Danh sách chi tiết xem tại Quản lý sách</p>
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -241,35 +242,11 @@ export default function Dashboard() {
           <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
             Người dùng đăng ký gần đây
           </h3>
-          {recentUsers.length > 0 ? (
-            <div className="space-y-4">
-              {recentUsers.map((user) => (
-                <div 
-                  key={user.id}
-                  className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700 last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                      <span className="text-green-600 font-medium">
-                        {user.username?.[0]?.toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-gray-800 dark:text-gray-200 font-medium">{user.username}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-400">{formatTimeAgo(user.createdAt)}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p>Chưa có người dùng đăng ký</p>
-              <p className="text-sm mt-1">Người dùng mới sẽ hiển thị ở đây</p>
-            </div>
-          )}
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <p>Chức năng đang phát triển</p>
+            <p className="text-sm mt-1">Cần thêm API endpoint để lấy danh sách users</p>
+          </div>
         </div>
       </div>
     </div>

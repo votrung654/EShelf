@@ -6,12 +6,11 @@ const path = require('path');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting seed process...\n');
+  console.log('Starting seed process...\n');
 
   try {
-    // Test database connection
     await prisma.$connect();
-    console.log('✅ Database connected successfully\n');
+    console.log('Database connected successfully\n');
 
     // Create admin user
     console.log('Creating admin user...');
@@ -31,7 +30,7 @@ async function main() {
         emailVerified: true,
       },
     });
-    console.log('✅ Admin user created:', admin.email);
+    console.log('Admin user created:', admin.email);
 
     // Create demo user
     console.log('Creating demo user...');
@@ -51,7 +50,7 @@ async function main() {
         emailVerified: true,
       },
     });
-    console.log('✅ Demo user created:', demoUser.email);
+    console.log('Demo user created:', demoUser.email);
 
     // Load book data from JSON
     const bookDataPath = path.join(__dirname, '../../../src/data/book-details.json');
@@ -60,12 +59,12 @@ async function main() {
     try {
       if (fs.existsSync(bookDataPath)) {
         bookData = JSON.parse(fs.readFileSync(bookDataPath, 'utf8'));
-        console.log(`\n📚 Found ${bookData.length} books in JSON`);
+        console.log(`\nFound ${bookData.length} books in JSON`);
       } else {
-        console.log('⚠️  Book data file not found, skipping books seed');
+        console.log('Book data file not found, skipping books seed');
       }
     } catch (error) {
-      console.error('⚠️  Error loading book data:', error.message);
+      console.error('Error loading book data:', error.message);
     }
 
     // Create genres from book data
@@ -90,7 +89,7 @@ async function main() {
           },
         });
       }
-      console.log(`✅ Created ${genreSet.size} genres`);
+      console.log(`Created ${genreSet.size} genres`);
 
       // Create books (first 50 only)
       console.log(`\nCreating books (first 50)...`);
@@ -138,37 +137,37 @@ async function main() {
           console.error(`Error creating book ${bookItem.isbn}:`, error.message);
         }
       }
-      console.log(`✅ Created ${booksCreated} books with genres`);
+      console.log(`Created ${booksCreated} books with genres`);
     }
 
-    console.log('\n✅ Seeding completed successfully!\n');
-    console.log('═══════════════════════════════════════════════════════');
-    console.log('📋 LOGIN CREDENTIALS');
-    console.log('═══════════════════════════════════════════════════════');
-    console.log('\n👑 ADMIN ACCOUNT:');
+    console.log('\nSeeding completed successfully!\n');
+    console.log('===================================================');
+    console.log('LOGIN CREDENTIALS');
+    console.log('===================================================');
+    console.log('\nADMIN ACCOUNT:');
     console.log('   Email:    admin@eshelf.com');
     console.log('   Password: Admin123!');
     console.log('   Role:     ADMIN');
-    console.log('\n👤 USER ACCOUNT:');
+    console.log('\nUSER ACCOUNT:');
     console.log('   Email:    user@eshelf.com');
     console.log('   Password: User123!');
     console.log('   Role:     USER');
-    console.log('\n═══════════════════════════════════════════════════════\n');
+    console.log('\n===================================================\n');
 
   } catch (error) {
-    console.error('\n❌ Seeding failed:', error);
+    console.error('\nSeeding failed:', error);
     throw error;
   }
 }
 
 main()
   .catch((e) => {
-    console.error('\n❌ Fatal error:', e);
+    console.error('\nFatal error:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-    console.log('👋 Database connection closed\n');
+    console.log('Database connection closed\n');
   });
 
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import bookDetailsData from '../../data/book-details.json';
+import { booksAPI, genresAPI } from '../../services/api';
 import AddBookModal from '../components/AddBookModal';
 import EditBookModal from '../components/EditBookModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
@@ -10,9 +10,11 @@ const ITEMS_PER_PAGE = 10;
 
 export default function AdminBooks() {
   const [books, setBooks] = useState([]);
+  const [allGenres, setAllGenres] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedGenre, setSelectedGenre] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -23,25 +25,65 @@ export default function AdminBooks() {
   // Toast state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Load books and genres from API
   useEffect(() => {
-    setBooks(bookDetailsData || []);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        const [booksRes, genresRes] = await Promise.all([
+          booksAPI.getAll(1, 1000), // Get all books for admin
+          genresAPI.getAll()
+        ]);
+
+        if (booksRes.success && booksRes.data) {
+          setBooks(booksRes.data.books || []);
+        }
+
+        if (genresRes.success && genresRes.data) {
+          setAllGenres(genresRes.data.map(g => g.name || g));
+        }
+      } catch (error) {
+        console.error('Error loading books:', error);
+        showToast('Không thể tải danh sách sách', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
-  // Get unique genres
+  // Get unique genres from books (for filtering)
   const genres = useMemo(() => {
-    const allGenres = books.flatMap(book => book.genres || []);
-    return [...new Set(allGenres)].sort();
+    const bookGenres = books.flatMap(book => {
+      if (Array.isArray(book.genres)) {
+        return book.genres.map(g => typeof g === 'string' ? g : g.name);
+      }
+      return [];
+    });
+    return [...new Set(bookGenres)].sort();
   }, [books]);
 
   // Filtered and paginated books
   const filteredBooks = useMemo(() => {
     return books.filter(book => {
+      const authorsStr = Array.isArray(book.authors) ? book.authors.join(', ') : (book.author || '');
       const matchesSearch = 
         book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        book.author?.join(', ').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        authorsStr.toLowerCase().includes(searchTerm.toLowerCase()) ||
         book.isbn?.includes(searchTerm);
       
-      const matchesGenre = selectedGenre === 'all' || book.genres?.includes(selectedGenre);
+      let matchesGenre = true;
+      if (selectedGenre !== 'all') {
+        if (Array.isArray(book.genres)) {
+          matchesGenre = book.genres.some(g => {
+            const genreName = typeof g === 'string' ? g : g.name;
+            return genreName === selectedGenre;
+          });
+        } else {
+          matchesGenre = false;
+        }
+      }
       
       return matchesSearch && matchesGenre;
     });
@@ -64,27 +106,82 @@ export default function AdminBooks() {
     setTimeout(() => setToast({ show: false, message: '', type: 'success' }), 3000);
   };
 
-  const handleAddBook = (newBook) => {
-    const bookWithId = { ...newBook, isbn: `NEW-${Date.now()}` };
-    setBooks(prev => [bookWithId, ...prev]);
-    setShowAddModal(false);
-    showToast('Thêm sách thành công!');
+  const handleAddBook = async (newBook) => {
+    try {
+      const bookData = {
+        title: newBook.title,
+        author: Array.isArray(newBook.author) ? newBook.author : [newBook.author],
+        authors: Array.isArray(newBook.author) ? newBook.author : [newBook.author],
+        isbn: newBook.isbn,
+        description: newBook.description,
+        publisher: newBook.publisher,
+        coverUrl: newBook.coverUrl,
+        publishedYear: newBook.year || newBook.publishedYear,
+        pageCount: newBook.pages || newBook.pageCount,
+        language: newBook.language || 'vi',
+        genreIds: newBook.genreIds || []
+      };
+
+      const response = await booksAPI.create(bookData);
+      if (response.success) {
+        // Reload books
+        const booksRes = await booksAPI.getAll(1, 1000);
+        if (booksRes.success && booksRes.data) {
+          setBooks(booksRes.data.books || []);
+        }
+        setShowAddModal(false);
+        showToast('Thêm sách thành công!');
+      }
+    } catch (error) {
+      console.error('Error adding book:', error);
+      showToast(error.response?.data?.message || 'Không thể thêm sách', 'error');
+    }
   };
 
-  const handleEditBook = (updatedBook) => {
-    setBooks(prev => prev.map(book => 
-      book.isbn === updatedBook.isbn ? updatedBook : book
-    ));
-    setShowEditModal(false);
-    setSelectedBook(null);
-    showToast('Cập nhật sách thành công!');
+  const handleEditBook = async (updatedBook) => {
+    try {
+      const bookId = updatedBook.id || updatedBook.isbn;
+      const bookData = {
+        title: updatedBook.title,
+        description: updatedBook.description,
+        coverUrl: updatedBook.coverUrl
+      };
+
+      const response = await booksAPI.update(bookId, bookData);
+      if (response.success) {
+        // Reload books
+        const booksRes = await booksAPI.getAll(1, 1000);
+        if (booksRes.success && booksRes.data) {
+          setBooks(booksRes.data.books || []);
+        }
+        setShowEditModal(false);
+        setSelectedBook(null);
+        showToast('Cập nhật sách thành công!');
+      }
+    } catch (error) {
+      console.error('Error updating book:', error);
+      showToast(error.response?.data?.message || 'Không thể cập nhật sách', 'error');
+    }
   };
 
-  const handleDeleteBook = () => {
-    setBooks(prev => prev.filter(book => book.isbn !== selectedBook.isbn));
-    setShowDeleteModal(false);
-    setSelectedBook(null);
-    showToast('Xóa sách thành công!', 'warning');
+  const handleDeleteBook = async () => {
+    try {
+      const bookId = selectedBook.id || selectedBook.isbn;
+      const response = await booksAPI.delete(bookId);
+      if (response.success) {
+        // Reload books
+        const booksRes = await booksAPI.getAll(1, 1000);
+        if (booksRes.success && booksRes.data) {
+          setBooks(booksRes.data.books || []);
+        }
+        setShowDeleteModal(false);
+        setSelectedBook(null);
+        showToast('Xóa sách thành công!', 'success');
+      }
+    } catch (error) {
+      console.error('Error deleting book:', error);
+      showToast(error.response?.data?.message || 'Không thể xóa sách', 'error');
+    }
   };
 
   const openEditModal = (book) => {
@@ -143,108 +240,123 @@ export default function AdminBooks() {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Sách
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Tác giả
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Thể loại
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Năm
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Thao tác
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {paginatedBooks.length > 0 ? (
-                paginatedBooks.map((book) => (
-                  <tr key={book.isbn} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={book.coverUrl || '/images/book-placeholder.svg'}
-                          alt={book.title}
-                          className="w-12 h-16 object-cover rounded shadow"
-                          onError={(e) => { e.target.src = '/images/book-placeholder.svg'; }}
-                        />
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-xs">
-                            {book.title}
-                          </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            ISBN: {book.isbn}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {Array.isArray(book.author) ? book.author.join(', ') : book.author}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {book.genres?.slice(0, 2).map((genre, idx) => (
-                          <span
-                            key={idx}
-                            className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded"
-                          >
-                            {genre}
-                          </span>
-                        ))}
-                        {book.genres?.length > 2 && (
-                          <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
-                            +{book.genres.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
-                      {book.year || '-'}
-                    </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => openEditModal(book)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                          title="Sửa"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => openDeleteModal(book)}
-                          className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Xóa"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                    Không tìm thấy sách nào
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent"></div>
+          <p className="mt-4 text-gray-500 dark:text-gray-400">Đang tải danh sách sách...</p>
         </div>
+      ) : (
+        <>
+          {/* Table */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Sách
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Tác giả
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Thể loại
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Năm
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Thao tác
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {paginatedBooks.length > 0 ? (
+                    paginatedBooks.map((book) => (
+                      <tr key={book.id || book.isbn} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={book.coverUrl || '/images/book-placeholder.svg'}
+                              alt={book.title}
+                              className="w-12 h-16 object-cover rounded shadow"
+                              onError={(e) => { e.target.src = '/images/book-placeholder.svg'; }}
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium text-gray-800 dark:text-gray-200 truncate max-w-xs">
+                                {book.title}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                ISBN: {book.isbn || '-'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {Array.isArray(book.authors) ? book.authors.join(', ') : (book.author || '-')}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex flex-wrap gap-1">
+                            {Array.isArray(book.genres) && book.genres.length > 0 ? (
+                              book.genres.slice(0, 2).map((genre, idx) => {
+                                const genreName = typeof genre === 'string' ? genre : genre.name;
+                                return (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded"
+                                  >
+                                    {genreName}
+                                  </span>
+                                );
+                              })
+                            ) : (
+                              <span className="text-xs text-gray-400">-</span>
+                            )}
+                            {Array.isArray(book.genres) && book.genres.length > 2 && (
+                              <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
+                                +{book.genres.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-600 dark:text-gray-300">
+                          {book.publishedYear || book.year || '-'}
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => openEditModal(book)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+                              title="Sửa"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => openDeleteModal(book)}
+                              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                        Không tìm thấy sách nào
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Hiển thị {(currentPage - 1) * ITEMS_PER_PAGE + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, filteredBooks.length)} / {filteredBooks.length} sách
             </p>
@@ -290,10 +402,12 @@ export default function AdminBooks() {
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
-            </div>
+              </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
       {/* Modals */}
       <AddBookModal

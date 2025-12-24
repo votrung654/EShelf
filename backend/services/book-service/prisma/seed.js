@@ -6,7 +6,7 @@ const path = require('path');
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database...');
 
   // Create admin user
   const adminPassword = await bcrypt.hash('Admin123!', 12);
@@ -22,7 +22,7 @@ async function main() {
       emailVerified: true,
     },
   });
-  console.log('✅ Created admin user:', admin.email);
+  console.log('Created admin user:', admin.email);
 
   // Create demo user
   const userPassword = await bcrypt.hash('User123!', 12);
@@ -38,7 +38,7 @@ async function main() {
       emailVerified: true,
     },
   });
-  console.log('✅ Created demo user:', demoUser.email);
+  console.log('Created demo user:', demoUser.email);
 
   // Load book data from JSON
   const bookDataPath = path.join(__dirname, '../../../src/data/book-details.json');
@@ -47,7 +47,7 @@ async function main() {
   try {
     if (fs.existsSync(bookDataPath)) {
       bookData = JSON.parse(fs.readFileSync(bookDataPath, 'utf8'));
-      console.log(`📚 Found ${bookData.length} books in JSON`);
+      console.log(`Found ${bookData.length} books in JSON`);
     }
   } catch (error) {
     console.error('Error loading book data:', error);
@@ -73,7 +73,7 @@ async function main() {
       },
     });
   }
-  console.log(`✅ Created ${genreSet.size} genres`);
+  console.log(`Created ${genreSet.size} genres`);
 
   // Create books
   for (const bookItem of bookData.slice(0, 50)) { // Limit to 50 for initial seed
@@ -118,9 +118,9 @@ async function main() {
       console.error(`Error creating book ${bookItem.isbn}:`, error.message);
     }
   }
-  console.log('✅ Created books with genres');
+  console.log('Created books with genres');
 
-  console.log('✨ Seeding completed!');
+  console.log('Seeding completed!');
 }
 
 main()

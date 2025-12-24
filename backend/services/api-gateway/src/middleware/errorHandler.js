@@ -42,7 +42,7 @@ const errorHandler = (err, req, res, next) => {
 
   // Log error in development
   if (process.env.NODE_ENV === 'development') {
-    console.error('❌ Error:', {
+    console.error('Error:', {
       message: err.message,
       stack: err.stack,
       path: req.path,
@@ -66,7 +66,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Programming or unknown errors (don't leak details)
-  console.error('💥 CRITICAL ERROR:', err);
+  console.error('CRITICAL ERROR:', err);
   
   return res.status(500).json({
     error: 'InternalServerError',

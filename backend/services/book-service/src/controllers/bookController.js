@@ -34,7 +34,6 @@ exports.getAllBooks = async (req, res) => {
     res.json({
       success: true,
       data: {
-        // Frontend cần key 'books' này
         books: books.map(book => ({
           ...book,
           genres: book.genres.map(bg => bg.genre.name) // Chuyển object genre thành mảng tên
@@ -265,7 +264,6 @@ exports.getPopularBooks = async (req, res) => {
 exports.getBookReviews = async (req, res) => {
   try {
     const { id } = req.params;
-    // Tìm book id trước (vì params có thể là isbn)
     const book = await prisma.book.findFirst({
         where: { OR: [{id: id}, {isbn: id}] }
     });

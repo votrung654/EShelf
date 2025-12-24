@@ -97,7 +97,7 @@
 | API Gateway | 3000 | Express.js | API routing, rate limiting |
 | Auth Service | 3001 | Express.js | JWT authentication |
 | Book Service | 3002 | Express.js | Book CRUD, search |
-| User Service | 3003 | Express.js | Profile, favorites, collections |
+| User Service | 3003 | Express.js | Profile, favorites, collections, users (admin) |
 | ML Service | 8000 | FastAPI | Recommendations, similarity |
 | PostgreSQL | 5432 | PostgreSQL 16 | Primary database |
 | Redis | 6379 | Redis 7 | Caching |
@@ -268,41 +268,50 @@ eShelf/
 
 **Frontend:**
 - ✅ Giao diện người dùng với React + Vite
-- ✅ Tìm kiếm và lọc sách
-- ✅ Quản lý bộ sưu tập
-- ✅ Lịch sử đọc
-- ✅ Yêu thích sách
+- ✅ Tìm kiếm và lọc sách (tìm kiếm cơ bản và nâng cao)
+- ✅ Quản lý bộ sưu tập (tạo, xóa, thêm/xóa sách)
+- ✅ Lịch sử đọc (theo dõi tiến độ, lưu tự động)
+- ✅ Yêu thích sách (thêm/xóa, hiển thị trong profile)
 - ✅ Dark mode
-- ✅ Kết nối với backend API
+- ✅ Kết nối với backend API (tất cả chức năng chính)
+- ✅ Admin panel (quản lý sách - CRUD)
+- ✅ ML Recommendations (hiển thị gợi ý sách)
+- ✅ Similar Books (sách tương tự)
 
 **Backend:**
-- ✅ Kiến trúc microservices
-- ✅ API Gateway với proxy routing
-- ✅ Auth Service (JWT authentication)
-- ✅ Book Service (CRUD, search)
-- ✅ User Service (Profile, favorites, collections, history)
-- ✅ ML Service (Recommendations, similarity)
-- ✅ Database schema với Prisma
+- ✅ Kiến trúc microservices (4 services: Auth, Book, User, ML)
+- ✅ API Gateway với proxy routing và rate limiting
+- ✅ Auth Service (JWT authentication, refresh tokens)
+- ✅ Book Service (CRUD, search với filters, genres)
+- ✅ User Service (Profile, favorites, collections, history - đã migrate sang Prisma)
+- ✅ ML Service (Recommendations, similarity, reading time estimation)
+- ✅ Database schema với Prisma (PostgreSQL)
 - ✅ Docker Compose setup
+- ✅ ISBN-to-UUID conversion logic
 
-**DevOps:**
-- ✅ GitHub Actions CI pipeline
-- ✅ Jenkins pipeline
-- ✅ Terraform modules (VPC, EC2, Security Groups)
-- ✅ CloudFormation templates
-- ✅ Docker containerization
+**Database:**
+- ✅ Prisma ORM với PostgreSQL
+- ✅ Schema đầy đủ (Users, Books, Genres, Favorites, Collections, ReadingHistory, Reviews)
+- ✅ Migrations và seed data
 
-**MLOps:**
-- ✅ Recommendation API
-- ✅ Similar books API
-- ✅ Reading time estimation
+**ML-AI:**
+- ✅ Recommendation API (tích hợp với frontend)
+- ✅ Similar books API (tích hợp với frontend)
+- ✅ Reading time estimation API (tích hợp với frontend Profile page)
 
-### Đang phát triển
+### Đang phát triển / Cần hoàn thiện
+
+**Frontend:**
+- ✅ Admin Dashboard (đã tích hợp API cho books và users)
+- ✅ Estimate Reading Time tích hợp với ML Service
+- 🔄 ReadingProgress component (có thể vẫn dùng localStorage cho một số mục đích)
 
 **Backend:**
-- 🔄 Chuyển từ in-memory storage sang database persistence (Prisma)
+- ✅ Admin API endpoint để lấy danh sách users (GET, PUT, DELETE)
+- ✅ ProfileController đã migrate sang Prisma
+- ✅ Users Controller với đầy đủ CRUD cho Admin
 - 🔄 Hoàn thiện error handling và validation
-- 🔄 Thêm unit tests và integration tests
+- 🔄 Unit tests và integration tests
 
 **DevOps:**
 - 🔄 Smart Build (path-filter trong CI/CD)
@@ -316,19 +325,31 @@ eShelf/
 - 🔄 Model versioning
 - 🔄 Model performance monitoring
 
-### Dự kiến làm
+### Dự kiến làm (theo yêu cầu môn học)
 
-**Infrastructure:**
+**Infrastructure (Lab 1):**
 - 📋 Deploy lên AWS (EKS hoặc K3s trên EC2)
 - 📋 Setup Harbor/Artifactory cho artifact management
 - 📋 Ansible scripts cho configuration management
 - 📋 Complete monitoring stack
 
-**CI/CD:**
+**CI/CD (Lab 2 & Đồ án):**
 - 📋 Smart Build với path-filter
 - 📋 ArgoCD Image Updater
 - 📋 Blue/Green deployment
 - 📋 Automated rollback
+- 📋 PR checks: lint → unit test → typecheck → static analysis → build artefact
+- 📋 Image Build & Scan: multi-stage Docker build → container scan (Trivy/Clair) → push to registry
+- 📋 Infrastructure as Code: terraform plan/apply (staging) + cloud resources
+- 📋 Config Management: Ansible hoặc Helm charts / kustomize
+- 📋 Deploy Staging: deploy image to staging (K8s/ECS/Swarm) → run integration / e2e tests
+- 📋 Promote to Prod: manual approval → deploy to prod (blue/green or canary) → smoke tests
+- 📋 Observability & Alerts: Prometheus + Grafana + Loki + Alertmanager
+- 📋 GitOps: push deployment manifests to infra repo → ArgoCD/Flux sync to cluster
+- 📋 Rollback / Post-deploy: automatic rollback on failing healthchecks + retention & audit logs
+
+**MLOps (Đồ án):**
+- 📋 Model training CI → model registry (MLflow) → CI for model packaging → Canary deploy model service → monitoring model metrics & data drift
 
 **Security:**
 - 📋 Complete security scanning pipeline

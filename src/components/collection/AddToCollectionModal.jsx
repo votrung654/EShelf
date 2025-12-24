@@ -33,8 +33,6 @@ function AddToCollectionModal({ isOpen, onClose, book, collections, onAdd, onCre
   }, [newName, book, onCreateNew]);
 
   const isBookInCollection = useCallback((collection) => {
-    // Backend trả về books là array của UUIDs, nên cần dùng book.id (UUID) để check
-    // Nếu chưa có UUID, dùng isbn
     const bookUUID = book?.id;
     const bookIsbn = book?.isbn;
     
@@ -43,10 +41,8 @@ function AddToCollectionModal({ isOpen, onClose, book, collections, onAdd, onCre
     if (Array.isArray(collection.books)) {
       return collection.books.some(b => {
         if (typeof b === 'string') {
-          // Backend trả về UUID, nên check với bookUUID trước
           return b === bookUUID || b === bookIsbn || b === book?.id || b === book?.isbn;
         }
-        // Nếu là object, check cả id và isbn
         return (b.id || b.isbn) === bookUUID || (b.id || b.isbn) === bookIsbn || (b.id || b.isbn) === book?.id || (b.id || b.isbn) === book?.isbn;
       });
     }

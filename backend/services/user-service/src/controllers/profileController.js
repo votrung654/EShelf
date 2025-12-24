@@ -1,28 +1,45 @@
-// In-memory storage (replace with database)
-const users = new Map();
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
-// Get profile
 exports.getProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
-    let user = users.get(userId);
+    
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        role: true,
+        createdAt: true,
+        updatedAt: true
+      }
+    });
 
     if (!user) {
-      // Create default profile
-      user = {
-        id: userId,
-        name: req.user.email?.split('@')[0] || 'User',
-        email: req.user.email,
-        avatar: null,
-        bio: '',
-        createdAt: new Date().toISOString()
-      };
-      users.set(userId, user);
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy người dùng'
+      });
     }
 
     res.json({
       success: true,
-      data: user
+      data: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        name: user.name || user.username,
+        avatar: user.avatarUrl,
+        bio: user.bio || '',
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
+      }
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -30,31 +47,40 @@ exports.getProfile = async (req, res) => {
   }
 };
 
-// Update profile
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { name, bio } = req.body;
 
-    let user = users.get(userId) || {
-      id: userId,
-      email: req.user.email,
-      createdAt: new Date().toISOString()
-    };
-
-    user = {
-      ...user,
-      name: name || user.name,
-      bio: bio !== undefined ? bio : user.bio,
-      updatedAt: new Date().toISOString()
-    };
-
-    users.set(userId, user);
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        name: name !== undefined ? name : undefined,
+        bio: bio !== undefined ? bio : undefined
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        updatedAt: true
+      }
+    });
 
     res.json({
       success: true,
       message: 'Cập nhật profile thành công',
-      data: user
+      data: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        name: updatedUser.name || updatedUser.username,
+        avatar: updatedUser.avatarUrl,
+        bio: updatedUser.bio || '',
+        updatedAt: updatedUser.updatedAt
+      }
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -62,30 +88,44 @@ exports.updateProfile = async (req, res) => {
   }
 };
 
-// Update avatar
 exports.updateAvatar = async (req, res) => {
   try {
     const userId = req.user.userId;
     const { avatar } = req.body;
 
-    let user = users.get(userId) || {
-      id: userId,
-      email: req.user.email,
-      createdAt: new Date().toISOString()
-    };
+    if (!avatar) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu URL avatar'
+      });
+    }
 
-    user = {
-      ...user,
-      avatar,
-      updatedAt: new Date().toISOString()
-    };
-
-    users.set(userId, user);
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: avatar },
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        bio: true,
+        updatedAt: true
+      }
+    });
 
     res.json({
       success: true,
       message: 'Cập nhật avatar thành công',
-      data: user
+      data: {
+        id: updatedUser.id,
+        email: updatedUser.email,
+        username: updatedUser.username,
+        name: updatedUser.name || updatedUser.username,
+        avatar: updatedUser.avatarUrl,
+        bio: updatedUser.bio || '',
+        updatedAt: updatedUser.updatedAt
+      }
     });
   } catch (error) {
     console.error('Update avatar error:', error);
@@ -93,18 +133,37 @@ exports.updateAvatar = async (req, res) => {
   }
 };
 
-// Get user stats
 exports.getStats = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // Mock stats - replace with actual data from database
+    const [historyCount, historyPages, favoritesCount, collectionsCount] = await Promise.all([
+      prisma.readingHistory.count({
+        where: { userId }
+      }),
+      prisma.readingHistory.aggregate({
+        where: { userId },
+        _sum: {
+          currentPage: true
+        }
+      }),
+      prisma.favorite.count({
+        where: { userId }
+      }),
+      prisma.collection.count({
+        where: { userId }
+      })
+    ]);
+
+    const pagesRead = historyPages._sum.currentPage || 0;
+    const readingTime = Math.round(pagesRead / 20);
+
     const stats = {
-      booksRead: 12,
-      pagesRead: 1500,
-      readingTime: 45, // hours
-      collectionsCount: 3,
-      favoritesCount: 8
+      booksRead: historyCount,
+      pagesRead: pagesRead,
+      readingTime: readingTime,
+      collectionsCount: collectionsCount,
+      favoritesCount: favoritesCount
     };
 
     res.json({
@@ -116,5 +175,3 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ success: false, message: 'Lỗi server' });
   }
 };
-
-

@@ -34,7 +34,6 @@ const HomePage = () => {
         }
 
         if (genresRes.success) {
-            // Giả sử API trả về mảng object [{id: 1, name: 'Fiction'}, ...]
             const genreNames = genresRes.data.map(g => g.name || g);
             setGenres(["all", ...genreNames]);
         }

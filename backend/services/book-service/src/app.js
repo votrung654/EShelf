@@ -44,7 +44,7 @@ app.use(errorHandler);
 // Start server
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`📚 Book Service running on port ${PORT}`);
+    console.log(`Book Service running on port ${PORT}`);
   });
 }
 

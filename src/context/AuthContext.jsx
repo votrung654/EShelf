@@ -14,16 +14,14 @@ export function AuthProvider({ children }) {
       const storedUser = localStorage.getItem('user');
 
       if (token && storedUser) {
-        // Nếu có token, set user tạm thời từ storage để hiển thị ngay
         setUser(JSON.parse(storedUser));
         
-        // (Tuỳ chọn) Gọi API verify lại user cho chắc
         try {
            const res = await authAPI.getCurrentUser();
            if(res.success) setUser(res.data);
         } catch (err) {
            console.error("Token invalid:", err);
-           logout(); // Token lỗi thì logout luôn
+           logout();
         }
       }
       setIsLoading(false);
@@ -83,7 +81,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('user');
     setUser(null);
     
-    // Redirect về login (nếu cần)
     window.location.href = '/login';
   };
 
@@ -91,7 +88,7 @@ export function AuthProvider({ children }) {
     user,
     isLoading,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'ADMIN', // Lưu ý: Backend trả về 'ADMIN' hoa
+    isAdmin: user?.role === 'ADMIN',
     login,
     register,
     logout,

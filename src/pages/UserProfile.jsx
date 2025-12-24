@@ -50,7 +50,6 @@ export default function UserProfile() {
           const historyWithBooks = await Promise.all(
             histRes.data.map(async (historyItem) => {
               try {
-                // Backend trả về bookId có thể là UUID hoặc ISBN
                 const bookId = historyItem.bookId;
                 const bookRes = await booksAPI.getById(bookId);
                 if (bookRes.success && bookRes.data) {

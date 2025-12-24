@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Calendar, BookOpen, Clock, Heart, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { favoritesAPI, historyAPI, profileAPI, collectionsAPI } from '../services/api'; // Import API
+import { favoritesAPI, historyAPI, profileAPI, collectionsAPI, mlAPI } from '../services/api';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -44,7 +44,22 @@ export default function Profile() {
             const totalBooksRead = historyList.length;
             const collectionsCount = collectionsList.length;
 
-            const estimatedMinutes = totalBooksRead * 30;
+            let estimatedMinutes = totalBooksRead * 30;
+            
+            if (historyList.length > 0) {
+              try {
+                const totalPages = historyList.reduce((sum, item) => {
+                  return sum + (item.progress?.totalPages || item.book?.pageCount || 200);
+                }, 0);
+                const avgGenre = historyList[0]?.book?.genres?.[0] || 'Fiction';
+                const timeRes = await mlAPI.estimateReadingTime(totalPages, avgGenre);
+                if (timeRes.success && timeRes.data?.minutes) {
+                  estimatedMinutes = timeRes.data.minutes;
+                }
+              } catch (error) {
+                console.error('Error estimating reading time:', error);
+              }
+            }
 
             setStats({
                 totalBooks: totalBooksRead,

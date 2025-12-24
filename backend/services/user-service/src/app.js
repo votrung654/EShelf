@@ -7,6 +7,8 @@ const profileRoutes = require('./routes/profile');
 const favoritesRoutes = require('./routes/favorites');
 const collectionsRoutes = require('./routes/collections');
 const historyRoutes = require('./routes/history');
+const usersRoutes = require('./routes/users');
+
 const { errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
@@ -41,6 +43,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/reading-history', historyRoutes);
+app.use('/api/users', usersRoutes); // Thêm route users cho admin
 
 // Error handler
 app.use(errorHandler);
@@ -48,7 +51,7 @@ app.use(errorHandler);
 // Start server
 if (require.main === module) {
   app.listen(PORT, () => {
-    console.log(`👤 User Service running on port ${PORT}`);
+    console.log(`User Service running on port ${PORT}`);
   });
 }
 
