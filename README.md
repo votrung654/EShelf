@@ -9,6 +9,8 @@
 > **Trường Đại học Công nghệ Thông tin (UIT)**  
 > Nền tảng đọc sách điện tử với kiến trúc microservices, CI/CD pipeline và MLOps.
 
+<!-- Test PR Pipeline: This is a test change for Phase 1 validation -->
+
 ---
 
 ## Mục lục
