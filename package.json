@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "eShelf - Enterprise eBook Platform",
+  "description": "eShelf - Enterprise eBook Platform - Phase 1 Test",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
