@@ -23,7 +23,7 @@ aws cloudformation create-stack \
     ParameterKey=DockerHubUsername,ParameterValue=<username> \
     ParameterKey=DockerHubPassword,ParameterValue=<password> \
   --capabilities CAPABILITY_NAMED_IAM \
-  --region ap-southeast-1
+  --region us-east-1
 ```
 
 ### 2. Lưu Kubernetes Config trong Secrets Manager
@@ -36,7 +36,7 @@ cat ~/.kube/config | base64 > kubeconfig.b64
 aws secretsmanager create-secret \
   --name kubeconfig \
   --secret-binary fileb://kubeconfig.b64 \
-  --region ap-southeast-1
+  --region us-east-1
 ```
 
 ### 3. Cập nhật CodeBuild Deploy Project
@@ -58,7 +58,7 @@ Deploy project tham chiếu đến secret. Kiểm tra:
 # Khởi động pipeline execution
 aws codepipeline start-pipeline-execution \
   --name eshelf-codepipeline-pipeline \
-  --region ap-southeast-1
+  --region us-east-1
 ```
 
 ## Giám sát
@@ -71,5 +71,5 @@ Xem trạng thái pipeline trong AWS Console:
 ```bash
 aws cloudformation delete-stack \
   --stack-name eshelf-codepipeline \
-  --region ap-southeast-1
+  --region us-east-1
 ```

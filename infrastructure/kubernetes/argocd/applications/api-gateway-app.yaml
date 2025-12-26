@@ -14,17 +14,12 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/eshelf-infra.git
+    repoURL: https://github.com/votrung654/EShelf.git
     targetRevision: main
-    path: infrastructure/kubernetes/overlays/prod
-    kustomize:
-      images:
-        - name: api-gateway
-          newName: harbor.yourdomain.com/eshelf/api-gateway
-          newTag: latest
+    path: infrastructure/kubernetes/overlays/dev
   destination:
     server: https://kubernetes.default.svc
-    namespace: eshelf-prod
+    namespace: default
   syncPolicy:
     automated:
       prune: true

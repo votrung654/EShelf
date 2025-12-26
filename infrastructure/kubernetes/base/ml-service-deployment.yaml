@@ -14,6 +14,8 @@ spec:
         app: ml-service
         tier: ml
     spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
       containers:
       - name: ml-service
         image: eshelf/ml-service:latest

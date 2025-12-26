@@ -12,7 +12,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/your-org/eshelf-infra.git
+    repoURL: https://github.com/votrung654/EShelf.git
     targetRevision: main
     path: infrastructure/kubernetes/monitoring
   destination:

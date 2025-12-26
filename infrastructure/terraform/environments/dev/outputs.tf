@@ -1,4 +1,4 @@
-﻿# Development Environment Outputs
+# Development Environment Outputs
 
 output "vpc_id" {
   description = "VPC ID"
@@ -50,10 +50,20 @@ output "k3s_kubeconfig_command" {
   value       = var.create_k3s_cluster ? "scp -i <key.pem> ec2-user@${module.ec2.k3s_master_public_ip}:~/.kube/config ~/.kube/config" : null
 }
 
+output "k3s_master_instance_id" {
+  description = "K3s master instance ID"
+  value       = var.create_k3s_cluster ? module.ec2.k3s_master_instance_id : null
+}
+
+output "k3s_worker_instance_ids" {
+  description = "K3s worker instance IDs"
+  value       = var.create_k3s_cluster ? module.ec2.k3s_worker_instance_ids : []
+}
+
 output "ansible_inventory_info" {
   description = "Info for Ansible inventory"
   value = var.create_k3s_cluster ? {
-    master_ip = module.ec2.k3s_master_public_ip
+    master_ip  = module.ec2.k3s_master_public_ip
     worker1_ip = module.ec2.k3s_worker_private_ips[0]
     worker2_ip = module.ec2.k3s_worker_private_ips[1]
   } : null

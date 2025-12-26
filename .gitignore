@@ -34,3 +34,9 @@ terraform.tfvars
 *.pem
 *.key
 !*.example.*
+
+# Terraform temporary files
+*.tfplan
+*.tfstate.backup
+terraform.tfvars.backup-*
+*.backup

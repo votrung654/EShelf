@@ -104,15 +104,34 @@ Frontend (React) → API Gateway → Microservices → Database
 git clone https://github.com/votrung654/EShelf.git
 cd EShelf
 
-# 2. Start Backend
+# 2. (Tùy chọn) Tạo file .env nếu muốn custom database settings
 cd backend
+# Nếu có file .env.example, copy nó:
+# cp .env.example .env
+# Sau đó chỉnh sửa .env nếu cần
+
+# 3. Start Backend (bao gồm database và migrations tự động)
 docker-compose up -d
 
-# 3. Start Frontend
+# Database migrations sẽ tự động chạy khi container khởi động
+# Nếu gặp lỗi "relation does not exist", đợi vài giây để migrations hoàn tất
+# Hoặc kiểm tra logs: docker-compose logs db-migration
+
+# 4. Start Frontend
 cd ..
 npm install
 npm run dev
 ```
+
+**Lưu ý:** 
+- Database migrations sẽ tự động chạy khi bạn start docker-compose
+- Nếu services báo lỗi "table does not exist", đợi vài giây để migration service hoàn tất
+- Kiểm tra logs: `docker-compose logs db-migration` để xem trạng thái migrations
+- **Quan trọng về .env file:**
+  - Nếu bạn có file `.env` trong `backend/`, docker-compose sẽ đọc các biến từ đó
+  - Đảm bảo `DATABASE_URL` hoặc `POSTGRES_*` variables khớp với postgres service
+  - Nếu `DATABASE_URL` trong `.env` khác với default, đảm bảo host là `postgres` (tên service)
+  - Xem thêm: `backend/TROUBLESHOOTING.md` nếu gặp lỗi connection
 
 ### Access
 
@@ -131,9 +150,10 @@ npm run dev
 
 ### Infrastructure as Code
 
-- **Terraform:** 3-node K3s cluster (1 master + 2 workers) trên AWS
+- **Terraform:** K3s cluster (1 master + 2 workers) trên AWS
 - **CloudFormation:** VPC, EC2, CodePipeline
 - **Ansible:** K3s cluster setup và configuration management
+- **Status:** Dev environment đã deploy thành công
 
 ### CI/CD Pipeline
 
@@ -158,12 +178,13 @@ npm run dev
 
 ### Kubernetes Deployment
 
-- **K3s Cluster:** 3 nodes (1 master + 2 workers) trên AWS (dev, staging, prod)
+- **K3s Cluster:** 3 nodes (1 master + 2 workers) trên AWS - Đã deploy
 - **Kustomize:** Environment-specific overlays (dev, staging, prod)
-- **ArgoCD:** GitOps deployment với Application manifests và Image Updater
-- **Harbor:** Container registry thay thế DockerHub
-- **Jenkins:** CI/CD pipeline trên Kubernetes
-- **SonarQube:** Code quality analysis trên Kubernetes
+- **ArgoCD:** GitOps deployment - Đã deploy và sẵn sàng
+- **Harbor:** Container registry - Đã deploy và sẵn sàng
+- **Monitoring Stack:** Prometheus, Grafana, Loki, Alertmanager - Đã deploy
+- **Jenkins:** CI/CD pipeline trên Kubernetes (manifests sẵn sàng, chưa deploy)
+- **SonarQube:** Code quality analysis (manifests sẵn sàng, chưa deploy)
 
 ### Monitoring Stack
 
@@ -189,16 +210,33 @@ npm run dev
 
 ## Tài liệu
 
+### Setup & Deployment
 - [Setup Guide](docs/SETUP_GUIDE.md) - Hướng dẫn setup chi tiết
+- [Next Steps](NEXT_STEPS.md) - Các bước sau khi đăng nhập AWS Console
+- [Manual Steps Guide](docs/MANUAL_STEPS_GUIDE.md) - Hướng dẫn thủ công cho các script tự động
+- [Manual Testing Guide](MANUAL_TESTING_GUIDE.md) - Hướng dẫn test thủ công infrastructure
 - [Architecture](docs/ARCHITECTURE.md) - Kiến trúc hệ thống
+- [Architecture Deep Dive](docs/ARCHITECTURE_DEEP_DIVE.md) - Chi tiết cơ chế hoạt động
 - [Demo Guide](DEMO_GUIDE.md) - Hướng dẫn demo project
+- [Demo Video Script](DEMO_VIDEO_SCRIPT.md) - Kịch bản quay video demo từ A-Z
+
+### Infrastructure Components
 - [Ansible README](infrastructure/ansible/README.md) - K3s setup với Ansible
 - [ArgoCD README](infrastructure/kubernetes/argocd/README.md) - GitOps deployment
 - [Harbor README](infrastructure/kubernetes/harbor/README.md) - Container registry
 - [MLOps README](infrastructure/kubernetes/mlops/README.md) - MLOps workflows
 - [CodePipeline README](infrastructure/cloudformation/pipeline/README.md) - AWS CodePipeline
+
+### Requirements & Analysis
 - [Yêu cầu môn học](yeucaumonhoc.md) - Lab 1, Lab 2, Đồ án
 - [Góp ý giảng viên](gopygiangvien.md) - Feedback và yêu cầu
+- [Yêu cầu giảng viên analysis](YEU_CAU_GIANG_VIEN_ANALYSIS.md) - Phân tích yêu cầu chi tiết
+- [Requirements Compliance](REQUIREMENTS_COMPLIANCE.md) - Đối chiếu yêu cầu
+
+### Presentation & Study Materials
+- [Presentation Slides Content](PRESENTATION_SLIDES_CONTENT.md) - Nội dung slide thuyết trình
+- [Study Material](STUDY_MATERIAL.md) - Tài liệu ôn tập và trả lời câu hỏi giảng viên
+- [Push Guidelines](PUSH_GUIDELINES.md) - Hướng dẫn những gì nên và không nên push
 
 ### Scripts tiện ích
 
@@ -208,6 +246,7 @@ npm run dev
 - `scripts/check-code-changes.sh` - Smart build: Kiểm tra file có code changes thực sự
 - `scripts/test-changes.ps1` - Test script để validate tất cả thay đổi
 - `scripts/test-smart-build.ps1` - Test smart build logic
+- `scripts/test-fresh-clone.ps1` / `test-fresh-clone.sh` - **Test fresh clone**: Kiểm tra docker-compose setup đúng cho người mới clone repo
 
 **Sử dụng:**
 ```bash
@@ -221,13 +260,19 @@ chmod +x scripts/get-github-logs.sh
 # Test smart build locally
 ./scripts/check-service-changes.sh backend/services/api-gateway HEAD~1
 
+# Test fresh clone (kiểm tra docker-compose setup cho người mới clone)
+.\scripts\test-fresh-clone.ps1  # Windows
+./scripts/test-fresh-clone.sh    # Linux/Mac
+
 # Với GitHub CLI trực tiếp
 gh run list --status failure
 gh run view <RUN_ID> --log
 gh run view <RUN_ID> --log --job <JOB_ID>
 ```
 
-**Xem thêm:** [Smart Build Documentation](scripts/README-SMART-BUILD.md)
+**Xem thêm:** 
+- [Smart Build Documentation](scripts/README-SMART-BUILD.md)
+- [Test Fresh Clone Documentation](scripts/README-TEST-FRESH-CLONE.md)
 
 ---
 

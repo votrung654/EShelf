@@ -132,9 +132,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
       
       - name: Login to Harbor
         continue-on-error: true

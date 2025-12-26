@@ -1,8 +1,12 @@
 # Security Groups Module for eShelf
 
-# Bastion Security Group
+# Note: We don't use data source for security groups because of permission restrictions
+# We use the IDs directly from terraform.tfvars
+
+# Bastion Security Group - Create new or use existing
 # checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
 resource "aws_security_group" "bastion" {
+  count = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-bastion-sg-${var.environment}"
   description = "Security group for bastion host"
   vpc_id      = var.vpc_id
@@ -30,9 +34,10 @@ resource "aws_security_group" "bastion" {
   })
 }
 
-# Application Security Group
+# Application Security Group - Create new or use existing
 # checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
 resource "aws_security_group" "app" {
+  count = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-app-sg-${var.environment}"
   description = "Security group for application servers"
   vpc_id      = var.vpc_id
@@ -43,7 +48,7 @@ resource "aws_security_group" "app" {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    security_groups = [aws_security_group.bastion.id]
+    security_groups = var.use_existing_security_groups ? [var.existing_bastion_sg_id] : [aws_security_group.bastion[0].id]
   }
 
   # HTTP from ALB
@@ -52,7 +57,7 @@ resource "aws_security_group" "app" {
     from_port       = 3000
     to_port         = 3000
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
+    security_groups = var.use_existing_security_groups ? [var.existing_alb_sg_id] : [aws_security_group.alb[0].id]
   }
 
   # Internal communication
@@ -78,9 +83,10 @@ resource "aws_security_group" "app" {
   })
 }
 
-# ALB Security Group
+# ALB Security Group - Create new or use existing
 # checkov:skip=CKV2_AWS_5:Security group is attached to ALB via module references
 resource "aws_security_group" "alb" {
+  count = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-alb-sg-${var.environment}"
   description = "Security group for Application Load Balancer"
   vpc_id      = var.vpc_id
@@ -117,8 +123,9 @@ resource "aws_security_group" "alb" {
   })
 }
 
-# K3s Master Security Group
+# K3s Master Security Group - Create new or use existing
 resource "aws_security_group" "k3s_master" {
+  count = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-k3s-master-sg-${var.environment}"
   description = "Security group for K3s master node"
   vpc_id      = var.vpc_id
@@ -132,13 +139,23 @@ resource "aws_security_group" "k3s_master" {
     cidr_blocks = var.allowed_ssh_cidrs
   }
 
-  # K3s API Server
+  # K3s API Server (from VPC)
   ingress {
-    description = "K3s API Server"
+    description = "K3s API Server from VPC"
     from_port   = 6443
     to_port     = 6443
     protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
+  }
+
+  # K3s API Server (from Internet - for kubectl access)
+  # checkov:skip=CKV_AWS_24:K3s API server requires public access for kubectl
+  ingress {
+    description = "K3s API Server from Internet"
+    from_port   = 6443
+    to_port     = 6443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   # K3s Flannel VXLAN
@@ -182,8 +199,9 @@ resource "aws_security_group" "k3s_master" {
   })
 }
 
-# K3s Worker Security Group
+# K3s Worker Security Group - Create new or use existing
 resource "aws_security_group" "k3s_worker" {
+  count = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-k3s-worker-sg-${var.environment}"
   description = "Security group for K3s worker nodes"
   vpc_id      = var.vpc_id
@@ -194,7 +212,7 @@ resource "aws_security_group" "k3s_worker" {
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    security_groups = [aws_security_group.k3s_master.id]
+    security_groups = var.use_existing_security_groups ? [var.existing_k3s_master_sg_id] : [aws_security_group.k3s_master[0].id]
   }
 
   # K3s Flannel VXLAN
@@ -248,8 +266,9 @@ resource "aws_security_group" "k3s_worker" {
   })
 }
 
-# RDS Security Group
+# RDS Security Group - Create new or use existing
 resource "aws_security_group" "rds" {
+  count = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-rds-sg-${var.environment}"
   description = "Security group for RDS database"
   vpc_id      = var.vpc_id
@@ -260,9 +279,14 @@ resource "aws_security_group" "rds" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = concat(
-      [aws_security_group.app.id],
-      var.create_k3s_cluster ? [aws_security_group.k3s_worker.id] : []
+    security_groups = var.use_existing_security_groups ? (
+      concat(
+        var.existing_app_sg_id != "" ? [var.existing_app_sg_id] : [],
+        var.create_k3s_cluster && var.existing_k3s_worker_sg_id != "" ? [var.existing_k3s_worker_sg_id] : []
+      )
+    ) : concat(
+      [aws_security_group.app[0].id],
+      var.create_k3s_cluster ? [aws_security_group.k3s_worker[0].id] : []
     )
   }
 
