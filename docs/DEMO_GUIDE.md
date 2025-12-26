@@ -82,9 +82,9 @@ kubectl version --client
 File `aws-academy-credentials.txt` đã được tạo tự động từ thông tin bạn cung cấp. File này **KHÔNG** được commit lên Git (đã có trong `.gitignore`).
 
 **Lưu ý quan trọng:**
-- Sandbox sẽ reset sau 4 giờ, tất cả dữ liệu sẽ bị xóa
-- Hệ thống có thể bị khóa vì nhiều lý do
-- Tham khảo "Hands-on playground and labs abuse protocol" để biết thêm chi tiết
+- ⚠️ Sandbox sẽ reset sau 4 giờ, tất cả dữ liệu sẽ bị xóa
+- ⚠️ Hệ thống có thể bị khóa vì nhiều lý do
+- ⚠️ Tham khảo "Hands-on playground and labs abuse protocol" để biết thêm chi tiết
 
 ### Bước 2: Load Credentials vào Environment
 
@@ -208,11 +208,11 @@ Chạy script test tự động:
 ```
 
 Script này sẽ test:
-- AWS CLI installation
-- AWS credentials configuration
-- Region access
-- EC2 service access
-- VPC service access
+- ✅ AWS CLI installation
+- ✅ AWS credentials configuration
+- ✅ Region access
+- ✅ EC2 service access
+- ✅ VPC service access
 
 **Kết quả mong đợi:**
 ```
@@ -275,7 +275,7 @@ Kiểm tra output:
 
 ### Bước 4: Terraform Apply (Thủ Công - Cần Xác Nhận)
 
-**Lưu ý:** Bước này sẽ tạo resources trên AWS và có thể tốn phí. Hãy chắc chắn bạn muốn tiếp tục.
+**⚠️ Lưu ý:** Bước này sẽ tạo resources trên AWS và có thể tốn phí. Hãy chắc chắn bạn muốn tiếp tục.
 
 ```powershell
 terraform apply
@@ -380,9 +380,9 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 - Password: [Password từ command trên]
 
 **Kiểm tra trong ArgoCD UI:**
-- Tất cả applications đã được sync
-- Health status: Healthy
-- Sync status: Synced
+- ✅ Tất cả applications đã được sync
+- ✅ Health status: Healthy
+- ✅ Sync status: Synced
 
 ### Bước 3: Deploy Monitoring Stack
 
@@ -409,9 +409,9 @@ kubectl port-forward svc/grafana -n monitoring 3000:3000
 - Password: `admin` (đổi sau lần đăng nhập đầu)
 
 **Kiểm tra:**
-- Dashboard hiển thị metrics
-- Prometheus data source đã được config
-- Có metrics từ các services
+- ✅ Dashboard hiển thị metrics
+- ✅ Prometheus data source đã được config
+- ✅ Có metrics từ các services
 
 ### Bước 5: Deploy Harbor Registry
 
@@ -437,9 +437,9 @@ kubectl port-forward svc/harbor-core -n harbor 8081:80
 - Password: [Xem trong Harbor values.yaml hoặc secret]
 
 **Kiểm tra:**
-- Harbor UI load được
-- Có thể tạo project
-- Có thể push/pull images
+- ✅ Harbor UI load được
+- ✅ Có thể tạo project
+- ✅ Có thể push/pull images
 
 ---
 
@@ -673,7 +673,7 @@ cd infrastructure/terraform/environments/dev
 
 ## Cleanup (Quan Trọng!)
 
-**Lưu ý:** AWS Academy sandbox sẽ tự động reset sau 4 giờ, nhưng bạn nên cleanup để tránh tốn phí không cần thiết.
+**⚠️ Lưu ý:** AWS Academy sandbox sẽ tự động reset sau 4 giờ, nhưng bạn nên cleanup để tránh tốn phí không cần thiết.
 
 ### Shutdown EC2 Instances
 
@@ -692,7 +692,7 @@ aws ec2 stop-instances --instance-ids <instance-id-1> <instance-id-2> ...
 
 ### Destroy Terraform Resources
 
-**Cẩn thận:** Bước này sẽ xóa TẤT CẢ resources!
+**⚠️ Cẩn thận:** Bước này sẽ xóa TẤT CẢ resources!
 
 ```powershell
 cd infrastructure/terraform/environments/dev
