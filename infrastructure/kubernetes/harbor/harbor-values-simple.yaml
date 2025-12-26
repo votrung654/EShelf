@@ -1,0 +1,79 @@
+# Harbor Helm Values - Simplified for testing
+# Install using: helm install harbor harbor/harbor -f harbor-values-simple.yaml -n harbor
+
+expose:
+  type: clusterIP
+  tls:
+    enabled: false
+
+persistence:
+  enabled: true
+  resourcePolicy: "keep"
+  persistentVolumeClaim:
+    registry:
+      storageClass: "local-path"
+      accessMode: ReadWriteOnce
+      size: 10Gi
+    chartmuseum:
+      storageClass: "local-path"
+      accessMode: ReadWriteOnce
+      size: 2Gi
+    jobservice:
+      jobLog:
+        storageClass: "local-path"
+        accessMode: ReadWriteOnce
+        size: 1Gi
+      scanDataExports:
+        storageClass: "local-path"
+        accessMode: ReadWriteOnce
+        size: 1Gi
+    database:
+      storageClass: "local-path"
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    redis:
+      storageClass: "local-path"
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    trivy:
+      storageClass: "local-path"
+      accessMode: ReadWriteOnce
+      size: 2Gi
+
+externalURL: http://harbor-core.harbor.svc.cluster.local
+
+internalTLS:
+  enabled: false
+
+harborAdminPassword: "Harbor12345"
+
+database:
+  password: "root123"
+  maxIdleConns: 50
+  maxOpenConns: 100
+
+core:
+  replicas: 1
+
+jobservice:
+  replicas: 1
+
+registry:
+  replicas: 1
+  relativeurls: false
+
+chartmuseum:
+  enabled: true
+  replicas: 1
+
+trivy:
+  enabled: true
+  replicas: 1
+  ignoreUnfixed: false
+  skipUpdate: false
+  offlineScan: false
+  securityChecks: "vuln,secret"
+
+notary:
+  enabled: false
+

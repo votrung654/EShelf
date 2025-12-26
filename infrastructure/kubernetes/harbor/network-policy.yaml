@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: harbor-netpol
+  namespace: harbor
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: harbor
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: harbor
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+

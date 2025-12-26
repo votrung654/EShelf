@@ -1,9 +1,0 @@
-﻿{
-    "Id":  "58871576531",
-    "Name":  "Train ML Model",
-    "Steps":  "[",
-    "StartedAt":  "2025-12-24T13:20:31Z",
-    "CompletedAt":  "2025-12-24T13:25:28Z",
-    "Conclusion":  "failure",
-    "Status":  "completed"
-}
