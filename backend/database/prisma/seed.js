@@ -53,56 +53,93 @@ async function main() {
     console.log('Demo user created:', demoUser.email);
 
     // Load book data from JSON
-    const bookDataPath = path.join(__dirname, '../../../src/data/book-details.json');
+    // Try multiple paths: container volume mount, then relative path
+    const possiblePaths = [
+      path.join(__dirname, '../data/book-details.json'), // Container volume mount
+      path.join(__dirname, '../../../src/data/book-details.json'), // Relative from project root
+      '/app/data/book-details.json' // Absolute path in container
+    ];
+    
     let bookData = [];
+    let bookDataPath = null;
+    
+    for (const testPath of possiblePaths) {
+      if (fs.existsSync(testPath)) {
+        bookDataPath = testPath;
+        break;
+      }
+    }
     
     try {
-      if (fs.existsSync(bookDataPath)) {
+      if (bookDataPath && fs.existsSync(bookDataPath)) {
         bookData = JSON.parse(fs.readFileSync(bookDataPath, 'utf8'));
-        console.log(`\nFound ${bookData.length} books in JSON`);
+        console.log(`\nFound ${bookData.length} books in JSON at ${bookDataPath}`);
       } else {
         console.log('Book data file not found, skipping books seed');
+        console.log('Tried paths:', possiblePaths.join(', '));
       }
     } catch (error) {
       console.error('Error loading book data:', error.message);
     }
 
+    // Check if books already exist in database
+    const existingBooksCount = await prisma.book.count();
+    console.log(`\nExisting books in database: ${existingBooksCount}`);
+
     // Create books and genres
     if (bookData.length > 0) {
-      const booksToCreate = bookData.slice(0, 50);
+      // Seed ALL books, not just 50
+      const booksToCreate = bookData;
       const genreSet = new Set();
       
-      // Collect genres only from books that will be created
+      // Collect genres from all books
       booksToCreate.forEach(book => {
         (book.genres || []).forEach(genre => genreSet.add(genre));
       });
 
-      console.log(`\nCreating ${genreSet.size} genres from ${booksToCreate.length} books...`);
+      console.log(`\nProcessing ${genreSet.size} genres from ${booksToCreate.length} books...`);
+      
+      // Create genres first
+      let genresCreated = 0;
+      let genresUpdated = 0;
       for (const genreName of genreSet) {
         const slug = genreName.toLowerCase()
           .replace(/\s+/g, '-')
           .replace(/[^\w-]/g, '');
         
-        await prisma.genre.upsert({
-          where: { name: genreName },
-          update: {},
-          create: {
-            name: genreName,
-            slug,
-          },
-        });
+        const existingGenre = await prisma.genre.findUnique({ where: { name: genreName } });
+        if (!existingGenre) {
+          await prisma.genre.create({
+            data: {
+              name: genreName,
+              slug,
+            },
+          });
+          genresCreated++;
+        } else {
+          genresUpdated++;
+        }
       }
-      console.log(`Created ${genreSet.size} genres`);
+      console.log(`Genres: ${genresCreated} created, ${genresUpdated} already exist`);
 
       // Create books
-      console.log(`\nCreating ${booksToCreate.length} books...`);
+      console.log(`\nProcessing ${booksToCreate.length} books...`);
       let booksCreated = 0;
+      let booksSkipped = 0;
+      
       for (const bookItem of booksToCreate) {
         try {
-          const book = await prisma.book.upsert({
-            where: { isbn: bookItem.isbn },
-            update: {},
-            create: {
+          const existingBook = await prisma.book.findUnique({ where: { isbn: bookItem.isbn } });
+          
+          if (existingBook) {
+            // Book already exists, skip to preserve existing data
+            booksSkipped++;
+            continue;
+          }
+          
+          // Create new book
+          const book = await prisma.book.create({
+            data: {
               isbn: bookItem.isbn,
               title: bookItem.title,
               description: bookItem.description,
@@ -123,16 +160,20 @@ async function main() {
           for (const genreName of (bookItem.genres || [])) {
             const genre = await prisma.genre.findUnique({ where: { name: genreName } });
             if (genre) {
-              await prisma.bookGenre.upsert({
+              const existingLink = await prisma.bookGenre.findUnique({
                 where: {
                   bookId_genreId: { bookId: book.id, genreId: genre.id }
                 },
-                update: {},
-                create: {
-                  bookId: book.id,
-                  genreId: genre.id,
-                },
               });
+              
+              if (!existingLink) {
+                await prisma.bookGenre.create({
+                  data: {
+                    bookId: book.id,
+                    genreId: genre.id,
+                  },
+                });
+              }
             }
           }
           booksCreated++;
@@ -140,7 +181,12 @@ async function main() {
           console.error(`Error creating book ${bookItem.isbn}:`, error.message);
         }
       }
-      console.log(`Created ${booksCreated} books with genres`);
+      
+      const finalBooksCount = await prisma.book.count();
+      console.log(`\nBooks: ${booksCreated} created, ${booksSkipped} skipped (already exist)`);
+      console.log(`Total books in database: ${finalBooksCount}`);
+    } else {
+      console.log('\nNo book data to seed. Database will keep existing books.');
     }
 
     console.log('\nSeeding completed successfully!\n');

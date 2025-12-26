@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # API Gateway
   api-gateway:
@@ -33,11 +31,11 @@ services:
       - PORT=3001
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-your-refresh-secret}
-      # 👇 Kết nối DB sử dụng biến môi trường
       - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-eshelf}:${POSTGRES_PASSWORD:-eshelf123}@postgres:5432/${POSTGRES_DB:-eshelf}?schema=public}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
-      - postgres
+      db-migration:
+        condition: service_completed_successfully
     networks:
       - eshelf-network
 
@@ -50,13 +48,13 @@ services:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=3002
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      # 👇 Kết nối DB sử dụng biến môi trường
       - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-eshelf}:${POSTGRES_PASSWORD:-eshelf123}@postgres:5432/${POSTGRES_DB:-eshelf}?schema=public}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     volumes:
       - ../src/data:/app/data:ro
     depends_on:
-      - postgres
+      db-migration:
+        condition: service_completed_successfully
     networks:
       - eshelf-network
 
@@ -71,11 +69,11 @@ services:
       - NODE_ENV=${NODE_ENV:-development}
       - PORT=3003
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
-      # 👇 Kết nối DB sử dụng biến môi trường
       - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-eshelf}:${POSTGRES_PASSWORD:-eshelf123}@postgres:5432/${POSTGRES_DB:-eshelf}?schema=public}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173,http://localhost:3000}
     depends_on:
-      - postgres
+      db-migration:
+        condition: service_completed_successfully
     networks:
       - eshelf-network
 
@@ -88,6 +86,23 @@ services:
       - ../src/data:/app/data:ro
     networks:
       - eshelf-network
+
+  # Database Migration Service
+  db-migration:
+    build: ./database
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-eshelf}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-eshelf123}
+      - POSTGRES_DB=${POSTGRES_DB:-eshelf}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://${POSTGRES_USER:-eshelf}:${POSTGRES_PASSWORD:-eshelf123}@postgres:5432/${POSTGRES_DB:-eshelf}?schema=public}
+    volumes:
+      - ../src/data:/app/data:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - eshelf-network
+    restart: "no"
 
   # PostgreSQL
   postgres:
@@ -102,6 +117,11 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - eshelf-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-eshelf} -d ${POSTGRES_DB:-eshelf}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Redis
   redis:
