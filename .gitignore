@@ -45,3 +45,6 @@ terraform.tfvars.backup-*
 *.log
 **/github-logs-*/
 **/logs/
+
+# Local documentation files (keep locally, exclude from repo)
+docs/
