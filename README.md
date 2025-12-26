@@ -213,12 +213,9 @@ npm run dev
 ### Setup & Deployment
 - [Setup Guide](docs/SETUP_GUIDE.md) - Hướng dẫn setup chi tiết
 - [Next Steps](NEXT_STEPS.md) - Các bước sau khi đăng nhập AWS Console
-- [Manual Steps Guide](docs/MANUAL_STEPS_GUIDE.md) - Hướng dẫn thủ công cho các script tự động
-- [Manual Testing Guide](MANUAL_TESTING_GUIDE.md) - Hướng dẫn test thủ công infrastructure
 - [Architecture](docs/ARCHITECTURE.md) - Kiến trúc hệ thống
 - [Architecture Deep Dive](docs/ARCHITECTURE_DEEP_DIVE.md) - Chi tiết cơ chế hoạt động
 - [Demo Guide](DEMO_GUIDE.md) - Hướng dẫn demo project
-- [Demo Video Script](DEMO_VIDEO_SCRIPT.md) - Kịch bản quay video demo từ A-Z
 
 ### Infrastructure Components
 - [Ansible README](infrastructure/ansible/README.md) - K3s setup với Ansible
@@ -235,8 +232,6 @@ npm run dev
 
 ### Presentation & Study Materials
 - [Presentation Slides Content](PRESENTATION_SLIDES_CONTENT.md) - Nội dung slide thuyết trình
-- [Study Material](STUDY_MATERIAL.md) - Tài liệu ôn tập và trả lời câu hỏi giảng viên
-- [Push Guidelines](PUSH_GUIDELINES.md) - Hướng dẫn những gì nên và không nên push
 
 ### Scripts tiện ích
 
@@ -272,7 +267,6 @@ gh run view <RUN_ID> --log --job <JOB_ID>
 
 **Xem thêm:** 
 - [Smart Build Documentation](scripts/README-SMART-BUILD.md)
-- [Test Fresh Clone Documentation](scripts/README-TEST-FRESH-CLONE.md)
 
 ---
 

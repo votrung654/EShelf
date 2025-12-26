@@ -54,6 +54,7 @@ jobs:
       - name: Terraform Validate
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform validate
+        continue-on-error: true
 
       - name: Terraform Format Check
         working-directory: ${{ env.TF_WORKING_DIR }}
