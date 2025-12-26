@@ -6,7 +6,7 @@
 set -e
 
 ENVIRONMENT=${1:-dev}
-AWS_REGION=${AWS_REGION:-ap-southeast-1}
+AWS_REGION=${AWS_REGION:-us-east-1}
 
 echo "Starting AWS resources for environment: $ENVIRONMENT"
 

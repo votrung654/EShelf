@@ -21,6 +21,18 @@ replicas:
 
 images:
   - name: eshelf/api-gateway
-    newName: harbor.yourdomain.com/eshelf/api-gateway
+    newName: harbor-core.harbor.svc.cluster.local/eshelf/api-gateway
+    newTag: dev
+  - name: eshelf/auth-service
+    newName: harbor-core.harbor.svc.cluster.local/eshelf/auth-service
+    newTag: dev
+  - name: eshelf/book-service
+    newName: harbor-core.harbor.svc.cluster.local/eshelf/book-service
+    newTag: dev
+  - name: eshelf/user-service
+    newName: harbor-core.harbor.svc.cluster.local/eshelf/user-service
+    newTag: dev
+  - name: eshelf/ml-service
+    newName: harbor-core.harbor.svc.cluster.local/eshelf/ml-service
     newTag: dev
 

@@ -14,6 +14,8 @@ spec:
         app: auth-service
         tier: backend
     spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
       containers:
       - name: auth-service
         image: eshelf/auth-service:latest

@@ -41,7 +41,7 @@ if [ -f "$CFN_DIR/vpc-stack.yaml" ]; then
     # AWS CLI validation
     aws cloudformation validate-template \
         --template-body file://"$CFN_DIR/vpc-stack.yaml" \
-        --region ap-southeast-1 > /dev/null 2>&1
+        --region us-east-1 > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "PASS: VPC stack template AWS validation successful"
     else
@@ -68,7 +68,7 @@ if [ -f "$CFN_DIR/ec2-stack.yaml" ]; then
     # AWS CLI validation (will fail without VPC ID, but syntax check)
     aws cloudformation validate-template \
         --template-body file://"$CFN_DIR/ec2-stack.yaml" \
-        --region ap-southeast-1 > /dev/null 2>&1
+        --region us-east-1 > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         echo "PASS: EC2 stack template AWS validation successful"
     else

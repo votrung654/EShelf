@@ -66,6 +66,13 @@ variable "k3s_worker_count" {
   default     = 2
 }
 
+variable "k3s_token" {
+  description = "Pre-shared K3s token for joining workers (if empty, will use default)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "create_k3s_cluster" {
   description = "Create K3s cluster (1 master + N workers)"
   type        = bool
@@ -100,6 +107,18 @@ variable "k3s_master_sg_id" {
 
 variable "k3s_worker_sg_id" {
   description = "K3s worker security group ID"
+  type        = string
+  default     = ""
+}
+
+variable "ami_id" {
+  description = "AMI ID to use for EC2 instances. If not provided, will try to query latest Amazon Linux 2023 AMI"
+  type        = string
+  default     = ""
+}
+
+variable "iam_instance_profile" {
+  description = "IAM instance profile name for SSM"
   type        = string
   default     = ""
 }

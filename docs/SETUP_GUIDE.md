@@ -55,6 +55,22 @@ cd ../ml-service && pip install -r requirements.txt
 
 ### 3. Thiết lập database
 
+**Cách 1: Tự động với Docker Compose (Khuyến nghị)**
+
+Migrations sẽ tự động chạy khi bạn start docker-compose:
+
+```bash
+cd backend
+docker-compose up -d
+```
+
+Kiểm tra logs của migration service:
+```bash
+docker-compose logs db-migration
+```
+
+**Cách 2: Thiết lập thủ công (nếu không dùng Docker)**
+
 ```bash
 cd backend/database
 npm install
@@ -69,6 +85,9 @@ npx prisma db seed
 # Khởi động tất cả service bằng Docker Compose
 cd backend
 docker-compose up -d
+
+# Database migrations sẽ tự động chạy trước khi các services khác start
+# Nếu gặp lỗi "table does not exist", đợi vài giây để migrations hoàn tất
 
 # Hoặc khởi động từng service riêng lẻ
 npm run backend:start
@@ -102,7 +121,7 @@ terraform init
 #### 3. Tạo file terraform.tfvars
 
 ```hcl
-aws_region = "ap-southeast-1"
+aws_region = "us-east-1"
 create_k3s_cluster = true
 k3s_master_instance_type = "t3.medium"
 k3s_worker_instance_type = "t3.small"
@@ -130,7 +149,7 @@ cd infrastructure/cloudformation/templates
 aws cloudformation create-stack \
   --stack-name eshelf-vpc \
   --template-body file://vpc-stack.yaml \
-  --region ap-southeast-1
+  --region us-east-1
 ```
 
 ## Triển khai Kubernetes

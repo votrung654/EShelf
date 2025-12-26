@@ -204,7 +204,7 @@ annotations:
 backend "s3" {
   bucket         = "eshelf-terraform-state"
   key            = "prod/terraform.tfstate"
-  region         = "ap-southeast-1"
+  region         = "us-east-1"
   encrypt        = true
   dynamodb_table = "eshelf-terraform-locks"
 }

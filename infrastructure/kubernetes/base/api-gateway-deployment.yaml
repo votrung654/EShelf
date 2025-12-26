@@ -17,6 +17,8 @@ spec:
         app: api-gateway
         tier: backend
     spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
       containers:
       - name: api-gateway
         image: eshelf/api-gateway:latest

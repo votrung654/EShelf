@@ -7,6 +7,7 @@ resources:
   - prometheus/prometheus-configmap.yaml
   - prometheus/alerts.yaml
   - grafana/grafana-deployment.yaml
+  - grafana/dashboard-configmap.yaml
   - loki/loki-deployment.yaml
   - promtail/promtail-daemonset.yaml
   - alertmanager/alertmanager-deployment.yaml

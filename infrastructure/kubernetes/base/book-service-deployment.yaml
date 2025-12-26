@@ -14,6 +14,8 @@ spec:
         app: book-service
         tier: backend
     spec:
+      imagePullSecrets:
+      - name: harbor-registry-secret
       containers:
       - name: book-service
         image: eshelf/book-service:latest

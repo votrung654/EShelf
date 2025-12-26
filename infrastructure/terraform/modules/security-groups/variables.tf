@@ -41,4 +41,47 @@ variable "tags" {
   default     = {}
 }
 
+# Use existing security groups (for AWS Academy with restricted permissions)
+variable "use_existing_security_groups" {
+  description = "Use existing security groups instead of creating new ones"
+  type        = bool
+  default     = false
+}
+
+variable "existing_bastion_sg_id" {
+  description = "Existing bastion security group ID"
+  type        = string
+  default     = ""
+}
+
+variable "existing_app_sg_id" {
+  description = "Existing app security group ID"
+  type        = string
+  default     = ""
+}
+
+variable "existing_alb_sg_id" {
+  description = "Existing ALB security group ID"
+  type        = string
+  default     = ""
+}
+
+variable "existing_k3s_master_sg_id" {
+  description = "Existing K3s master security group ID"
+  type        = string
+  default     = ""
+}
+
+variable "existing_k3s_worker_sg_id" {
+  description = "Existing K3s worker security group ID"
+  type        = string
+  default     = ""
+}
+
+variable "existing_rds_sg_id" {
+  description = "Existing RDS security group ID"
+  type        = string
+  default     = ""
+}
+
 

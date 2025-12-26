@@ -1,11 +1,11 @@
 # Development Environment Variables
 # Copy this file to terraform.tfvars and fill in your values
 
-aws_region = "ap-southeast-1"
+aws_region = "us-east-1"
 
 vpc_cidr = "10.0.0.0/16"
 
-availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
+availability_zones = ["us-east-1a", "us-east-1b"]
 
 public_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24"]
 
@@ -24,4 +24,12 @@ public_key = ""  # Paste your SSH public key here
 bastion_instance_type = "t3.micro"
 app_instance_type = "t3.small"
 app_instance_count = 2
+
+# AMI ID (REQUIRED if you don't have ec2:DescribeImages permission)
+# Get AMI ID from AWS Console:
+# 1. Go to EC2 Console -> Launch instance
+# 2. Search for "Amazon Linux 2023"
+# 3. Copy the AMI ID (e.g., ami-0c55b159cbfafe1f0)
+# Or run: .\scripts\get-ami-id.ps1
+ami_id = ""  # Example: "ami-0c55b159cbfafe1f0" (for us-east-1)
 
