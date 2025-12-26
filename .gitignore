@@ -40,3 +40,8 @@ terraform.tfvars
 *.tfstate.backup
 terraform.tfvars.backup-*
 *.backup
+
+# Log files
+*.log
+**/github-logs-*/
+**/logs/
