@@ -82,7 +82,7 @@ pipeline {
 
         stage('4. Quality Gate') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 10, unit: 'MINUTES') {
                     // Đợi SonarQube trả kết quả. Nếu Fail -> Dừng pipeline ngay.
                     waitForQualityGate abortPipeline: true
                 }
