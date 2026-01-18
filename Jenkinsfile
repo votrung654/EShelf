@@ -6,7 +6,6 @@ pipeline {
         // Phải cấu hình trong Manage Jenkins -> Tools -> Đặt tên là "NodeJS"
         nodejs 'NodeJS' 
         // Phải cấu hình trong Manage Jenkins -> Tools -> Đặt tên là "SonarQubeScanner"
-        jdk 'jdk17' // (Tùy chọn, nếu cần Java 17 cho SonarScanner)
     }
 
     environment {
