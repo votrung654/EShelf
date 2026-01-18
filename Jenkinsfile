@@ -99,7 +99,7 @@ pipeline {
                             export AWS_ACCESS_KEY_ID=${AWS_KEY}
                             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET}
                             export AWS_DEFAULT_REGION=${AWS_REGION}
-                            aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+                            /usr/bin/aws ecr get-login-password --region ${AWS_REGION} | /usr/bin/docker login --username AWS --password-stdin ${ECR_REGISTRY}
                         """
                     }
                 }
