@@ -181,6 +181,30 @@ jobs:
       
       - name: Build and push frontend Docker image
         run: |
+          # Helper function for retry logic
+          push_with_retry() {
+            local image=$1
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempting to push $image (attempt $attempt/$max_attempts)..."
+              if timeout 120 docker push "$image" --quiet; then
+                echo "Successfully pushed $image"
+                return 0
+              else
+                echo "Failed to push $image, attempt $attempt/$max_attempts"
+                if [ $attempt -lt $max_attempts ]; then
+                  sleep 5
+                fi
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "Warning: Failed to push $image after $max_attempts attempts (non-critical)"
+            return 1
+          }
+          
           ENV_TAG="${{ steps.env.outputs.env }}"
           IMAGE_NAME="docker.io/22521571/eshelf-frontend"
           
@@ -196,10 +220,10 @@ jobs:
           # Build with environment-specific API URL
           docker build --build-arg VITE_API_URL=$VITE_API_URL -t $IMAGE_NAME:$ENV_TAG -t $IMAGE_NAME:${{ github.sha }} .
           
-          # Push images
-          docker push $IMAGE_NAME:$ENV_TAG
-          docker push $IMAGE_NAME:${{ github.sha }}
-          docker push $IMAGE_NAME:latest || true
+          # Push images with retry
+          push_with_retry $IMAGE_NAME:$ENV_TAG || true
+          push_with_retry $IMAGE_NAME:${{ github.sha }} || true
+          push_with_retry $IMAGE_NAME:latest || true
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -237,15 +261,40 @@ jobs:
       
       - name: Build and push Docker image
         run: |
+          # Helper function for retry logic
+          push_with_retry() {
+            local image=$1
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempting to push $image (attempt $attempt/$max_attempts)..."
+              if timeout 120 docker push "$image" --quiet; then
+                echo "Successfully pushed $image"
+                return 0
+              else
+                echo "Failed to push $image, attempt $attempt/$max_attempts"
+                if [ $attempt -lt $max_attempts ]; then
+                  sleep 5
+                fi
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "Warning: Failed to push $image after $max_attempts attempts (non-critical)"
+            return 1
+          }
+          
           ENV_TAG="${{ steps.env.outputs.env }}"
           IMAGE_NAME="docker.io/22521571/eshelf-api-gateway"
           SHA_TAG="${{ github.sha }}"
           
           docker build -t $IMAGE_NAME:$ENV_TAG -t $IMAGE_NAME:$SHA_TAG backend/services/api-gateway/
           
-          docker push $IMAGE_NAME:$ENV_TAG
-          docker push $IMAGE_NAME:$SHA_TAG
-          docker push $IMAGE_NAME:latest || true
+          # Push images with retry
+          push_with_retry $IMAGE_NAME:$ENV_TAG || true
+          push_with_retry $IMAGE_NAME:$SHA_TAG || true
+          push_with_retry $IMAGE_NAME:latest || true
 
   # Build Auth Service (only if changed)
   build-auth-service:
@@ -277,15 +326,40 @@ jobs:
       
       - name: Build and push Docker image
         run: |
+          # Helper function for retry logic
+          push_with_retry() {
+            local image=$1
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempting to push $image (attempt $attempt/$max_attempts)..."
+              if timeout 120 docker push "$image" --quiet; then
+                echo "Successfully pushed $image"
+                return 0
+              else
+                echo "Failed to push $image, attempt $attempt/$max_attempts"
+                if [ $attempt -lt $max_attempts ]; then
+                  sleep 5
+                fi
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "Warning: Failed to push $image after $max_attempts attempts (non-critical)"
+            return 1
+          }
+          
           ENV_TAG="${{ steps.env.outputs.env }}"
           IMAGE_NAME="docker.io/22521571/eshelf-auth-service"
           SHA_TAG="${{ github.sha }}"
           
           docker build -t $IMAGE_NAME:$ENV_TAG -t $IMAGE_NAME:$SHA_TAG backend/services/auth-service/
           
-          docker push $IMAGE_NAME:$ENV_TAG
-          docker push $IMAGE_NAME:$SHA_TAG
-          docker push $IMAGE_NAME:latest || true
+          # Push images with retry
+          push_with_retry $IMAGE_NAME:$ENV_TAG || true
+          push_with_retry $IMAGE_NAME:$SHA_TAG || true
+          push_with_retry $IMAGE_NAME:latest || true
 
   # Build Book Service (only if changed)
   build-book-service:
@@ -317,15 +391,40 @@ jobs:
       
       - name: Build and push Docker image
         run: |
+          # Helper function for retry logic
+          push_with_retry() {
+            local image=$1
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempting to push $image (attempt $attempt/$max_attempts)..."
+              if timeout 120 docker push "$image" --quiet; then
+                echo "Successfully pushed $image"
+                return 0
+              else
+                echo "Failed to push $image, attempt $attempt/$max_attempts"
+                if [ $attempt -lt $max_attempts ]; then
+                  sleep 5
+                fi
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "Warning: Failed to push $image after $max_attempts attempts (non-critical)"
+            return 1
+          }
+          
           ENV_TAG="${{ steps.env.outputs.env }}"
           IMAGE_NAME="docker.io/22521571/eshelf-book-service"
           SHA_TAG="${{ github.sha }}"
           
           docker build -t $IMAGE_NAME:$ENV_TAG -t $IMAGE_NAME:$SHA_TAG backend/services/book-service/
           
-          docker push $IMAGE_NAME:$ENV_TAG
-          docker push $IMAGE_NAME:$SHA_TAG
-          docker push $IMAGE_NAME:latest || true
+          # Push images with retry
+          push_with_retry $IMAGE_NAME:$ENV_TAG || true
+          push_with_retry $IMAGE_NAME:$SHA_TAG || true
+          push_with_retry $IMAGE_NAME:latest || true
 
   # Build User Service (only if changed)
   build-user-service:
@@ -357,15 +456,40 @@ jobs:
       
       - name: Build and push Docker image
         run: |
+          # Helper function for retry logic
+          push_with_retry() {
+            local image=$1
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempting to push $image (attempt $attempt/$max_attempts)..."
+              if timeout 120 docker push "$image" --quiet; then
+                echo "Successfully pushed $image"
+                return 0
+              else
+                echo "Failed to push $image, attempt $attempt/$max_attempts"
+                if [ $attempt -lt $max_attempts ]; then
+                  sleep 5
+                fi
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "Warning: Failed to push $image after $max_attempts attempts (non-critical)"
+            return 1
+          }
+          
           ENV_TAG="${{ steps.env.outputs.env }}"
           IMAGE_NAME="docker.io/22521571/eshelf-user-service"
           SHA_TAG="${{ github.sha }}"
           
           docker build -f backend/services/user-service/Dockerfile -t $IMAGE_NAME:$ENV_TAG -t $IMAGE_NAME:$SHA_TAG backend/
           
-          docker push $IMAGE_NAME:$ENV_TAG
-          docker push $IMAGE_NAME:$SHA_TAG
-          docker push $IMAGE_NAME:latest || true
+          # Push images with retry
+          push_with_retry $IMAGE_NAME:$ENV_TAG || true
+          push_with_retry $IMAGE_NAME:$SHA_TAG || true
+          push_with_retry $IMAGE_NAME:latest || true
         continue-on-error: false
 
   # Build ML Service (only if changed)
@@ -398,15 +522,40 @@ jobs:
       
       - name: Build and push Docker image
         run: |
+          # Helper function for retry logic
+          push_with_retry() {
+            local image=$1
+            local max_attempts=3
+            local attempt=1
+            
+            while [ $attempt -le $max_attempts ]; do
+              echo "Attempting to push $image (attempt $attempt/$max_attempts)..."
+              if timeout 120 docker push "$image" --quiet; then
+                echo "Successfully pushed $image"
+                return 0
+              else
+                echo "Failed to push $image, attempt $attempt/$max_attempts"
+                if [ $attempt -lt $max_attempts ]; then
+                  sleep 5
+                fi
+                attempt=$((attempt + 1))
+              fi
+            done
+            
+            echo "Warning: Failed to push $image after $max_attempts attempts (non-critical)"
+            return 1
+          }
+          
           ENV_TAG="${{ steps.env.outputs.env }}"
           IMAGE_NAME="docker.io/22521571/eshelf-ml-service"
           SHA_TAG="${{ github.sha }}"
           
           docker build -t $IMAGE_NAME:$ENV_TAG -t $IMAGE_NAME:$SHA_TAG backend/services/ml-service/
           
-          docker push $IMAGE_NAME:$ENV_TAG
-          docker push $IMAGE_NAME:$SHA_TAG
-          docker push $IMAGE_NAME:latest || true
+          # Push images with retry
+          push_with_retry $IMAGE_NAME:$ENV_TAG || true
+          push_with_retry $IMAGE_NAME:$SHA_TAG || true
+          push_with_retry $IMAGE_NAME:latest || true
 
   # Summary
   summary:
