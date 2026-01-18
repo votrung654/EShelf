@@ -295,3 +295,34 @@ resource "aws_security_group" "rds" {
   })
 }
 
+# Private Security Group - For Private Subnet instances
+# checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
+resource "aws_security_group" "private" {
+  count = var.use_existing_security_groups ? 0 : 1
+  name        = "${var.project}-private-sg-${var.environment}"
+  description = "Security group for private subnet instances"
+  vpc_id      = var.vpc_id
+
+  # SSH from Bastion only
+  ingress {
+    description     = "SSH from Bastion"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = var.use_existing_security_groups ? [var.existing_bastion_sg_id] : [aws_security_group.bastion[0].id]
+  }
+
+  # checkov:skip=CKV_AWS_382:Egress all traffic is required for functionality
+  egress {
+    description = "All outbound traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.project}-private-sg-${var.environment}"
+  })
+}
+

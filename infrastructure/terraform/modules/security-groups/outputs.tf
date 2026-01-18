@@ -30,4 +30,9 @@ output "k3s_worker_sg_id" {
   value       = var.use_existing_security_groups ? var.existing_k3s_worker_sg_id : aws_security_group.k3s_worker[0].id
 }
 
+output "private_sg_id" {
+  description = "Private security group ID"
+  value       = var.use_existing_security_groups ? "" : aws_security_group.private[0].id
+}
+
 

@@ -124,6 +124,9 @@ module "ec2" {
   iam_instance_profile     = module.iam.ec2_ssm_instance_profile_name
   k3s_token                = var.k3s_token
   ami_id                   = var.ami_id
+  # Add-on: Private Subnet and NAT Gateway
+  private_subnet_id        = module.vpc.private_subnet_id
+  private_sg_id            = module.security_groups.private_sg_id
   tags                     = local.common_tags
 }
 

@@ -20,7 +20,8 @@ data "aws_ami" "amazon_linux" {
 
 # Local value for AMI ID
 locals {
-  ami_id = var.ami_id != "" ? var.ami_id : (length(data.aws_ami.amazon_linux) > 0 ? data.aws_ami.amazon_linux[0].id : "")
+  # Hardcode AMI ID from Data Sheet: ami-0e200a2b66698ae78 (Amazon Linux 2023)
+  ami_id = var.ami_id != "" ? var.ami_id : "ami-0e200a2b66698ae78"
   key_name = var.create_key_pair ? aws_key_pair.main[0].key_name : (var.key_name != "" ? var.key_name : null)
 }
 
@@ -46,9 +47,16 @@ resource "aws_instance" "bastion" {
   key_name                    = local.key_name
   iam_instance_profile        = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
-  # Skip AMI validation (required when no DescribeImages permission)
+  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
   lifecycle {
-    ignore_changes = [ami]
+    ignore_changes = [
+      ami,
+      key_name,             # Bắt buộc: State null vs Code eshelf
+      user_data,            # Bắt buộc: Tránh chạy lại script
+      user_data_base64,
+      user_data_replace_on_change,
+      instance_type         # An toàn: Tránh hạ cấp nhầm
+    ]
   }
 
   root_block_device {
@@ -84,9 +92,16 @@ resource "aws_instance" "k3s_master" {
   associate_public_ip_address = true
   iam_instance_profile        = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
-  # Skip AMI validation (required when no DescribeImages permission)
+  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
   lifecycle {
-    ignore_changes = [ami]
+    ignore_changes = [
+      ami,
+      key_name,             # Bắt buộc: State null vs Code eshelf
+      user_data,            # Bắt buộc: Tránh chạy lại script
+      user_data_base64,
+      user_data_replace_on_change,
+      instance_type         # An toàn: Tránh hạ cấp nhầm
+    ]
   }
 
   root_block_device {
@@ -231,9 +246,16 @@ resource "aws_instance" "k3s_worker" {
   vpc_security_group_ids = [var.k3s_worker_sg_id]
   iam_instance_profile   = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
-  # Skip AMI validation (required when no DescribeImages permission)
+  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
   lifecycle {
-    ignore_changes = [ami]
+    ignore_changes = [
+      ami,
+      key_name,             # Bắt buộc: State null vs Code eshelf
+      user_data,            # Bắt buộc: Tránh chạy lại script
+      user_data_base64,
+      user_data_replace_on_change,
+      instance_type         # An toàn: Tránh hạ cấp nhầm
+    ]
   }
 
   root_block_device {
@@ -353,9 +375,16 @@ resource "aws_instance" "app" {
   subnet_id              = var.private_subnet_ids[count.index % length(var.private_subnet_ids)]
   vpc_security_group_ids = [var.app_sg_id]
 
-  # Skip AMI validation (required when no DescribeImages permission)
+  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
   lifecycle {
-    ignore_changes = [ami]
+    ignore_changes = [
+      ami,
+      key_name,             # Bắt buộc: State null vs Code eshelf
+      user_data,            # Bắt buộc: Tránh chạy lại script
+      user_data_base64,
+      user_data_replace_on_change,
+      instance_type         # An toàn: Tránh hạ cấp nhầm
+    ]
   }
 
   root_block_device {
@@ -386,6 +415,57 @@ resource "aws_instance" "app" {
   tags = merge(var.tags, {
     Name = "${var.project}-app-${count.index + 1}-${var.environment}"
     Role = "Application"
+  })
+}
+
+# Private App Instance - For Lab requirement (Private Subnet with NAT Gateway)
+resource "aws_instance" "private_app" {
+  count = 1
+
+  ami                    = local.ami_id
+  instance_type          = "t3.micro"
+  key_name               = local.key_name
+  subnet_id              = var.private_subnet_id
+  vpc_security_group_ids = [var.private_sg_id]
+  iam_instance_profile   = var.iam_instance_profile != "" ? var.iam_instance_profile : null
+
+  # Critical: Prevent replacement - ignore changes to these attributes
+  lifecycle {
+    ignore_changes = [
+      ami,
+      key_name,             # Bắt buộc: State null vs Code eshelf
+      user_data,            # Bắt buộc: Tránh chạy lại script
+      user_data_base64,
+      user_data_replace_on_change,
+      instance_type         # An toàn: Tránh hạ cấp nhầm
+    ]
+  }
+
+  root_block_device {
+    volume_type = "gp3"
+    volume_size = 50
+    encrypted   = true
+  }
+
+  user_data = <<-EOF
+              #!/bin/bash
+              yum update -y
+              
+              # Install httpd (Apache) for testing network connectivity
+              yum install -y httpd
+              systemctl start httpd
+              systemctl enable httpd
+              
+              # Create a simple test page
+              echo "<h1>Private App Instance - Network Test</h1>" > /var/www/html/index.html
+              echo "<p>This instance is in a Private Subnet with NAT Gateway.</p>" >> /var/www/html/index.html
+              echo "<p>Instance ID: $(curl -s http://169.254.169.254/latest/meta-data/instance-id)</p>" >> /var/www/html/index.html
+              echo "<p>Private IP: $(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)</p>" >> /var/www/html/index.html
+              EOF
+
+  tags = merge(var.tags, {
+    Name = "${var.project}-private-app-${var.environment}"
+    Role = "Private-App"
   })
 }
 

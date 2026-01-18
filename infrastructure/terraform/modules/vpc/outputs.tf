@@ -40,4 +40,14 @@ output "private_route_table_id" {
   value       = var.use_existing_subnets ? null : aws_route_table.private[0].id
 }
 
+output "private_subnet_id" {
+  description = "Private subnet ID for Lab (172.31.100.0/24)"
+  value       = aws_subnet.private_lab.id
+}
+
+output "nat_gateway_lab_id" {
+  description = "NAT Gateway ID for Lab"
+  value       = aws_nat_gateway.lab.id
+}
+
 

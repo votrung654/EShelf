@@ -160,4 +160,63 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private[0].id
 }
 
+# ============================================
+# ADD-ON: Private Subnet with NAT Gateway
+# ============================================
+# New Private Subnet for Lab requirement (always created, even with existing VPC)
+resource "aws_subnet" "private_lab" {
+  vpc_id            = local.vpc_id
+  cidr_block        = "172.31.100.0/24"
+  availability_zone = var.availability_zones[0]  # Use first AZ
+
+  tags = merge(var.tags, {
+    Name = "eshelf-private-subnet"
+    Tier = "Private"
+  })
+}
+
+# Elastic IP for NAT Gateway
+# checkov:skip=CKV2_AWS_19:EIP is attached to NAT Gateway, not EC2 instance
+resource "aws_eip" "nat_lab" {
+  domain = "vpc"
+
+  tags = merge(var.tags, {
+    Name = "${var.project}-nat-eip-lab-${var.environment}"
+  })
+
+  depends_on = [local.igw_id]
+}
+
+# NAT Gateway in Public Subnet (use first public subnet)
+resource "aws_nat_gateway" "lab" {
+  allocation_id = aws_eip.nat_lab.id
+  subnet_id     = var.use_existing_subnets ? var.existing_public_subnet_ids[0] : aws_subnet.public[0].id
+
+  tags = merge(var.tags, {
+    Name = "${var.project}-nat-lab-${var.environment}"
+  })
+
+  depends_on = [local.igw_id]
+}
+
+# Private Route Table for Lab Private Subnet
+resource "aws_route_table" "private_lab" {
+  vpc_id = local.vpc_id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.lab.id
+  }
+
+  tags = merge(var.tags, {
+    Name = "${var.project}-private-rt-lab-${var.environment}"
+  })
+}
+
+# Route Table Association for Lab Private Subnet
+resource "aws_route_table_association" "private_lab" {
+  subnet_id      = aws_subnet.private_lab.id
+  route_table_id = aws_route_table.private_lab.id
+}
+
 

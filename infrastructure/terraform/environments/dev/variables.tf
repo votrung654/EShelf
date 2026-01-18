@@ -3,7 +3,7 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-1"
+  default     = "ap-southeast-2"  # Data Sheet: ap-southeast-2 (Sydney)
 }
 
 variable "vpc_cidr" {
@@ -81,13 +81,13 @@ variable "create_k3s_cluster" {
 variable "k3s_master_instance_type" {
   description = "K3s master instance type"
   type        = string
-  default     = "t3.medium"
+  default     = "m7i-flex.large"  # Data Sheet: m7i-flex.large
 }
 
 variable "k3s_worker_instance_type" {
   description = "K3s worker instance type"
   type        = string
-  default     = "t3.small"
+  default     = "m7i-flex.large"  # Data Sheet: m7i-flex.large
 }
 
 variable "k3s_worker_count" {
@@ -104,9 +104,9 @@ variable "k3s_token" {
 }
 
 variable "ami_id" {
-  description = "AMI ID for EC2 instances. If empty, will try to query (requires ec2:DescribeImages permission)"
+  description = "AMI ID for EC2 instances. Default: ami-0e200a2b66698ae78 (Amazon Linux 2023)"
   type        = string
-  default     = ""
+  default     = "ami-0e200a2b66698ae78"  # Data Sheet: ami-0e200a2b66698ae78
 }
 
 # Use existing VPC (for AWS Academy with restricted permissions)
