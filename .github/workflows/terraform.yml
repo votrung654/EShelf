@@ -50,6 +50,16 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
+      # Optional: Configure AWS Credentials for data source queries
+      # If secrets are not set, terraform plan will still run but may fail on data sources
+      - name: Configure AWS Credentials (Optional)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+        continue-on-error: true
+
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init -backend=false -upgrade
@@ -112,8 +122,13 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init
 
+      - name: Terraform Plan (before apply)
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform plan -out=tfplan
+        continue-on-error: false
+
       - name: Terraform Apply
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
 
 
