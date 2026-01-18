@@ -248,3 +248,8 @@ else
     echo "Check logs: sudo journalctl -u k3s -n 50"
 fi
 
+
+
+
+
+

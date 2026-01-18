@@ -13,6 +13,10 @@ spec:
       labels:
         app: book-service
         tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3002"
+        prometheus.io/path: "/metrics"
     spec:
       imagePullSecrets:
       - name: harbor-registry-secret

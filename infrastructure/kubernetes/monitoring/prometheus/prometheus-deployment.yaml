@@ -32,15 +32,18 @@ spec:
         volumeMounts:
         - name: prometheus-config
           mountPath: /etc/prometheus
+        - name: prometheus-alerts
+          mountPath: /etc/prometheus/rules
+          readOnly: true
         - name: prometheus-storage
           mountPath: /prometheus
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "200Mi"
+            cpu: "150m"
           limits:
-            memory: "2Gi"
-            cpu: "2000m"
+            memory: "1Gi"
+            cpu: "1000m"
         livenessProbe:
           httpGet:
             path: /-/healthy
@@ -57,6 +60,9 @@ spec:
       - name: prometheus-config
         configMap:
           name: prometheus-config
+      - name: prometheus-alerts
+        configMap:
+          name: prometheus-alerts
       - name: prometheus-storage
         emptyDir: {}
 ---

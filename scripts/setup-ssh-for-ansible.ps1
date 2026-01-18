@@ -118,3 +118,8 @@ Write-Host "  3. Run Ansible playbook: cd infrastructure\ansible && ansible-play
 
 
 
+
+
+
+
+

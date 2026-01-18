@@ -95,3 +95,8 @@ Write-Host "  Then run: cat /home/ec2-user/.kube/config" -ForegroundColor Gray
 
 
 
+
+
+
+
+

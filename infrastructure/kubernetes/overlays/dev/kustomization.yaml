@@ -3,23 +3,30 @@ kind: Kustomization
 
 namespace: eshelf-dev
 
-bases:
+resources:
   - ../../base
-
-namePrefix: dev-
 
 commonLabels:
   environment: dev
 
 replicas:
+  - name: frontend
+    count: 1
   - name: api-gateway
     count: 1
   - name: auth-service
     count: 1
   - name: book-service
     count: 1
+  - name: user-service
+    count: 1
+  - name: ml-service
+    count: 1
 
 images:
+  - name: eshelf/frontend
+    newName: harbor-core.harbor.svc.cluster.local/eshelf/frontend
+    newTag: dev
   - name: eshelf/api-gateway
     newName: harbor-core.harbor.svc.cluster.local/eshelf/api-gateway
     newTag: dev
@@ -35,4 +42,16 @@ images:
   - name: eshelf/ml-service
     newName: harbor-core.harbor.svc.cluster.local/eshelf/ml-service
     newTag: dev
+
+configMapGenerator:
+  - name: app-config
+    literals:
+      - NODE_ENV=development
+      - LOG_LEVEL=debug
+
+patches:
+  - path: ingress-patch.yaml
+    target:
+      kind: Ingress
+      name: eshelf-ingress
 

@@ -9,15 +9,11 @@ metadata:
 data:
   registries.conf: |
     registries:
-    - name: Harbor
-      prefix: harbor.yourdomain.com
-      api_url: https://harbor.yourdomain.com
-      credentials: ext:/scripts/harbor-creds
-      default: true
     - name: Docker Hub
       prefix: docker.io
       api_url: https://registry-1.docker.io
       credentials: ext:/scripts/dockerhub-creds
+      default: true
   git.user: github-actions[bot]
   git.email: github-actions[bot]@users.noreply.github.com
   git.commit_message: "chore: update image tags to {{.Tag}}"

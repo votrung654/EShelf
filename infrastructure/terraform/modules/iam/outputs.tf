@@ -12,3 +12,8 @@ output "ec2_ssm_instance_profile_arn" {
 
 
 
+
+
+
+
+

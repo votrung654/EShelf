@@ -189,3 +189,8 @@ Write-Host "  2. Try MSI installer: .\scripts\reinstall-aws-cli.ps1 -UseMSI" -Fo
 Write-Host "  3. Check antivirus/security software" -ForegroundColor Gray
 Write-Host ""
 
+
+
+
+
+

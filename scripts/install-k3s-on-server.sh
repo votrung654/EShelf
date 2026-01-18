@@ -225,3 +225,8 @@ echo ""
 echo "3. Test from local:"
 echo "   kubectl get nodes"
 
+
+
+
+
+

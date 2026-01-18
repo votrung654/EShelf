@@ -322,3 +322,8 @@ Write-Host "  3. Port-forward ArgoCD: kubectl port-forward svc/argocd-server -n 
 Write-Host "  4. Access ArgoCD UI: https://localhost:8080" -ForegroundColor Cyan
 Write-Host ""
 
+
+
+
+
+

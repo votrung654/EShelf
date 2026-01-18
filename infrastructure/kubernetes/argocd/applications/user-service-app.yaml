@@ -1,14 +1,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: user-service
+  name: user-service-dev
   namespace: argocd
   annotations:
-    argocd-image-updater.argoproj.io/image-list: user-service=harbor.yourdomain.com/eshelf/user-service
+    argocd-image-updater.argoproj.io/image-list: user-service=docker.io/22521571/eshelf-user-service
+    argocd-image-updater.argoproj.io/user-service.update-strategy: digest
+    argocd-image-updater.argoproj.io/user-service.allow-tags-regex: '^dev$'
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/git-branch: main
     argocd-image-updater.argoproj.io/write-back-target: kustomization
-    argocd-image-updater.argoproj.io/kustomize-image-name: user-service
+    argocd-image-updater.argoproj.io/kustomize-image-name: eshelf/user-service
+    argocd-image-updater.argoproj.io/git-commit-user: github-actions[bot]
+    argocd-image-updater.argoproj.io/git-commit-email: github-actions[bot]@users.noreply.github.com
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -19,7 +23,7 @@ spec:
     path: infrastructure/kubernetes/overlays/dev
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: eshelf-dev
   syncPolicy:
     automated:
       prune: true

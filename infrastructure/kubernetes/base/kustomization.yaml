@@ -5,11 +5,13 @@ namespace: eshelf
 
 resources:
   - namespace.yaml
+  - frontend-deployment.yaml
   - api-gateway-deployment.yaml
   - auth-service-deployment.yaml
   - book-service-deployment.yaml
   - user-service-deployment.yaml
   - ml-service-deployment.yaml
+  - ingress.yaml
 
 labels:
   - includeSelectors: true

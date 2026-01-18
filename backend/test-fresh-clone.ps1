@@ -156,3 +156,8 @@ Write-Host ""
 Write-Host "Database sẽ tự động setup đầy đủ!" -ForegroundColor Green
 Write-Host ""
 
+
+
+
+
+

@@ -193,3 +193,8 @@ Write-Host "  2. Reinstall AWS CLI:" -ForegroundColor Cyan
 Write-Host "     .\scripts\clean-reinstall-aws-cli.ps1" -ForegroundColor Gray
 Write-Host ""
 
+
+
+
+
+

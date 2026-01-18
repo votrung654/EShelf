@@ -7,6 +7,8 @@ resources:
   - ../../base
 
 replicas:
+  - name: frontend
+    count: 1
   - name: api-gateway
     count: 2
   - name: auth-service
@@ -19,18 +21,30 @@ replicas:
     count: 1
 
 images:
+  - name: eshelf/frontend
+    newName: docker.io/22521571/eshelf-frontend
+    newTag: staging
   - name: eshelf/api-gateway
-    newTag: latest
+    newName: docker.io/22521571/eshelf-api-gateway
+    newTag: staging
   - name: eshelf/auth-service
-    newTag: latest
+    newName: docker.io/22521571/eshelf-auth-service
+    newTag: staging
   - name: eshelf/book-service
-    newTag: latest
+    newName: docker.io/22521571/eshelf-book-service
+    newTag: staging
   - name: eshelf/user-service
-    newTag: latest
+    newName: docker.io/22521571/eshelf-user-service
+    newTag: staging
   - name: eshelf/ml-service
-    newTag: latest
+    newName: docker.io/22521571/eshelf-ml-service
+    newTag: staging
 
 patches:
+  - path: ingress-patch.yaml
+    target:
+      kind: Ingress
+      name: eshelf-ingress
   - path: api-gateway-patch.yaml
     target:
       kind: Deployment

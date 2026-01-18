@@ -37,14 +37,89 @@ argocd app create api-gateway -f applications/api-gateway-app.yaml
 
 ArgoCD Image Updater tự động cập nhật image tags khi có image mới được push lên registry.
 
-Thiết lập:
-1. Cài đặt ArgoCD Image Updater
-2. Cấu hình registry credentials
-3. Thêm annotations cho applications với update policies
+### Thiết lập Git Credentials (QUAN TRỌNG - Cần cho Write-back)
 
-Ví dụ annotation:
-```yaml
-argocd-image-updater.argoproj.io/image-list: api-gateway=harbor.yourdomain.com/eshelf/api-gateway
-argocd-image-updater.argoproj.io/write-back-method: git
-argocd-image-updater.argoproj.io/git-branch: main
+ArgoCD Image Updater cần quyền write vào Git repository để commit ngược lại. Cấu hình như sau:
+
+#### Cách 1: Sử dụng ArgoCD CLI (Khuyến nghị)
+
+```bash
+# Đăng nhập ArgoCD
+argocd login <argocd-server-url>
+
+# Thêm repository với credentials có quyền write
+argocd repo add https://github.com/votrung654/EShelf.git \
+  --username <github-username> \
+  --password <github-token> \
+  --type git
 ```
+
+**Lưu ý:** Cần sử dụng GitHub Personal Access Token (PAT) với quyền `repo` để có quyền write.
+
+#### Cách 2: Sử dụng Kubernetes Secret
+
+```bash
+# Tạo secret cho Git credentials
+kubectl create secret generic git-creds \
+  --from-literal=username=<github-username> \
+  --from-literal=password=<github-token> \
+  -n argocd
+
+# Thêm repository vào ArgoCD
+argocd repo add https://github.com/votrung654/EShelf.git \
+  --username <github-username> \
+  --password <github-token>
+```
+
+### Cấu hình Registry Credentials
+
+```bash
+# Tạo secret cho Docker Hub credentials
+kubectl create secret generic dockerhub-creds \
+  --from-literal=username=<dockerhub-username> \
+  --from-literal=password=<dockerhub-token> \
+  -n argocd
+```
+
+### Annotations trong Applications
+
+Tất cả 5 backend services đã được cấu hình với các annotations sau:
+
+```yaml
+annotations:
+  # Image list với Docker Hub
+  argocd-image-updater.argoproj.io/image-list: api-gateway=docker.io/22521571/eshelf-api-gateway
+  
+  # Update strategy: digest (theo dõi mã băm, tránh lỗi semantic version)
+  argocd-image-updater.argoproj.io/api-gateway.update-strategy: digest
+  
+  # Chỉ định tag cụ thể để theo dõi
+  argocd-image-updater.argoproj.io/api-gateway.allow-tags-regex: '^dev$'
+  
+  # Git write-back configuration
+  argocd-image-updater.argoproj.io/write-back-method: git
+  argocd-image-updater.argoproj.io/git-branch: main
+  argocd-image-updater.argoproj.io/write-back-target: kustomization
+  argocd-image-updater.argoproj.io/kustomize-image-name: eshelf/api-gateway
+  argocd-image-updater.argoproj.io/git-commit-user: github-actions[bot]
+  argocd-image-updater.argoproj.io/git-commit-email: github-actions[bot]@users.noreply.github.com
+```
+
+### Kiểm tra Write-back hoạt động
+
+```bash
+# Xem logs của ArgoCD Image Updater
+kubectl logs -n argocd -l app.kubernetes.io/name=argocd-image-updater --tail=100
+
+# Kiểm tra applications
+kubectl get applications -n argocd
+
+# Xem chi tiết một application
+kubectl describe application api-gateway -n argocd
+```
+
+### Troubleshooting
+
+1. **Bot không commit**: Kiểm tra Git credentials có quyền write không
+2. **Lỗi "Invalid Semantic Version"**: Đã sử dụng `digest` strategy thay vì `latest`
+3. **Image không được cập nhật**: Kiểm tra `allow-tags-regex` có khớp với tag trên Docker Hub không

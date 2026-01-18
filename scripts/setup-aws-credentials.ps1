@@ -73,3 +73,8 @@ Write-Host "Run 'aws configure' manually to set up AWS CLI with temporary creden
 
 
 
+
+
+
+
+
