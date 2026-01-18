@@ -112,8 +112,10 @@ Write-Host ""
 
 # Show final disk space
 $drive = Get-PSDrive C
+$freePercent = [math]::Round(($drive.Free/($drive.Used+$drive.Free))*100,2)
+$color = if ($freePercent -lt 10) { "Red" } else { "Green" }
 Write-Host "C: Drive Status:" -ForegroundColor Cyan
 Write-Host "  Used: $([math]::Round($drive.Used/1GB,2)) GB" -ForegroundColor White
 Write-Host "  Free: $([math]::Round($drive.Free/1GB,2)) GB" -ForegroundColor White
-Write-Host "  Free: $([math]::Round(($drive.Free/($drive.Used+$drive.Free))*100,2))%" -ForegroundColor $(if ($drive.Free/($drive.Used+$drive.Free) -lt 0.1) { "Red" } else { "Green" })
+Write-Host "  Free: $freePercent`%" -ForegroundColor $color
 
