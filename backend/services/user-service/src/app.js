@@ -54,7 +54,7 @@ if (require.main === module) {
     console.log(`User Service running on port ${PORT}`);
   });
 }
-
+// [DEMO] Fixed Pipeline Logic
 module.exports = app;
 
 
