@@ -17,12 +17,12 @@ $tempPath = $env:TEMP
 if (Test-Path $tempPath) {
     try {
         Get-ChildItem -Path $tempPath -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-        Write-Host "   ✓ Cleaned Windows Temp folder" -ForegroundColor Green
+        Write-Host "   Cleaned Windows Temp folder" -ForegroundColor Green
     } catch {
-        Write-Host "   ⚠ Some files in Temp folder could not be deleted (may be in use)" -ForegroundColor Yellow
+        Write-Host "   Some files in Temp folder could not be deleted (may be in use)" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "   ⚠ Temp folder not found" -ForegroundColor Yellow
+    Write-Host "   Temp folder not found" -ForegroundColor Yellow
 }
 
 # 2. Clean user Temp folder
@@ -31,12 +31,12 @@ $userTempPath = "$env:USERPROFILE\AppData\Local\Temp"
 if (Test-Path $userTempPath) {
     try {
         Get-ChildItem -Path $userTempPath -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-        Write-Host "   ✓ Cleaned User Temp folder" -ForegroundColor Green
+        Write-Host "   Cleaned User Temp folder" -ForegroundColor Green
     } catch {
-        Write-Host "   ⚠ Some files in User Temp folder could not be deleted" -ForegroundColor Yellow
+        Write-Host "   Some files in User Temp folder could not be deleted" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "   ⚠ User Temp folder not found" -ForegroundColor Yellow
+    Write-Host "   User Temp folder not found" -ForegroundColor Yellow
 }
 
 # 3. Clean npm cache (if exists)
@@ -44,12 +44,12 @@ Write-Host "3. Cleaning npm cache..." -ForegroundColor Green
 if (Get-Command npm -ErrorAction SilentlyContinue) {
     try {
         npm cache clean --force 2>&1 | Out-Null
-        Write-Host "   ✓ Cleaned npm cache" -ForegroundColor Green
+        Write-Host "   Cleaned npm cache" -ForegroundColor Green
     } catch {
-        Write-Host "   ⚠ Could not clean npm cache" -ForegroundColor Yellow
+        Write-Host "   Could not clean npm cache" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "   ⚠ npm not found, skipping" -ForegroundColor Yellow
+    Write-Host "   npm not found, skipping" -ForegroundColor Yellow
 }
 
 # 4. Clean Docker (if exists)
@@ -57,12 +57,12 @@ Write-Host "4. Cleaning Docker (if installed)..." -ForegroundColor Green
 if (Get-Command docker -ErrorAction SilentlyContinue) {
     try {
         docker system prune -f 2>&1 | Out-Null
-        Write-Host "   ✓ Cleaned Docker system" -ForegroundColor Green
+        Write-Host "   Cleaned Docker system" -ForegroundColor Green
     } catch {
-        Write-Host "   ⚠ Docker not running or not accessible" -ForegroundColor Yellow
+        Write-Host "   Docker not running or not accessible" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "   ⚠ Docker not found, skipping" -ForegroundColor Yellow
+    Write-Host "   Docker not found, skipping" -ForegroundColor Yellow
 }
 
 # 5. Clean Windows Update cache (requires admin)
@@ -72,21 +72,21 @@ if ($isAdmin) {
         Stop-Service -Name wuauserv -Force -ErrorAction SilentlyContinue
         Remove-Item -Path "$env:SystemRoot\SoftwareDistribution\Download\*" -Recurse -Force -ErrorAction SilentlyContinue
         Start-Service -Name wuauserv -ErrorAction SilentlyContinue
-        Write-Host "   ✓ Cleaned Windows Update cache" -ForegroundColor Green
+        Write-Host "   Cleaned Windows Update cache" -ForegroundColor Green
     } catch {
-        Write-Host "   ⚠ Could not clean Windows Update cache" -ForegroundColor Yellow
+        Write-Host "   Could not clean Windows Update cache" -ForegroundColor Yellow
     }
 } else {
-    Write-Host "   ⚠ Skipping (requires Administrator)" -ForegroundColor Yellow
+    Write-Host "   Skipping (requires Administrator)" -ForegroundColor Yellow
 }
 
 # 6. Clean Recycle Bin
 Write-Host "6. Cleaning Recycle Bin..." -ForegroundColor Green
 try {
     Clear-RecycleBin -Force -ErrorAction SilentlyContinue
-    Write-Host "   ✓ Cleaned Recycle Bin" -ForegroundColor Green
+    Write-Host "   Cleaned Recycle Bin" -ForegroundColor Green
 } catch {
-    Write-Host "   ⚠ Could not clean Recycle Bin" -ForegroundColor Yellow
+    Write-Host "   Could not clean Recycle Bin" -ForegroundColor Yellow
 }
 
 # 7. Clean browser caches (Chrome, Edge)
@@ -99,9 +99,9 @@ foreach ($path in $browserPaths) {
     if (Test-Path $path) {
         try {
             Get-ChildItem -Path $path -Recurse -ErrorAction SilentlyContinue | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-            Write-Host "   ✓ Cleaned browser cache: $(Split-Path $path -Leaf)" -ForegroundColor Green
+            Write-Host "   Cleaned browser cache: $(Split-Path $path -Leaf)" -ForegroundColor Green
         } catch {
-            Write-Host "   ⚠ Could not clean: $(Split-Path $path -Leaf)" -ForegroundColor Yellow
+            Write-Host "   Could not clean: $(Split-Path $path -Leaf)" -ForegroundColor Yellow
         }
     }
 }
@@ -117,5 +117,5 @@ $color = if ($freePercent -lt 10) { "Red" } else { "Green" }
 Write-Host "C: Drive Status:" -ForegroundColor Cyan
 Write-Host "  Used: $([math]::Round($drive.Used/1GB,2)) GB" -ForegroundColor White
 Write-Host "  Free: $([math]::Round($drive.Free/1GB,2)) GB" -ForegroundColor White
-Write-Host "  Free: $freePercent`%" -ForegroundColor $color
-
+$percentMsg = "  Free: " + $freePercent.ToString() + " percent"
+Write-Host $percentMsg -ForegroundColor $color
