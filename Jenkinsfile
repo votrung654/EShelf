@@ -144,6 +144,16 @@ pipeline {
                 }
             }
         }
+
+        stage('7. Security Scan (Trivy)') {
+            steps {
+                script {
+                    echo "Running Trivy security scan on Docker images..."
+                    // Pull the image first (since we pushed it) or scan local
+                    sh "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image --exit-code 0 --severity HIGH,CRITICAL ${ECR_REGISTRY}/${PROJECT_KEY}/api-gateway:latest"
+                }
+            }
+        }
     }
 
     post {

@@ -1,5 +1,6 @@
 # eShelf Development Environment
 # Terraform configuration for Lab 1
+# Final check for Lab 2
 
 terraform {
   required_version = ">= 1.5.0"
