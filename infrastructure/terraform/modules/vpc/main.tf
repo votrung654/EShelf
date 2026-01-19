@@ -43,6 +43,10 @@ resource "aws_internet_gateway" "main" {
 locals {
   vpc_id         = var.use_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.main[0].id
   vpc_cidr_block = var.use_existing_vpc ? data.aws_vpc.existing[0].cidr_block : aws_vpc.main[0].cidr_block
+  # Dynamically calculate private_lab subnet CIDR from VPC CIDR block
+  # cidrsubnet(prefix, newbits, netnum): splits VPC CIDR into subnets
+  # For /16 VPC: newbits=8 creates /24 subnets, netnum=100 selects subnet 100
+  private_lab_subnet_cidr = cidrsubnet(local.vpc_cidr_block, 8, 100)
   # If existing_igw_id is provided, use it directly; otherwise create new (if not using existing VPC)
   # For existing VPC without IGW ID, we skip IGW creation (default VPC already has IGW)
   igw_id = var.use_existing_vpc && var.existing_igw_id != "" ? var.existing_igw_id : (var.use_existing_vpc ? "" : aws_internet_gateway.main[0].id)
@@ -168,9 +172,10 @@ resource "aws_route_table_association" "private" {
 # ADD-ON: Private Subnet with NAT Gateway
 # ============================================
 # New Private Subnet for Lab requirement (always created, even with existing VPC)
+# CIDR is dynamically calculated from VPC CIDR block to avoid conflicts
 resource "aws_subnet" "private_lab" {
   vpc_id            = local.vpc_id
-  cidr_block        = "172.31.10.0/24" # Safe CIDR range close to existing subnets (1.0, 2.0, 3.0, 4.0)
+  cidr_block        = local.private_lab_subnet_cidr # Dynamically calculated from VPC CIDR using cidrsubnet
   availability_zone = "ap-southeast-2a" # Explicitly set to Sydney AZ
 
   tags = merge(var.tags, {
