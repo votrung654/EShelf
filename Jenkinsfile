@@ -73,7 +73,7 @@ pipeline {
                         -Dsonar.projectKey=${PROJECT_KEY} \
                         -Dsonar.projectName="eShelf Project" \
                         -Dsonar.sources=backend/services \
-                        -Dsonar.host.url=http://sonarqube.sonarqube.svc.cluster.local:9000 \
+                        -Dsonar.host.url=http://sonarqube:9000 \
                         -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/*.spec.js"""
                     }
                 }
