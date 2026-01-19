@@ -170,7 +170,7 @@ resource "aws_route_table_association" "private" {
 # New Private Subnet for Lab requirement (always created, even with existing VPC)
 resource "aws_subnet" "private_lab" {
   vpc_id            = local.vpc_id
-  cidr_block        = "172.31.10.0/24"  # Changed from 172.31.100.0/24 to avoid overlap with existing subnets
+  cidr_block        = "172.31.128.0/24"  # Using 172.31.128.0/24 to avoid overlap with default subnets (0, 16, 32, 48)
   availability_zone = "ap-southeast-2a"  # Explicitly set to Sydney AZ
 
   tags = merge(var.tags, {
