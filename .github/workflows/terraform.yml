@@ -144,6 +144,8 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: |
           terraform plan \
+            -var="public_key=dummy" \
+            -var="create_k3s_cluster=true" \
             -var="use_existing_vpc=true" \
             -var="existing_vpc_id=vpc-081b81333953d3c66" \
             -var="use_existing_subnets=true" \
