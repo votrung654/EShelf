@@ -106,8 +106,8 @@ jobs:
     needs: terraform-plan
     # Removed environment completely to eliminate all protection rules
     # Simplified condition: only run on push to main (not on PRs)
-    # Force run by checking if plan job succeeded
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.terraform-plan.result == 'success'
+    # The 'needs' keyword already ensures this only runs after terraform-plan succeeds
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Debug workflow context
