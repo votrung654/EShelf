@@ -41,7 +41,7 @@ output "private_route_table_id" {
 }
 
 output "private_subnet_id" {
-  description = "Private subnet ID for Lab (172.31.10.0/24)"
+  description = "Private subnet ID for Lab (dynamically calculated CIDR using cidrsubnet)"
   value       = aws_subnet.private_lab.id
 }
 
