@@ -114,16 +114,31 @@ pipeline {
                     services.each { service ->
                         echo "Building & Pushing: ${service}"
                         
-                        dir("backend/services/${service}") {
-                            // 1. Build Image
-                            sh "docker build -t ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT} ."
-                            
-                            // 2. Tag thêm bản 'latest'
-                            sh "docker tag ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT} ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:latest"
-                            
-                            // 3. Push lên ECR
-                            sh "docker push ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT}"
-                            sh "docker push ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:latest"
+                        // user-service needs build context from 'backend' directory to access shared database/prisma
+                        if (service == 'user-service') {
+                            dir("backend") {
+                                // 1. Build Image with specific Dockerfile path
+                                sh "/usr/bin/docker build -f services/${service}/Dockerfile -t ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT} ."
+                                
+                                // 2. Tag thêm bản 'latest'
+                                sh "/usr/bin/docker tag ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT} ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:latest"
+                                
+                                // 3. Push lên ECR
+                                sh "/usr/bin/docker push ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT}"
+                                sh "/usr/bin/docker push ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:latest"
+                            }
+                        } else {
+                            dir("backend/services/${service}") {
+                                // 1. Build Image
+                                sh "/usr/bin/docker build -t ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT} ."
+                                
+                                // 2. Tag thêm bản 'latest'
+                                sh "/usr/bin/docker tag ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT} ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:latest"
+                                
+                                // 3. Push lên ECR
+                                sh "/usr/bin/docker push ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:${env.GIT_COMMIT_SHORT}"
+                                sh "/usr/bin/docker push ${ECR_REGISTRY}/${PROJECT_KEY}/${service}:latest"
+                            }
                         }
                     }
                 }
