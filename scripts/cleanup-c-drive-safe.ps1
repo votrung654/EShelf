@@ -69,13 +69,19 @@ Write-Host "DON DEP O C AN TOAN" -ForegroundColor Magenta
 Write-Host ""
 Write-Host "Script nay se xoa:" -ForegroundColor White
 Write-Host "  [OK] Windows Temp files" -ForegroundColor Green
-Write-Host "  [OK] Browser cache" -ForegroundColor Green
-Write-Host "  [OK] npm cache (co the tai tao)" -ForegroundColor Green
+Write-Host "  [OK] Browser cache (Chrome, Edge, Firefox, Brave, Opera)" -ForegroundColor Green
+Write-Host "  [OK] npm/yarn/pnpm cache (co the tai tao)" -ForegroundColor Green
 Write-Host "  [OK] Python cache (__pycache__)" -ForegroundColor Green
 Write-Host "  [OK] Docker unused images/containers" -ForegroundColor Green
 Write-Host "  [OK] Build artifacts (dist/, build/)" -ForegroundColor Green
 Write-Host "  [OK] Recycle Bin" -ForegroundColor Green
 Write-Host "  [OK] Windows Update files cu" -ForegroundColor Green
+Write-Host "  [OK] Visual Studio Code cache" -ForegroundColor Green
+Write-Host "  [OK] Windows Store cache" -ForegroundColor Green
+Write-Host "  [OK] Prefetch files" -ForegroundColor Green
+Write-Host "  [OK] Thumbnail cache" -ForegroundColor Green
+Write-Host "  [OK] Recent files cache" -ForegroundColor Green
+Write-Host "  [OK] Log files cu (>7 ngay)" -ForegroundColor Green
 Write-Host ""
 Write-Host "KHONG xoa:" -ForegroundColor White
 Write-Host "  [X] node_modules trong project" -ForegroundColor Red
@@ -129,12 +135,18 @@ foreach ($tempPath in $tempPaths) {
 Write-Host ""
 Write-Host "2. Browser Cache" -ForegroundColor Magenta
 $browserCaches = @(
-    "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache",
-    "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Code Cache",
-    "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache"
+    @{ Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache"; Name = "Chrome Cache" },
+    @{ Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Code Cache"; Name = "Chrome Code Cache" },
+    @{ Path = "$env:LOCALAPPDATA\Google\Chrome\User Data\ShaderCache"; Name = "Chrome Shader Cache" },
+    @{ Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache"; Name = "Edge Cache" },
+    @{ Path = "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Code Cache"; Name = "Edge Code Cache" },
+    @{ Path = "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles"; Name = "Firefox Profiles Cache" },
+    @{ Path = "$env:APPDATA\Mozilla\Firefox\Profiles"; Name = "Firefox Profiles Cache (Roaming)" },
+    @{ Path = "$env:LOCALAPPDATA\BraveSoftware\Brave-Browser\User Data\Default\Cache"; Name = "Brave Cache" },
+    @{ Path = "$env:LOCALAPPDATA\Opera Software\Opera Stable\Cache"; Name = "Opera Cache" }
 )
 foreach ($cache in $browserCaches) {
-    $totalFreed += Remove-SafeFolder -Path $cache -Description "Browser Cache"
+    $totalFreed += Remove-SafeFolder -Path $cache.Path -Description $cache.Name
 }
 
 # 3. npm Cache
@@ -274,6 +286,131 @@ if ($logFiles) {
     }
 } else {
     Write-Host "  [OK] Khong co log files cu" -ForegroundColor Green
+}
+
+# 10. Visual Studio Code Cache
+Write-Host ""
+Write-Host "10. Visual Studio Code Cache" -ForegroundColor Magenta
+$vscodeCaches = @(
+    "$env:APPDATA\Code\Cache",
+    "$env:APPDATA\Code\CachedData",
+    "$env:APPDATA\Code\CachedExtensions",
+    "$env:APPDATA\Code\User\workspaceStorage",
+    "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Cache"
+)
+foreach ($cache in $vscodeCaches) {
+    $totalFreed += Remove-SafeFolder -Path $cache -Description "VS Code Cache"
+}
+
+# 11. Windows Store Cache
+Write-Host ""
+Write-Host "11. Windows Store Cache" -ForegroundColor Magenta
+$storeCaches = @(
+    "$env:LOCALAPPDATA\Packages\Microsoft.WindowsStore_*\TempState",
+    "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"
+)
+foreach ($cachePattern in $storeCaches) {
+    $cachePaths = Get-ChildItem -Path (Split-Path $cachePattern -Parent) -Filter (Split-Path $cachePattern -Leaf) -ErrorAction SilentlyContinue
+    if ($cachePaths) {
+        foreach ($cache in $cachePaths) {
+            $totalFreed += Remove-SafeFolder -Path $cache.FullName -Description "Windows Store Cache"
+        }
+    }
+}
+$inetCache = "$env:LOCALAPPDATA\Microsoft\Windows\INetCache"
+if (Test-Path $inetCache) {
+    $totalFreed += Remove-SafeFolder -Path $inetCache -Description "Internet Cache"
+}
+
+# 12. Prefetch Files (Windows optimization files - safe to delete)
+Write-Host ""
+Write-Host "12. Windows Prefetch Files" -ForegroundColor Magenta
+$prefetchPath = "C:\Windows\Prefetch"
+if (Test-Path $prefetchPath) {
+    $prefetchFiles = Get-ChildItem -Path $prefetchPath -File -ErrorAction SilentlyContinue
+    if ($prefetchFiles) {
+        $size = ($prefetchFiles | Measure-Object -Property Length -Sum).Sum / 1GB
+        Write-Host "  [INFO] Prefetch files: $([math]::Round($size, 2)) GB" -ForegroundColor Cyan
+        if (-not $DryRun) {
+            try {
+                $prefetchFiles | Remove-Item -Force -ErrorAction SilentlyContinue
+                Write-Host "     [OK] Da xoa Prefetch files" -ForegroundColor Green
+                $totalFreed += $size
+            } catch {
+                Write-Host "     [WARN] Can quyen admin de xoa Prefetch" -ForegroundColor Yellow
+            }
+        } else {
+            $totalFreed += $size
+        }
+    } else {
+        Write-Host "  [OK] Prefetch: Da trong" -ForegroundColor Green
+    }
+}
+
+# 13. Thumbnail Cache
+Write-Host ""
+Write-Host "13. Thumbnail Cache" -ForegroundColor Magenta
+$thumbnailCache = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer"
+if (Test-Path $thumbnailCache) {
+    $thumbFiles = Get-ChildItem -Path $thumbnailCache -Filter "thumbcache_*.db" -ErrorAction SilentlyContinue
+    if ($thumbFiles) {
+        $size = ($thumbFiles | Measure-Object -Property Length -Sum).Sum / 1GB
+        Write-Host "  [INFO] Thumbnail cache: $([math]::Round($size, 2)) GB" -ForegroundColor Cyan
+        if (-not $DryRun) {
+            $thumbFiles | Remove-Item -Force -ErrorAction SilentlyContinue
+            Write-Host "     [OK] Da xoa thumbnail cache" -ForegroundColor Green
+            $totalFreed += $size
+        } else {
+            $totalFreed += $size
+        }
+    } else {
+        Write-Host "  [OK] Thumbnail cache: Da trong" -ForegroundColor Green
+    }
+}
+
+# 14. Recent Files Cache
+Write-Host ""
+Write-Host "14. Recent Files Cache" -ForegroundColor Magenta
+$recentPaths = @(
+    "$env:APPDATA\Microsoft\Windows\Recent",
+    "$env:LOCALAPPDATA\Microsoft\Windows\Recent"
+)
+foreach ($recentPath in $recentPaths) {
+    if (Test-Path $recentPath) {
+        $recentFiles = Get-ChildItem -Path $recentPath -ErrorAction SilentlyContinue
+        if ($recentFiles) {
+            $size = ($recentFiles | Measure-Object -Property Length -Sum -ErrorAction SilentlyContinue).Sum / 1GB
+            if ($size -gt 0) {
+                Write-Host "  [INFO] Recent files: $([math]::Round($size, 2)) GB" -ForegroundColor Cyan
+                if (-not $DryRun) {
+                    $recentFiles | Remove-Item -Force -ErrorAction SilentlyContinue
+                    Write-Host "     [OK] Da xoa recent files cache" -ForegroundColor Green
+                    $totalFreed += $size
+                } else {
+                    $totalFreed += $size
+                }
+            }
+        }
+    }
+}
+
+# 15. npm/yarn/pnpm global cache và temp
+Write-Host ""
+Write-Host "15. Package Manager Caches" -ForegroundColor Magenta
+# Yarn cache
+$yarnCache = "$env:LOCALAPPDATA\Yarn\Cache"
+if (Test-Path $yarnCache) {
+    $totalFreed += Remove-SafeFolder -Path $yarnCache -Description "Yarn Cache"
+}
+# pnpm cache
+$pnpmCache = "$env:LOCALAPPDATA\pnpm\cache"
+if (Test-Path $pnpmCache) {
+    $totalFreed += Remove-SafeFolder -Path $pnpmCache -Description "pnpm Cache"
+}
+# npm temp
+$npmTemp = "$env:LOCALAPPDATA\npm-cache"
+if (Test-Path $npmTemp) {
+    $totalFreed += Remove-SafeFolder -Path $npmTemp -Description "npm Temp Cache"
 }
 
 # Summary

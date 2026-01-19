@@ -1,0 +1,39 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: auth-service-prod
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: auth-service=docker.io/22521571/eshelf-auth-service
+    argocd-image-updater.argoproj.io/auth-service.update-strategy: digest
+    argocd-image-updater.argoproj.io/auth-service.allow-tags-regex: '^prod$'
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/git-branch: main
+    argocd-image-updater.argoproj.io/write-back-target: kustomization
+    argocd-image-updater.argoproj.io/kustomize-image-name: eshelf/auth-service
+    argocd-image-updater.argoproj.io/git-commit-user: github-actions[bot]
+    argocd-image-updater.argoproj.io/git-commit-email: github-actions[bot]@users.noreply.github.com
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/votrung654/EShelf.git
+    targetRevision: main
+    path: infrastructure/kubernetes/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: eshelf-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+

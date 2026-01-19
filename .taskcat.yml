@@ -1,0 +1,12 @@
+project:
+  name: eshelf-infra
+  owner: student
+  regions:
+    - ap-southeast-2
+
+tests:
+  vpc-test:
+    template: infrastructure/cloudformation/templates/vpc-stack.yaml
+  ec2-test:
+    template: infrastructure/cloudformation/templates/ec2-stack.yaml
+

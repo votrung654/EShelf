@@ -11,14 +11,13 @@ terraform {
     }
   }
 
-  # Uncomment for remote state
-  # backend "s3" {
-  #   bucket         = "eshelf-terraform-state"
-  #   key            = "dev/terraform.tfstate"
-  #   region         = "us-east-1"
-  #   encrypt        = true
-  #   dynamodb_table = "eshelf-terraform-locks"
-  # }
+  backend "s3" {
+    bucket         = "eshelf-terraform-state"
+    key            = "dev/terraform.tfstate"
+    region         = "ap-southeast-2"
+    dynamodb_table = "eshelf-terraform-locks"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
