@@ -89,7 +89,7 @@ jobs:
             -var="ami_id=" \
             -input=false \
             -no-color \
-            -lock-timeout=5m \
+            -lock=false \
             -out=tfplan
         continue-on-error: false
 
@@ -125,12 +125,12 @@ jobs:
 
       - name: Terraform Plan (before apply)
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -out=tfplan -lock-timeout=5m
+        run: terraform plan -out=tfplan -lock=false
         continue-on-error: false
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform apply -lock-timeout=5m -auto-approve tfplan
+        run: terraform apply -lock=false -auto-approve tfplan
         continue-on-error: false
 
 
