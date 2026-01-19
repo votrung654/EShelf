@@ -22,7 +22,7 @@ terraform {
 }
 
 provider "aws" {
-  region = var.aws_region
+  region = "ap-southeast-2"  # Hardcoded to Sydney region
 
   # Skip AMI validation (required when no DescribeImages permission)
   skip_credentials_validation = false

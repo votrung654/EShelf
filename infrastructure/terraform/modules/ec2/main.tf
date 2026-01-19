@@ -22,19 +22,21 @@ data "aws_ami" "amazon_linux" {
 locals {
   # Hardcode AMI ID from Data Sheet: ami-0e200a2b66698ae78 (Amazon Linux 2023)
   ami_id = var.ami_id != "" ? var.ami_id : "ami-0e200a2b66698ae78"
-  key_name = var.create_key_pair ? aws_key_pair.main[0].key_name : (var.key_name != "" ? var.key_name : null)
+  # Use existing key pair "eshelf" (key pair resource is commented out)
+  key_name = var.key_name != "" ? var.key_name : "eshelf"
 }
 
-# Key Pair
-resource "aws_key_pair" "main" {
-  count      = var.create_key_pair ? 1 : 0
-  key_name   = "${var.project}-keypair-${var.environment}"
-  public_key = var.public_key
-
-  tags = merge(var.tags, {
-    Name = "${var.project}-keypair-${var.environment}"
-  })
-}
+# Key Pair - Commented out to use existing key pair "eshelf"
+# If public key file exists, uncomment and use: public_key = file("${path.module}/../../keys/eshelf.pub")
+# resource "aws_key_pair" "main" {
+#   count      = var.create_key_pair ? 1 : 0
+#   key_name   = "${var.project}-keypair-${var.environment}"
+#   public_key = var.public_key
+#
+#   tags = merge(var.tags, {
+#     Name = "${var.project}-keypair-${var.environment}"
+#   })
+# }
 
 # Bastion Host
 resource "aws_instance" "bastion" {
@@ -94,6 +96,7 @@ resource "aws_instance" "k3s_master" {
 
   # Critical: Prevent replacement/downgrade - ignore changes to these attributes
   lifecycle {
+    prevent_destroy = true
     ignore_changes = [
       ami,
       key_name,             # Bắt buộc: State null vs Code eshelf
@@ -431,6 +434,7 @@ resource "aws_instance" "private_app" {
 
   # Critical: Prevent replacement - ignore changes to these attributes
   lifecycle {
+    prevent_destroy = true
     ignore_changes = [
       ami,
       key_name,             # Bắt buộc: State null vs Code eshelf
