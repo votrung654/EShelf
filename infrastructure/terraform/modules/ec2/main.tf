@@ -103,7 +103,10 @@ resource "aws_instance" "k3s_master" {
       user_data,            # Bắt buộc: Tránh chạy lại script
       user_data_base64,
       user_data_replace_on_change,
-      instance_type         # An toàn: Tránh hạ cấp nhầm
+      instance_type,         # An toàn: Tránh hạ cấp nhầm
+      subnet_id,            # Prevent replacement if subnet reference changes
+      vpc_security_group_ids, # Prevent replacement if security group ID changes
+      iam_instance_profile   # Prevent replacement if IAM profile changes
     ]
   }
 
