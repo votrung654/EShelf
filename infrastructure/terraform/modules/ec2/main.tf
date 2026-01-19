@@ -312,7 +312,7 @@ resource "aws_instance" "k3s_worker" {
               fi
               
               # Use pre-shared token
-              K3S_TOKEN="${var.k3s_token != "" ? var.k3s_token : "changeme-token-12345"}"
+              K3S_TOKEN="${var.k3s_token != "" ? nonsensitive(var.k3s_token) : "changeme-token-12345"}"
               
               # Wait for master to be ready (retry logic)
               echo "Waiting for master to be ready..."
