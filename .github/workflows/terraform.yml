@@ -85,8 +85,15 @@ jobs:
         run: |
           terraform plan \
             -var="public_key=dummy" \
-            -var="create_k3s_cluster=false" \
-            -var="ami_id=" \
+            -var="create_k3s_cluster=true" \
+            -var="use_existing_vpc=true" \
+            -var="existing_vpc_id=vpc-081b81333953d3c66" \
+            -var="use_existing_subnets=true" \
+            -var="existing_public_subnet_ids=[\"subnet-0025351700fb81a11\"]" \
+            -var="existing_private_subnet_ids=[\"subnet-0cd16ab34a44574ca\",\"subnet-0e65e0734f2f7c904\"]" \
+            -var="vpc_cidr=172.31.0.0/16" \
+            -var="enable_nat_gateway=false" \
+            -var="use_existing_security_groups=false" \
             -input=false \
             -no-color \
             -lock=false \
@@ -125,7 +132,18 @@ jobs:
 
       - name: Terraform Plan (before apply)
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -out=tfplan -lock=false
+        run: |
+          terraform plan \
+            -var="use_existing_vpc=true" \
+            -var="existing_vpc_id=vpc-081b81333953d3c66" \
+            -var="use_existing_subnets=true" \
+            -var="existing_public_subnet_ids=[\"subnet-0025351700fb81a11\"]" \
+            -var="existing_private_subnet_ids=[\"subnet-0cd16ab34a44574ca\",\"subnet-0e65e0734f2f7c904\"]" \
+            -var="vpc_cidr=172.31.0.0/16" \
+            -var="enable_nat_gateway=false" \
+            -var="use_existing_security_groups=false" \
+            -out=tfplan \
+            -lock=false
         continue-on-error: false
 
       - name: Terraform Apply
