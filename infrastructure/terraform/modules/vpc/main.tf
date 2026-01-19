@@ -170,8 +170,8 @@ resource "aws_route_table_association" "private" {
 # New Private Subnet for Lab requirement (always created, even with existing VPC)
 resource "aws_subnet" "private_lab" {
   vpc_id            = local.vpc_id
-  cidr_block        = "172.31.100.0/24"
-  availability_zone = var.availability_zones[0]  # Use first AZ
+  cidr_block        = "172.31.10.0/24"  # Changed from 172.31.100.0/24 to avoid overlap with existing subnets
+  availability_zone = "ap-southeast-2a"  # Explicitly set to Sydney AZ
 
   tags = merge(var.tags, {
     Name = "eshelf-private-subnet"
