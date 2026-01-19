@@ -52,12 +52,24 @@ resource "aws_instance" "bastion" {
   # Critical: Prevent accidental destruction
   lifecycle {
     prevent_destroy = false
+    ignore_changes = [
+      user_data,            # User data cannot be changed after instance creation
+      user_data_base64,
+      user_data_replace_on_change
+    ]
   }
 
   root_block_device {
     volume_type = "gp3"
     volume_size = 50
     encrypted   = true
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+    http_tokens                 = "required"
+    instance_metadata_tags      = "disabled"
   }
 
   user_data = <<-EOF
@@ -90,12 +102,24 @@ resource "aws_instance" "k3s_master" {
   # Critical: Prevent accidental destruction of K3s Master
   lifecycle {
     prevent_destroy = true
+    ignore_changes = [
+      user_data,            # User data cannot be changed after instance creation
+      user_data_base64,
+      user_data_replace_on_change
+    ]
   }
 
   root_block_device {
     volume_type = "gp3"
     volume_size = 50
     encrypted   = true
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+    http_tokens                 = "required"
+    instance_metadata_tags      = "disabled"
   }
 
   user_data = <<-EOF
@@ -237,12 +261,24 @@ resource "aws_instance" "k3s_worker" {
   # Critical: Prevent accidental destruction
   lifecycle {
     prevent_destroy = false
+    ignore_changes = [
+      user_data,            # User data cannot be changed after instance creation
+      user_data_base64,
+      user_data_replace_on_change
+    ]
   }
 
   root_block_device {
     volume_type = "gp3"
     volume_size = 50
     encrypted   = true
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+    http_tokens                 = "required"
+    instance_metadata_tags      = "disabled"
   }
 
   user_data = <<-EOF
@@ -359,12 +395,24 @@ resource "aws_instance" "app" {
   # Critical: Prevent accidental destruction
   lifecycle {
     prevent_destroy = false
+    ignore_changes = [
+      user_data,            # User data cannot be changed after instance creation
+      user_data_base64,
+      user_data_replace_on_change
+    ]
   }
 
   root_block_device {
     volume_type = "gp3"
     volume_size = 50
     encrypted   = true
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+    http_tokens                 = "required"
+    instance_metadata_tags      = "disabled"
   }
 
   user_data = <<-EOF
@@ -412,6 +460,13 @@ resource "aws_instance" "private_app" {
     volume_type = "gp3"
     volume_size = 50
     encrypted   = true
+  }
+
+  metadata_options {
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 2
+    http_tokens                 = "required"
+    instance_metadata_tags      = "disabled"
   }
 
   user_data = <<-EOF
