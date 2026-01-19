@@ -41,14 +41,14 @@ resource "aws_internet_gateway" "main" {
 
 # Local values
 locals {
-  vpc_id = var.use_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.main[0].id
+  vpc_id         = var.use_existing_vpc ? data.aws_vpc.existing[0].id : aws_vpc.main[0].id
   vpc_cidr_block = var.use_existing_vpc ? data.aws_vpc.existing[0].cidr_block : aws_vpc.main[0].cidr_block
   # If existing_igw_id is provided, use it directly; otherwise create new (if not using existing VPC)
   # For existing VPC without IGW ID, we skip IGW creation (default VPC already has IGW)
   igw_id = var.use_existing_vpc && var.existing_igw_id != "" ? var.existing_igw_id : (var.use_existing_vpc ? "" : aws_internet_gateway.main[0].id)
-  
+
   # Use existing subnets if provided, otherwise use created subnets
-  public_subnet_ids = var.use_existing_subnets ? var.existing_public_subnet_ids : aws_subnet.public[*].id
+  public_subnet_ids  = var.use_existing_subnets ? var.existing_public_subnet_ids : aws_subnet.public[*].id
   private_subnet_ids = var.use_existing_subnets ? var.existing_private_subnet_ids : aws_subnet.private[*].id
 }
 
@@ -113,7 +113,7 @@ resource "aws_nat_gateway" "main" {
 # When using existing subnets, we use the default route table that already exists
 resource "aws_route_table" "public" {
   count = var.use_existing_subnets ? 0 : 1
-  
+
   vpc_id = local.vpc_id
 
   dynamic "route" {
@@ -132,7 +132,7 @@ resource "aws_route_table" "public" {
 # Private Route Table - Only create if not using existing subnets
 resource "aws_route_table" "private" {
   count = var.use_existing_subnets ? 0 : 1
-  
+
   vpc_id = local.vpc_id
 
   dynamic "route" {
@@ -170,8 +170,8 @@ resource "aws_route_table_association" "private" {
 # New Private Subnet for Lab requirement (always created, even with existing VPC)
 resource "aws_subnet" "private_lab" {
   vpc_id            = local.vpc_id
-  cidr_block        = "172.31.128.0/24"  # Using 172.31.128.0/24 to avoid overlap with default subnets (0, 16, 32, 48)
-  availability_zone = "ap-southeast-2a"  # Explicitly set to Sydney AZ
+  cidr_block        = "172.31.128.0/24" # Using 172.31.128.0/24 to avoid overlap with default subnets (0, 16, 32, 48)
+  availability_zone = "ap-southeast-2a" # Explicitly set to Sydney AZ
 
   tags = merge(var.tags, {
     Name = "eshelf-private-subnet"

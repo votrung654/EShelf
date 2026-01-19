@@ -22,7 +22,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "ap-southeast-2"  # Hardcoded to Sydney region
+  region = "ap-southeast-2" # Hardcoded to Sydney region
 
   # Skip AMI validation (required when no DescribeImages permission)
   skip_credentials_validation = false
@@ -125,9 +125,9 @@ module "ec2" {
   k3s_token                = var.k3s_token
   ami_id                   = var.ami_id
   # Add-on: Private Subnet and NAT Gateway
-  private_subnet_id        = module.vpc.private_subnet_id
-  private_sg_id            = module.security_groups.private_sg_id
-  tags                     = local.common_tags
+  private_subnet_id = module.vpc.private_subnet_id
+  private_sg_id     = module.security_groups.private_sg_id
+  tags              = local.common_tags
 }
 
 # Manual trigger for Lab 2 verification

@@ -33,7 +33,7 @@ variable "key_name" {
 variable "bastion_instance_type" {
   description = "Instance type for bastion host"
   type        = string
-  default     = "t3.micro"  # Data Sheet: t3.micro
+  default     = "t3.micro" # Data Sheet: t3.micro
 }
 
 variable "app_instance_type" {
@@ -51,13 +51,13 @@ variable "app_instance_count" {
 variable "k3s_master_instance_type" {
   description = "Instance type for K3s master node"
   type        = string
-  default     = "m7i-flex.large"  # Data Sheet: m7i-flex.large
+  default     = "m7i-flex.large" # Data Sheet: m7i-flex.large
 }
 
 variable "k3s_worker_instance_type" {
   description = "Instance type for K3s worker nodes"
   type        = string
-  default     = "m7i-flex.large"  # Data Sheet: m7i-flex.large
+  default     = "m7i-flex.large" # Data Sheet: m7i-flex.large
 }
 
 variable "k3s_worker_count" {
@@ -126,7 +126,7 @@ variable "private_sg_id" {
 variable "ami_id" {
   description = "AMI ID to use for EC2 instances. Default: ami-0e200a2b66698ae78 (Amazon Linux 2023)"
   type        = string
-  default     = "ami-0e200a2b66698ae78"  # Data Sheet: ami-0e200a2b66698ae78
+  default     = "ami-0e200a2b66698ae78" # Data Sheet: ami-0e200a2b66698ae78
 }
 
 variable "iam_instance_profile" {

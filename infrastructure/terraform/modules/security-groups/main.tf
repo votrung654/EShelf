@@ -6,7 +6,7 @@
 # Bastion Security Group - Create new or use existing
 # checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
 resource "aws_security_group" "bastion" {
-  count = var.use_existing_security_groups ? 0 : 1
+  count       = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-bastion-sg-${var.environment}"
   description = "Security group for bastion host"
   vpc_id      = var.vpc_id
@@ -37,7 +37,7 @@ resource "aws_security_group" "bastion" {
 # Application Security Group - Create new or use existing
 # checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
 resource "aws_security_group" "app" {
-  count = var.use_existing_security_groups ? 0 : 1
+  count       = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-app-sg-${var.environment}"
   description = "Security group for application servers"
   vpc_id      = var.vpc_id
@@ -86,7 +86,7 @@ resource "aws_security_group" "app" {
 # ALB Security Group - Create new or use existing
 # checkov:skip=CKV2_AWS_5:Security group is attached to ALB via module references
 resource "aws_security_group" "alb" {
-  count = var.use_existing_security_groups ? 0 : 1
+  count       = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-alb-sg-${var.environment}"
   description = "Security group for Application Load Balancer"
   vpc_id      = var.vpc_id
@@ -125,7 +125,7 @@ resource "aws_security_group" "alb" {
 
 # K3s Master Security Group - Create new or use existing
 resource "aws_security_group" "k3s_master" {
-  count = var.use_existing_security_groups ? 0 : 1
+  count       = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-k3s-master-sg-${var.environment}"
   description = "Security group for K3s master node"
   vpc_id      = var.vpc_id
@@ -201,7 +201,7 @@ resource "aws_security_group" "k3s_master" {
 
 # K3s Worker Security Group - Create new or use existing
 resource "aws_security_group" "k3s_worker" {
-  count = var.use_existing_security_groups ? 0 : 1
+  count       = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-k3s-worker-sg-${var.environment}"
   description = "Security group for K3s worker nodes"
   vpc_id      = var.vpc_id
@@ -268,23 +268,23 @@ resource "aws_security_group" "k3s_worker" {
 
 # RDS Security Group - Create new or use existing
 resource "aws_security_group" "rds" {
-  count = var.use_existing_security_groups ? 0 : 1
+  count       = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-rds-sg-${var.environment}"
   description = "Security group for RDS database"
   vpc_id      = var.vpc_id
 
   # PostgreSQL from App or K3s Workers
   ingress {
-    description     = "PostgreSQL from App"
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
+    description = "PostgreSQL from App"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
     security_groups = var.use_existing_security_groups ? (
       concat(
         var.existing_app_sg_id != "" ? [var.existing_app_sg_id] : [],
         var.create_k3s_cluster && var.existing_k3s_worker_sg_id != "" ? [var.existing_k3s_worker_sg_id] : []
       )
-    ) : concat(
+      ) : concat(
       [aws_security_group.app[0].id],
       var.create_k3s_cluster ? [aws_security_group.k3s_worker[0].id] : []
     )
@@ -298,7 +298,7 @@ resource "aws_security_group" "rds" {
 # Private Security Group - For Private Subnet instances
 # checkov:skip=CKV2_AWS_5:Security group is attached to EC2 instances via module references
 resource "aws_security_group" "private" {
-  count = var.use_existing_security_groups ? 0 : 1
+  count       = var.use_existing_security_groups ? 0 : 1
   name        = "${var.project}-private-sg-${var.environment}"
   description = "Security group for private subnet instances"
   vpc_id      = var.vpc_id

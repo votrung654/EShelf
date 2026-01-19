@@ -62,11 +62,12 @@ jobs:
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init -upgrade
+        continue-on-error: false
 
       - name: Terraform Format
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform fmt -recursive
-        continue-on-error: true
+        run: terraform fmt -recursive -check
+        continue-on-error: false
 
       - name: Terraform Validate
         working-directory: ${{ env.TF_WORKING_DIR }}
@@ -88,8 +89,9 @@ jobs:
             -var="ami_id=" \
             -input=false \
             -no-color \
-            -lock=false \
+            -lock-timeout=5m \
             -out=tfplan
+        continue-on-error: false
 
   terraform-apply:
     name: Terraform Apply
@@ -118,15 +120,17 @@ jobs:
 
       - name: Terraform Init
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform init -reconfigure
+        run: terraform init -upgrade
+        continue-on-error: false
 
       - name: Terraform Plan (before apply)
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform plan -out=tfplan -lock-timeout=5m -lock=false
+        run: terraform plan -out=tfplan -lock-timeout=5m
         continue-on-error: false
 
       - name: Terraform Apply
         working-directory: ${{ env.TF_WORKING_DIR }}
-        run: terraform apply -lock-timeout=5m tfplan
+        run: terraform apply -lock-timeout=5m -auto-approve tfplan
+        continue-on-error: false
 
 

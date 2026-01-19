@@ -3,7 +3,7 @@
 # Get latest Amazon Linux 2023 AMI (only if ami_id is not provided)
 data "aws_ami" "amazon_linux" {
   count = var.ami_id == "" ? 1 : 0
-  
+
   most_recent = true
   owners      = ["amazon"]
 
@@ -46,19 +46,12 @@ resource "aws_instance" "bastion" {
   vpc_security_group_ids      = [var.bastion_sg_id]
   associate_public_ip_address = true
   # key_name is optional - only set if not null
-  key_name                    = local.key_name
-  iam_instance_profile        = var.iam_instance_profile != "" ? var.iam_instance_profile : null
+  key_name             = local.key_name
+  iam_instance_profile = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
-  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
+  # Critical: Prevent accidental destruction
   lifecycle {
-    ignore_changes = [
-      ami,
-      key_name,             # Bắt buộc: State null vs Code eshelf
-      user_data,            # Bắt buộc: Tránh chạy lại script
-      user_data_base64,
-      user_data_replace_on_change,
-      instance_type         # An toàn: Tránh hạ cấp nhầm
-    ]
+    prevent_destroy = false
   }
 
   root_block_device {
@@ -94,20 +87,9 @@ resource "aws_instance" "k3s_master" {
   associate_public_ip_address = true
   iam_instance_profile        = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
-  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
+  # Critical: Prevent accidental destruction of K3s Master
   lifecycle {
     prevent_destroy = true
-    ignore_changes = [
-      ami,
-      key_name,             # Bắt buộc: State null vs Code eshelf
-      user_data,            # Bắt buộc: Tránh chạy lại script
-      user_data_base64,
-      user_data_replace_on_change,
-      instance_type,         # An toàn: Tránh hạ cấp nhầm
-      subnet_id,            # Prevent replacement if subnet reference changes
-      vpc_security_group_ids, # Prevent replacement if security group ID changes
-      iam_instance_profile   # Prevent replacement if IAM profile changes
-    ]
   }
 
   root_block_device {
@@ -252,16 +234,9 @@ resource "aws_instance" "k3s_worker" {
   vpc_security_group_ids = [var.k3s_worker_sg_id]
   iam_instance_profile   = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
-  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
+  # Critical: Prevent accidental destruction
   lifecycle {
-    ignore_changes = [
-      ami,
-      key_name,             # Bắt buộc: State null vs Code eshelf
-      user_data,            # Bắt buộc: Tránh chạy lại script
-      user_data_base64,
-      user_data_replace_on_change,
-      instance_type         # An toàn: Tránh hạ cấp nhầm
-    ]
+    prevent_destroy = false
   }
 
   root_block_device {
@@ -363,11 +338,11 @@ resource "aws_instance" "k3s_worker" {
               EOF
 
   tags = merge(var.tags, {
-    Name = "${var.project}-k3s-worker-${count.index + 1}-${var.environment}"
-    Role = "K3s-Worker"
+    Name        = "${var.project}-k3s-worker-${count.index + 1}-${var.environment}"
+    Role        = "K3s-Worker"
     K3sMasterIP = var.create_k3s_cluster ? aws_instance.k3s_master[0].private_ip : ""
   })
-  
+
   depends_on = [aws_instance.k3s_master]
 }
 
@@ -381,16 +356,9 @@ resource "aws_instance" "app" {
   subnet_id              = var.private_subnet_ids[count.index % length(var.private_subnet_ids)]
   vpc_security_group_ids = [var.app_sg_id]
 
-  # Critical: Prevent replacement/downgrade - ignore changes to these attributes
+  # Critical: Prevent accidental destruction
   lifecycle {
-    ignore_changes = [
-      ami,
-      key_name,             # Bắt buộc: State null vs Code eshelf
-      user_data,            # Bắt buộc: Tránh chạy lại script
-      user_data_base64,
-      user_data_replace_on_change,
-      instance_type         # An toàn: Tránh hạ cấp nhầm
-    ]
+    prevent_destroy = false
   }
 
   root_block_device {
@@ -435,17 +403,9 @@ resource "aws_instance" "private_app" {
   vpc_security_group_ids = [var.private_sg_id]
   iam_instance_profile   = var.iam_instance_profile != "" ? var.iam_instance_profile : null
 
-  # Critical: Prevent replacement - ignore changes to these attributes
+  # Critical: Prevent accidental destruction of private app
   lifecycle {
     prevent_destroy = true
-    ignore_changes = [
-      ami,
-      key_name,             # Bắt buộc: State null vs Code eshelf
-      user_data,            # Bắt buộc: Tránh chạy lại script
-      user_data_base64,
-      user_data_replace_on_change,
-      instance_type         # An toàn: Tránh hạ cấp nhầm
-    ]
   }
 
   root_block_device {
