@@ -107,7 +107,7 @@ jobs:
     # Only run on push to main branch (not on PRs)
     # Skip if commit message contains [skip apply]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip apply]')
-    environment: production
+    environment: dev
 
     steps:
       - name: Debug workflow context
