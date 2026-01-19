@@ -130,3 +130,5 @@ module "ec2" {
   tags                     = local.common_tags
 }
 
+# Manual trigger for Lab 2 verification
+
