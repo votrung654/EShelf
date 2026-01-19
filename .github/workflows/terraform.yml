@@ -104,10 +104,18 @@ jobs:
     name: Terraform Apply
     runs-on: ubuntu-latest
     needs: terraform-plan
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Only run on push to main branch (not on PRs)
+    # Skip if commit message contains [skip apply]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip apply]')
     environment: production
 
     steps:
+      - name: Debug workflow context
+        run: |
+          echo "Branch: ${{ github.ref }}"
+          echo "Event: ${{ github.event_name }}"
+          echo "Commit message: ${{ github.event.head_commit.message }}"
+          echo "Should run: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}"
       - uses: actions/checkout@v4
 
       - name: Setup Terraform
