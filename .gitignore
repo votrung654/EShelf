@@ -35,6 +35,7 @@ env/
 
 # Sensitive credentials and configuration files
 aws-academy-credentials.txt
+aws-academy-credentials.example.txt
 *.credentials
 *.secrets
 .env
@@ -42,7 +43,18 @@ aws-academy-credentials.txt
 .env.*.local
 *.pem
 *.key
+eshelf.pem.txt
 !*.example.*
+
+# Local Helper Scripts (Redundant)
+git_editor.ps1
+rebase_script.ps1
+remove-sensitive-data.ps1
+verify_lab.ps1
+nginx.conf
+
+# Local Course Documentation (Reports, Labs, Slides)
+NT548/
 
 # Terraform - CRITICAL: Never commit state files
 .terraform/
