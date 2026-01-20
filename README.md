@@ -1,329 +1,241 @@
 # eShelf - Enterprise eBook Platform
 
-<div align="center">
-
 [![CI/CD Pipeline](https://github.com/votrung654/EShelf/actions/workflows/ci.yml/badge.svg)](https://github.com/votrung654/EShelf/actions)
-[![Terraform](https://img.shields.io/badge/IaC-Terraform-7B42BC?logo=terraform)](https://www.terraform.io/)
-[![Kubernetes](https://img.shields.io/badge/K8s-Ready-326CE5?logo=kubernetes)](https://kubernetes.io/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://react.dev/)
-[![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-**A modern microservices-based eBook platform with DevOps & MLOps practices**
+## Project Overview
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Architecture](#-architecture) • [Documentation](#-documentation) • [Contributing](#-contributing)
+**eShelf** is an enterprise-grade eBook reading platform designed with a microservices architecture. This project serves as a comprehensive demonstration for the **NT548 - DevOps & MLOps** course, showcasing the complete lifecycle of a cloud-native application, from infrastructure provisioning to automated deployment using GitOps principles.
 
-</div>
+**Institution:** University of Information Technology (UIT)
+**Course:** NT548.Q11 - DevOps Technology and Applications
+**Instructor:** MSc. Le Anh Tuan
 
 ---
 
-## 📖 About
+## System Architecture
 
-**eShelf** is an enterprise-grade eBook reading platform built with microservices architecture, implementing modern DevOps and MLOps practices. This project demonstrates a production-ready application with CI/CD pipelines, container orchestration, infrastructure as code, and machine learning integration.
+### Architectural Design
+The system employs a microservices architecture deployed on AWS using Terraform for infrastructure provisioning and K3s for container orchestration.
 
-> **Academic Project** - NT548 DevOps & MLOps Course  
-> **University of Information Technology (UIT)**
-
----
-
-## ✨ Features
-
-### Core Functionality
-- 📚 **Online PDF Reader** - Read books directly in your browser
-- 🔍 **Advanced Search** - Search and filter books by genre, author, title
-- 📖 **Reading Progress** - Track your reading progress automatically
-- ❤️ **Collections & Favorites** - Organize your personal library
-- 🤖 **AI Recommendations** - ML-powered book suggestions
-- 👨‍💼 **Admin Panel** - Manage books, users, and categories
-
-### Technical Highlights
-- 🏗️ **Microservices Architecture** - Scalable and maintainable
-- 🚀 **CI/CD Pipelines** - Automated testing, building, and deployment
-- ☸️ **Kubernetes Ready** - Container orchestration with K3s
-- 🔒 **Security First** - Automated security scanning and code quality checks
-- 📊 **Monitoring & Observability** - Prometheus, Grafana, and Loki integration
-- 🤖 **MLOps Integration** - Automated model training and deployment
-
----
-
-## 🏗️ Architecture
-
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React + Vite)                   │
-│                      Port: 5173                              │
-└───────────────────────────┬─────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                  API Gateway (Express.js)                    │
-│                      Port: 3000                              │
-└───────┬───────────┬───────────┬───────────┬────────────────┘
-        │           │           │           │
-        ▼           ▼           ▼           ▼
-┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
-│   Auth   │ │   Book   │ │   User   │ │    ML     │
-│ Service  │ │ Service  │ │ Service  │ │ Service   │
-│  :3001   │ │  :3002   │ │  :3003   │ │  :8000    │
-└────┬─────┘ └────┬─────┘ └────┬─────┘ └────┬─────┘
-     │           │           │           │
-     └───────────┴───────────┴───────────┘
-                    │
-        ┌───────────┴───────────┐
-        ▼                       ▼
-┌──────────────┐        ┌──────────────┐
-│  PostgreSQL   │        │    Redis     │
-│   Port: 5432  │        │   Port: 6379 │
-└──────────────┘        └──────────────┘
+```mermaid
+graph TD
+    User[User] --> ALB[AWS Load Balancer]
+    ALB --> Ingress[Nginx Ingress]
+    Ingress --> Frontend[Frontend React]
+    Ingress --> API[API Gateway]
+    
+    API --> Auth[Auth Service]
+    API --> Book[Book Service]
+    API --> UserSvc[User Service]
+    API --> ML[ML Service]
+    
+    Auth & Book & UserSvc --> DB[(PostgreSQL)]
+    Book --> Redis[(Redis Cache)]
 ```
 
-### Services
+### Technology Stack
 
-| Service | Port | Technology | Description |
-|---------|------|------------|-------------|
-| **Frontend** | 5173 | React 18 + Vite | Modern web UI with TailwindCSS |
-| **API Gateway** | 3000 | Express.js | API routing, rate limiting, load balancing |
-| **Auth Service** | 3001 | Express.js + Prisma | JWT authentication & authorization |
-| **Book Service** | 3002 | Express.js + Prisma | Book CRUD operations, search, filtering |
-| **User Service** | 3003 | Express.js | User profiles, favorites, collections |
-| **ML Service** | 8000 | FastAPI + scikit-learn | Book recommendations, similarity search |
-| **PostgreSQL** | 5432 | PostgreSQL 16 | Primary database |
-| **Redis** | 6379 | Redis 7 | Caching layer |
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **React 18** - UI library
-- **Vite** - Build tool
-- **TailwindCSS** - Styling
-- **React Router** - Routing
-- **React PDF** - PDF viewer
-
-### Backend
-- **Node.js 20** - Runtime
-- **Express.js** - Web framework
-- **Prisma ORM** - Database toolkit
-- **PostgreSQL 16** - Primary database
-- **Redis 7** - Caching
-
-### ML/AI
-- **Python 3.11** - ML runtime
-- **FastAPI** - API framework
-- **scikit-learn** - Machine learning library
-
-### DevOps & Infrastructure
-- **IaC:** Terraform, AWS CloudFormation, Ansible
-- **CI/CD:** GitHub Actions, Jenkins, AWS CodePipeline
-- **Containers:** Docker, Docker Compose
-- **Orchestration:** Kubernetes (K3s)
-- **GitOps:** ArgoCD
-- **Registry:** Harbor
-- **Monitoring:** Prometheus, Grafana, Loki, Alertmanager
-- **Security:** Checkov, Trivy, SonarQube
+| Category | Technology | Usage |
+|----------|------------|-------|
+| **Cloud Provider** | AWS | VPC, EC2, Security Groups, IAM |
+| **Infrastructure as Code** | Terraform | Infrastructure provisioning and state management |
+| **Configuration Management** | Ansible | Server configuration and K3s cluster setup |
+| **Container Orchestration** | K3s | Lightweight Kubernetes distribution for production |
+| **CI/CD** | GitHub Actions | Continuous Integration (Lint, Test, Build, Push) |
+| **GitOps** | ArgoCD | Continuous Delivery and Cluster State Synchronization |
+| **Monitoring** | Prometheus, Grafana | Metrics collection and visualization |
+| **Logging** | Loki | Log aggregation |
 
 ---
 
-## 🚀 Quick Start
+## Phase 1: Cloud Infrastructure Provisioning
+
+This phase involves provisioning the necessary network and compute resources on AWS using Terraform.
 
 ### Prerequisites
+- AWS CLI configured with appropriate credentials.
+- Terraform (v1.5 or later) installed.
+- An S3 Bucket created for storing Terraform State (configured in `main.tf`).
 
-- **Node.js** >= 20
-- **Python** >= 3.11
-- **Docker** & **Docker Compose**
-- **Git**
+### Deployment Steps
 
-### Installation
+1.  **Navigate to the environment directory:**
+    ```bash
+    cd infrastructure/terraform/environments/dev
+    ```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/votrung654/EShelf.git
-   cd EShelf
-   ```
+2.  **Initialize Terraform:**
+    Downloads the required providers (AWS) and modules.
+    ```bash
+    terraform init
+    ```
 
-2. **Start Backend Services**
-   ```bash
-   cd backend
-   docker-compose up -d
-   ```
-   
-   This will automatically:
-   - Start PostgreSQL database
-   - Run database migrations
-   - Start all microservices
-   - Seed initial data
+3.  **Generate Execution Plan:**
+    Preview the changes that Terraform will make to the infrastructure.
+    ```bash
+    terraform plan -out=tfplan
+    ```
 
-3. **Start Frontend**
-   ```bash
-   cd ..
-   npm install
-   npm run dev
-   ```
+4.  **Apply Configuration:**
+    Provision the resources on AWS.
+    ```bash
+    terraform apply tfplan
+    ```
 
-### Access Points
-
-- **Frontend:** http://localhost:5173
-- **API Gateway:** http://localhost:3000
-- **ML API Docs:** http://localhost:8000/docs
-
-### Default Accounts
-
-- **Admin:** `admin@EShelf.com` / `Admin123!`
-- **User:** `user@EShelf.com` / `User123!`
-
-### Troubleshooting
-
-If you encounter "table does not exist" errors:
-- Wait a few seconds for migrations to complete
-- Check migration logs: `docker-compose logs db-migration`
-- See [Troubleshooting Guide](backend/TROUBLESHOOTING.md) for more details
+### Verification
+Upon successful application, verify the resources in the AWS Console:
+- **VPC:** A custom VPC with CIDR `10.0.0.0/16`.
+- **EC2 Instances:** Three instances should be running: `Bastion-Host`, `K3s-Master`, and `K3s-Worker`.
 
 ---
 
-## 🔄 DevOps & MLOps
+## Phase 2: Kubernetes Cluster Configuration
 
-### Infrastructure as Code
+This phase transforms the provisioned EC2 instances into a functional Kubernetes cluster using Ansible automation.
 
-- **Terraform** - K3s cluster (1 master + 2 workers) on AWS
-- **CloudFormation** - VPC, EC2, CodePipeline stacks
-- **Ansible** - K3s cluster setup and configuration management
-- **Status:** Dev environment successfully deployed
+### Prerequisites
+- Python 3 and Ansible installed (`pip install ansible`).
+- SSH access to the Bastion host and private nodes.
 
-### CI/CD Pipeline
+### Configuration
 
-#### GitHub Actions
+1.  **Update Inventory File:**
+    Edit `infrastructure/ansible/inventory/dev.ini` with the Private IP addresses obtained from the Terraform output.
 
-- **Smart Build System** - Only builds when actual code changes are detected
-  - Path-based filtering for service changes
-  - Code change analysis (ignores comments/whitespace)
-  - Resource-efficient CI/CD
+    ```ini
+    [master]
+    <MASTER_PRIVATE_IP> ansible_user=ec2-user
 
-- **Pull Request Pipeline**
-  - Lint, test, and security scanning
-  - No deployment (validation only)
+    [worker]
+    <WORKER_1_PRIVATE_IP> ansible_user=ec2-user
+    <WORKER_2_PRIVATE_IP> ansible_user=ec2-user
 
-- **Main Branch Pipeline**
-  - Build Docker images
-  - Push to Harbor registry
-  - Deploy to Kubernetes
-  - Update manifests with image tags
+    [k3s_cluster:children]
+    master
+    worker
+    ```
 
-- **Security & Quality**
-  - Trivy container scanning
-  - Checkov IaC scanning
-  - SonarQube code quality analysis
+2.  **Verify Connectivity:**
+    Ensure Ansible can reach all nodes via SSH.
+    ```bash
+    ansible -i inventory/dev.ini -m ping all
+    ```
 
-- **MLOps Workflows**
-  - Automated model training
-  - Model deployment with canary strategy
-  - Automated rollback on failure
+### Execution
 
-#### Other CI/CD Tools
+1.  **Run the Cluster Setup Playbook:**
+    This playbook installs K3s on the master node and joins the worker nodes to the cluster.
+    ```bash
+    cd infrastructure/ansible
+    ansible-playbook -i inventory/dev.ini playbooks/setup-cluster.yml
+    ```
 
-- **Jenkins** - Pipeline on Kubernetes with SonarQube integration
-- **AWS CodePipeline** - Automated deployment pipeline
-
-### Kubernetes Deployment
-
-- **K3s Cluster** - 3 nodes (1 master + 2 workers) on AWS ✅
-- **Kustomize** - Environment-specific overlays (dev, staging, prod)
-- **ArgoCD** - GitOps deployment ✅
-- **Harbor** - Container registry ✅
-- **Monitoring Stack** - Prometheus, Grafana, Loki, Alertmanager ✅
-
-### Monitoring & Observability
-
-- **Prometheus** - Metrics collection
-- **Grafana** - Visualization dashboards
-- **Loki** - Log aggregation
-- **Alertmanager** - Alerting
-
-### MLOps
-
-- **MLflow** - Model tracking and registry
-- **Automated Training** - GitHub Actions pipeline
-- **Canary Deployment** - Gradual rollout with rollback capability
-
-### Security
-
-- **IaC Scanning** - Checkov for Terraform/CloudFormation
-- **Container Scanning** - Trivy for Docker images
-- **Code Quality** - SonarQube integration
-- **Pre-deployment Gates** - Security checks before deployment
+2.  **Verify Cluster Status:**
+    SSH into the Master node and check the node status.
+    ```bash
+    kubectl get nodes -o wide
+    ```
+    *Expected Result: All nodes should be in the `Ready` status.*
 
 ---
 
-## 📚 Documentation
+## CI/CD and GitOps Implementation
 
-### Setup & Deployment
-- [Setup Guide](docs/SETUP_GUIDE.md) - Detailed setup instructions
-- [Quick Start AWS](docs/QUICK_START_AWS.md) - AWS deployment guide
-- [Setup Without AWS](docs/SETUP_WITHOUT_AWS.md) - Local development setup
-- [Architecture](docs/ARCHITECTURE.md) - System architecture overview
-- [Architecture Deep Dive](docs/ARCHITECTURE_DEEP_DIVE.md) - Detailed architecture
-- [Demo Guide](docs/DEMO_GUIDE.md) - Project demonstration guide
+The project utilizes a GitOps approach where the Git repository serves as the single source of truth for both application code and infrastructure configuration.
 
-### Infrastructure Components
-- [Ansible README](infrastructure/ansible/README.md) - K3s setup with Ansible
-- [ArgoCD README](infrastructure/kubernetes/argocd/README.md) - GitOps deployment
-- [Harbor README](infrastructure/kubernetes/harbor/README.md) - Container registry
-- [MLOps README](infrastructure/kubernetes/mlops/README.md) - MLOps workflows
-- [CodePipeline README](infrastructure/cloudformation/pipeline/README.md) - AWS CodePipeline
+### Continuous Integration (GitHub Actions)
+The CI pipeline is defined in `.github/workflows/ci.yml` and performs the following steps on every push to the `main` branch or Pull Request:
+1.  **Linting & Testing:** Static code analysis and unit testing for backend/frontend services.
+2.  **Security Scanning:** Vulnerability scanning using Trivy.
+3.  **Artifact Build:** Building Docker images for each microservice.
+4.  **Registry Push:** Pushing images to the container registry.
+5.  **Manifest Update:** Automatically updating the Kubernetes deployment manifests with the new image tag.
 
-### Scripts & Utilities
-- [Smart Build Documentation](scripts/README-SMART-BUILD.md) - CI/CD optimization
-- [Tools and Configuration Guide](docs/TOOLS_AND_CONFIGURATION.md) - Chi tiết các công cụ, cấu hình và quy trình tích hợp
-- Various utility scripts in `scripts/` directory
+### Continuous Delivery (ArgoCD)
+ArgoCD is configured to synchronize the `infrastructure/kubernetes` directory with the K3s cluster.
 
----
+**Setup Instructions:**
+1.  **Install ArgoCD:**
+    ```bash
+    kubectl create namespace argocd
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    ```
 
-## 👥 Team
-
-| MSSV | Name | Responsibilities |
-|------|------|------------------|
-| 22521571 | Võ Đình Trung | Frontend, Backend, ML Service, Database, CI/CD, Testing, Report |
-| 23521809 | Lê Văn Vũ | Frontend, Backend, DevOps, Database, Testing, Video demo |
-| 22521587 | Trương Phúc Trường | Backend, Infrastructure, CI/CD, Testing, Slide |
+2.  **Access the Dashboard:**
+    Port-forward the service to access the UI locally:
+    ```bash
+    kubectl port-forward svc/argocd-server -n argocd 8080:443
+    ```
 
 ---
 
-## 🤝 Contributing
+## Local Development Environment
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+For development and testing purposes without AWS infrastructure, Docker Compose can be used.
 
-- Code of conduct
-- Development setup
-- Pull request process
-- Coding standards
+### Setup
+
+1.  **Clone the Repository:**
+    ```bash
+    git clone https://github.com/votrung654/EShelf.git
+    cd EShelf
+    ```
+
+2.  **Start Backend Services:**
+    ```bash
+    cd backend
+    docker-compose up -d
+    ```
+
+3.  **Start Frontend Application:**
+    ```bash
+    cd ../frontend
+    npm install
+    npm run dev
+    ```
 
 ---
 
-## 📄 License
+## System Verification and Access
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Service Endpoints
 
-**Note:** This project is for educational purposes only.
+| Service Component | Local URL | Production URL (Example) |
+|-------------------|-----------|--------------------------|
+| **Frontend** | http://localhost:5173 | http://eshelf.com |
+| **API Gateway** | http://localhost:3000 | https://api.eshelf.com |
+| **ArgoCD Dashboard** | http://localhost:8080 | https://argocd.eshelf.com |
+| **Grafana Dashboard** | - | https://grafana.eshelf.com |
+
+### Demonstration Credentials
+
+- **Administrator:** `admin@eshelf.com` / `Admin123!`
+- **Standard User:** `user@eshelf.com` / `User123!`
+
+### Troubleshooting Commands
+
+```bash
+# List all pods in all namespaces
+kubectl get pods -A
+
+# Retrieve logs for a specific service
+kubectl logs -f -l app=book-service
+
+# Check Ingress configuration
+kubectl get ingress -A
+```
 
 ---
 
-## 🔗 Links
+## Project Team
 
-- [GitHub Repository](https://github.com/votrung654/EShelf)
-- [CI/CD Pipeline](https://github.com/votrung654/EShelf/actions)
-- [Issues](https://github.com/votrung654/EShelf/issues)
-- [Pull Requests](https://github.com/votrung654/EShelf/pulls)
+| Student ID | Name | Role & Responsibilities |
+|------------|------|-------------------------|
+| 22521571 | **Vo Dinh Trung** | Fullstack Development, CI/CD Pipeline, Report |
+| 23521809 | **Le Van Vu** | DevOps Engineering, Demo Video Production |
+| 22521587 | **Truong Phuc Truong** | Cloud Infrastructure, Presentation Materials |
 
 ---
 
-<div align="center">
-
-**Made with ❤️ by UIT Students**
-
-⭐ Star this repo if you find it helpful!
-
-</div>
+© 2026 Group 15 - NT548.Q11. University of Information Technology.
