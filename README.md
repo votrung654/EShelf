@@ -20,18 +20,18 @@ Hệ thống áp dụng kiến trúc Microservices, được triển khai trên 
 
 ```mermaid
 graph TD
-    User[Người dùng] --> ALB[AWS Load Balancer]
-    ALB --> Ingress[Nginx Ingress]
-    Ingress --> Frontend[Frontend React]
-    Ingress --> API[API Gateway]
+    User["Người dùng"] --> ALB["AWS Load Balancer"]
+    ALB --> Ingress["Nginx Ingress"]
+    Ingress --> Frontend["Frontend React"]
+    Ingress --> API["API Gateway"]
     
-    API --> Auth[Auth Service]
-    API --> Book[Book Service]
-    API --> UserSvc[User Service]
-    API --> ML[ML Service]
+    API --> Auth["Auth Service"]
+    API --> Book["Book Service"]
+    API --> UserSvc["User Service"]
+    API --> ML["ML Service"]
     
-    Auth & Book & UserSvc --> DB[(PostgreSQL)]
-    Book --> Redis[(Redis Cache)]
+    Auth & Book & UserSvc --> DB[("PostgreSQL")]
+    Book --> Redis[("Redis Cache")]
 ```
 
 ### Danh sách Công nghệ (Tech Stack)
