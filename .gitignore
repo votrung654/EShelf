@@ -53,8 +53,10 @@ remove-sensitive-data.ps1
 verify_lab.ps1
 nginx.conf
 
-# Local Course Documentation (Reports, Labs, Slides)
+# Local Course Documentation & Scripts
 NT548/
+docs/
+scripts/
 
 # Terraform - CRITICAL: Never commit state files
 .terraform/
