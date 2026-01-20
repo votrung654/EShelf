@@ -246,9 +246,9 @@ kubectl get ingress -A
 
 | MSSV | Họ và Tên | Vai trò & Trách nhiệm |
 |------|-----------|-----------------------|
-| 22521571 | **Võ Đình Trung** | Fullstack Development, CI/CD Pipeline, Viết báo cáo |
-| 23521809 | **Lê Văn Vũ** | DevOps Engineering, Dựng Video Demo |
-| 22521587 | **Trương Phúc Trường** | Cloud Infrastructure, Soạn thảo Slide |
+| 22521571 | **Võ Đình Trung** | DevOps Engineering, CI/CD Pipeline, Viết báo cáo |
+| 23521809 | **Lê Văn Vũ** | Fullstack Development, Soạn thảo Slide |
+| 22521587 | **Trương Phúc Trường** | Cloud Infrastructure, Dựng Video Demo|
 
 ---
 
