@@ -22,6 +22,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.cursor/
+
+# Python / MLOps
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
 
 # Sensitive credentials and configuration files
 aws-academy-credentials.txt
@@ -30,26 +40,46 @@ aws-academy-credentials.txt
 .env
 .env.local
 .env.*.local
-terraform.tfvars
 *.pem
 *.key
 !*.example.*
 
-# Terraform temporary files
-*.tfplan
+# Terraform - CRITICAL: Never commit state files
+.terraform/
+*.tfstate
 *.tfstate.backup
-terraform.tfvars.backup-*
-*.backup
+*.tfvars
+!*.tfvars.example
+*.tfplan
+.terraform.lock.hcl
+terraform.tfstate.d/
 
-# Log files
-*.log
-**/github-logs-*/
-**/logs/
+# Terraform temporary/plan files
+plan_*.txt
+plan_*.json
+*_plan.txt
 
-# Local documentation files (keep locally, exclude from repo)
-docs/
+# LaTeX build artifacts (NT548 Report)
+*.aux
+*.fdb_latexmk
+*.fls
+*.synctex.gz
+*.toc
+*.out
+*.xdv
+*.bbl
+*.blg
+*.lof
+*.lot
 
-# Markdown files - ignore all .md files except README.md
-*.md
-!README.md
-!**/README.md
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Ansible
+*.retry

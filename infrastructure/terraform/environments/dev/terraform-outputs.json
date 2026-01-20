@@ -1,0 +1,104 @@
+﻿{
+  "ansible_inventory_info": {
+    "sensitive": false,
+    "type": [
+      "object",
+      {
+        "master_ip": "string",
+        "worker1_ip": "string",
+        "worker2_ip": "string"
+      }
+    ],
+    "value": {
+      "master_ip": "3.25.81.230",
+      "worker1_ip": "10.0.10.211",
+      "worker2_ip": "10.0.11.108"
+    }
+  },
+  "app_private_ips": {
+    "sensitive": false,
+    "type": [
+      "tuple",
+      []
+    ],
+    "value": []
+  },
+  "bastion_public_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "3.107.206.232"
+  },
+  "k3s_kubeconfig_command": {
+    "sensitive": false,
+    "type": "string",
+    "value": "scp -i \u003ckey.pem\u003e ec2-user@3.25.81.230:~/.kube/config ~/.kube/config"
+  },
+  "k3s_master_instance_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "i-0b9e4e336072a8b61"
+  },
+  "k3s_master_private_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "10.0.1.123"
+  },
+  "k3s_master_public_ip": {
+    "sensitive": false,
+    "type": "string",
+    "value": "3.25.81.230"
+  },
+  "k3s_worker_instance_ids": {
+    "sensitive": false,
+    "type": [
+      "list",
+      "string"
+    ],
+    "value": [
+      "i-00bcde923e134df4d",
+      "i-050945839c6fd0736"
+    ]
+  },
+  "k3s_worker_private_ips": {
+    "sensitive": false,
+    "type": [
+      "list",
+      "string"
+    ],
+    "value": [
+      "10.0.10.211",
+      "10.0.11.108"
+    ]
+  },
+  "private_subnet_ids": {
+    "sensitive": false,
+    "type": [
+      "list",
+      "string"
+    ],
+    "value": [
+      "subnet-0cd16ab34a44574ca",
+      "subnet-0e65e0734f2f7c904"
+    ]
+  },
+  "public_subnet_ids": {
+    "sensitive": false,
+    "type": [
+      "list",
+      "string"
+    ],
+    "value": [
+      "subnet-0025351700fb81a11"
+    ]
+  },
+  "ssh_command": {
+    "sensitive": false,
+    "type": "string",
+    "value": "ssh -i \u003ckey.pem\u003e ec2-user@3.107.206.232"
+  },
+  "vpc_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "vpc-081b81333953d3c66"
+  }
+}

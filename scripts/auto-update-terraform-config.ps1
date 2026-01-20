@@ -16,15 +16,40 @@ Write-Host ""
 # Refresh PATH
 $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
 
-# Check AWS CLI
-if (-not (Get-Command aws -ErrorAction SilentlyContinue)) {
+# Check AWS CLI - try multiple locations
+$awsPath = $null
+$awsPaths = @(
+    "C:\Program Files\Amazon\AWSCLIV2\aws.exe",
+    "D:\conda\Scripts\aws.exe",
+    "D:\conda\Scripts\aws.cmd"
+)
+
+foreach ($path in $awsPaths) {
+    if (Test-Path $path) {
+        $awsPath = $path
+        break
+    }
+}
+
+# Also try to find via Get-Command
+if (-not $awsPath) {
+    $awsCmd = Get-Command aws -ErrorAction SilentlyContinue
+    if ($awsCmd) {
+        $awsPath = $awsCmd.Source
+    }
+}
+
+if (-not $awsPath) {
     Write-Host "Error: AWS CLI not found. Please install AWS CLI first." -ForegroundColor Red
     exit 1
 }
 
+# Use awsPath for all AWS CLI calls
+$env:AWS_CLI_PATH = $awsPath
+
 # Get default VPC
 Write-Host "[1/5] Getting default VPC..." -ForegroundColor Cyan
-$vpcJson = aws ec2 describe-vpcs --region $Region --filters "Name=isDefault,Values=true" --query 'Vpcs[0]' --output json 2>&1
+$vpcJson = & $awsPath ec2 describe-vpcs --region $Region --filters "Name=isDefault,Values=true" --query 'Vpcs[0]' --output json 2>&1
 if ($LASTEXITCODE -ne 0 -or $vpcJson -match "null") {
     Write-Host "Error: Could not find default VPC in region $Region" -ForegroundColor Red
     exit 1
@@ -38,7 +63,7 @@ Write-Host "  Found VPC: $vpcId ($vpcCidr)" -ForegroundColor Green
 
 # Get subnets
 Write-Host "[2/5] Getting subnets..." -ForegroundColor Cyan
-$subnetsJson = aws ec2 describe-subnets --region $Region --filters "Name=vpc-id,Values=$vpcId" --query 'Subnets[*].[SubnetId,AvailabilityZone,CidrBlock,MapPublicIpOnLaunch]' --output json 2>&1
+$subnetsJson = & $awsPath ec2 describe-subnets --region $Region --filters "Name=vpc-id,Values=$vpcId" --query 'Subnets[*].[SubnetId,AvailabilityZone,CidrBlock,MapPublicIpOnLaunch]' --output json 2>&1
 $subnets = $subnetsJson | ConvertFrom-Json
 
 $publicSubnets = @()
@@ -67,7 +92,7 @@ if ($privateSubnets.Count -eq 0) {
 
 # Get security groups
 Write-Host "[3/5] Getting security groups..." -ForegroundColor Cyan
-$sgsJson = aws ec2 describe-security-groups --region $Region --filters "Name=vpc-id,Values=$vpcId" "Name=group-name,Values=default" --query 'SecurityGroups[0].GroupId' --output text 2>&1
+$sgsJson = & $awsPath ec2 describe-security-groups --region $Region --filters "Name=vpc-id,Values=$vpcId" "Name=group-name,Values=default" --query 'SecurityGroups[0].GroupId' --output text 2>&1
 $defaultSgId = $sgsJson.Trim()
 
 if ($defaultSgId -and $defaultSgId -ne "None") {
@@ -91,7 +116,7 @@ Write-Host "  AZs: $($azs -join ', ')" -ForegroundColor Green
 
 # Get AMI ID (latest Amazon Linux 2023)
 Write-Host "[5/5] Getting latest AMI ID..." -ForegroundColor Cyan
-$amiId = aws ec2 describe-images --region $Region --owners amazon --filters "Name=name,Values=al2023-ami-*-x86_64" "Name=virtualization-type,Values=hvm" --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text 2>&1
+$amiId = & $awsPath ec2 describe-images --region $Region --owners amazon --filters "Name=name,Values=al2023-ami-*-x86_64" "Name=virtualization-type,Values=hvm" --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text 2>&1
 if ($LASTEXITCODE -eq 0 -and $amiId -and $amiId -ne "None") {
     Write-Host "  Found AMI: $amiId" -ForegroundColor Green
 } else {
