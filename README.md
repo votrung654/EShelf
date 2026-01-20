@@ -204,7 +204,7 @@ Dành cho việc phát triển và kiểm thử nhanh không cần hạ tầng A
    
 3.  **Khởi chạy Frontend:**
    ```bash
-    cd ../frontend
+   cd ../frontend
    npm install
    npm run dev
    ```
