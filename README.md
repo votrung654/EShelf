@@ -34,6 +34,37 @@ graph TD
     Book --> Redis[("Redis Cache")]
 ```
 
+### Kiến trúc DevOps & CI/CD Pipeline
+Quy trình tự động hóa từ khâu phát triển đến triển khai hạ tầng và ứng dụng.
+
+```mermaid
+graph LR
+    subgraph Infrastructure
+        Terraform --> AWS["AWS (EC2 Nodes)"]
+        AWS --> Ansible
+        Ansible --> K3s["K3s Cluster"]
+    end
+
+    subgraph CI["Continuous Integration"]
+        Dev["Developer"] -->|git push| GH["GitHub Repo"]
+        GH --> GHA["GitHub Actions"]
+        GH -->|Webhook| Jenkins["Jenkins"]
+        
+        GHA -->|Scan| Sonar["SonarQube"]
+        GHA --> Build["Build Docker Image"]
+        Build -->|Scan| Trivy
+        Trivy --> Harbor["Harbor Registry"]
+        Jenkins --> Harbor
+    end
+
+    subgraph CD["Continuous Delivery"]
+        Harbor --> ArgoCD
+        ArgoCD -->|Sync| K3s
+        Prometheus --> K3s
+        Grafana --> Prometheus
+    end
+```
+
 ### Danh sách Công nghệ (Tech Stack)
 
 | Hạng mục | Công nghệ | Mục đích sử dụng |
@@ -160,23 +191,23 @@ ArgoCD đóng vai trò đồng bộ hóa trạng thái giữa Git (Source of Tru
 Dành cho việc phát triển và kiểm thử nhanh không cần hạ tầng AWS.
 
 1.  **Sao chép mã nguồn:**
-    ```bash
-    git clone https://github.com/votrung654/EShelf.git
-    cd EShelf
-    ```
+   ```bash
+   git clone https://github.com/votrung654/EShelf.git
+   cd EShelf
+   ```
 
 2.  **Khởi chạy Backend & Database:**
-    ```bash
-    cd backend
-    docker-compose up -d
-    ```
-
+   ```bash
+   cd backend
+   docker-compose up -d
+   ```
+   
 3.  **Khởi chạy Frontend:**
-    ```bash
+   ```bash
     cd ../frontend
-    npm install
-    npm run dev
-    ```
+   npm install
+   npm run dev
+   ```
 
 ---
 
