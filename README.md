@@ -1,28 +1,28 @@
-# EShelf - Nền tảng sách điện tử doanh nghiệp
+# EShelf - Enterprise E-book Platform
 
 [![CI/CD Pipeline](https://github.com/votrung654/EShelf/actions/workflows/ci.yml/badge.svg)](https://github.com/votrung654/EShelf/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Tổng quan dự án
+## Project Overview
 
-**eShelf** là nền tảng đọc sách điện tử được xây dựng dựa trên kiến trúc Microservices. Dự án này là sản phẩm tổng hợp phục vụ cho môn học **NT548 - Công nghệ DevOps và Ứng dụng**, thể hiện trọn vẹn vòng đời phát triển phần mềm hiện đại (SDLC) từ khâu cấp phát hạ tầng, tự động hóa cấu hình đến triển khai liên tục theo mô hình GitOps.
+**EShelf** is an e-book reading platform built on a Microservices architecture. This project serves as a comprehensive final product for the **NT548 - DevOps Technology and Application** course, demonstrating the complete modern Software Development Life Cycle (SDLC) from infrastructure provisioning and automated configuration to continuous deployment using the GitOps model.
 
-**Đơn vị đào tạo:** Trường Đại học Công nghệ Thông tin - ĐHQG TP.HCM
-**Môn học:** NT548.Q11 - Công nghệ DevOps và Ứng dụng
-**Giảng viên hướng dẫn:** ThS. Lê Anh Tuấn
+**Institution:** University of Information Technology - VNU-HCM
+**Course:** NT548.Q11 - DevOps Technology and Application
+**Instructor:** MSc. Le Anh Tuan
 
 ---
 
-## Kiến trúc hệ thống
+## System Architecture
 
-### Thiết kế kiến trúc
-Hệ thống áp dụng kiến trúc Microservices, được triển khai trên nền tảng AWS sử dụng Terraform để quản lý hạ tầng và K3s để điều phối container.
+### Architectural Design
+The system utilizes a Microservices architecture, deployed on the AWS platform, using Terraform for infrastructure management and K3s for container orchestration.
 
 ```mermaid
 graph TD
-    User["Người dùng"] --> ALB["AWS Load Balancer"]
+    User["User"] --> ALB["AWS Load Balancer"]
     ALB --> Ingress["Nginx Ingress"]
-    Ingress --> Frontend["Frontend React"]
+    Ingress --> Frontend["React Frontend"]
     Ingress --> API["API Gateway"]
     
     API --> Auth["Auth Service"]
@@ -34,8 +34,8 @@ graph TD
     Book --> Redis[("Redis Cache")]
 ```
 
-### Kiến trúc DevOps & CI/CD Pipeline
-Quy trình tự động hóa từ khâu phát triển đến triển khai hạ tầng và ứng dụng.
+### DevOps Architecture & CI/CD Pipeline
+An automated workflow extending from development to infrastructure and application deployment.
 
 ```mermaid
 graph LR
@@ -65,144 +65,144 @@ graph LR
     end
 ```
 
-### Danh sách công nghệ (Tech Stack)
+### Technology Stack
 
-| Hạng mục | Công nghệ | Mục đích sử dụng |
+| Category | Technology | Purpose |
 |----------|-----------|------------------|
-| **Nền tảng Cloud** | AWS | VPC, EC2, Security Groups, IAM, NAT Gateway |
-| **Mã hóa Hạ tầng (IaC)** | Terraform | Tự động hóa cấp phát và quản lý trạng thái hạ tầng |
-| **Quản lý Cấu hình** | Ansible | Cấu hình máy chủ và cài đặt cụm K3s |
-| **Điều phối Container** | K3s | Kubernetes distribution hạng nhẹ cho môi trường Production |
-| **CI/CD** | GitHub Actions | Tích hợp liên tục (Lint, Test, Build, Scan, Push) |
-| **GitOps** | ArgoCD | Triển khai liên tục và đồng bộ trạng thái Cluster |
-| **Giám sát (Monitoring)** | Prometheus, Grafana | Thu thập Metrics và trực quan hóa dữ liệu |
-| **Nhật ký (Logging)** | Loki | Thu thập và truy vấn Log tập trung |
-| **Bảo mật (DevSecOps)** | Checkov, Trivy, SonarQube | Quét lỗ hổng IaC, Container và mã nguồn |
+| **Cloud Platform** | AWS | VPC, EC2, Security Groups, IAM, NAT Gateway |
+| **Infrastructure as Code (IaC)** | Terraform | Automated provisioning and infrastructure state management |
+| **Configuration Management** | Ansible | Server configuration and K3s cluster installation |
+| **Container Orchestration** | K3s | Lightweight Kubernetes distribution for Production |
+| **CI/CD** | GitHub Actions | Continuous Integration (Lint, Test, Build, Scan, Push) |
+| **GitOps** | ArgoCD | Continuous Delivery and Cluster state synchronization |
+| **Monitoring** | Prometheus, Grafana | Metrics collection and data visualization |
+| **Logging** | Loki | Centralized log aggregation and querying |
+| **Security (DevSecOps)** | Checkov, Trivy, SonarQube | Scanning IaC, Container vulnerabilities, and Source Code |
 
 ---
 
-## Phần 1: Thực hành Lab 1 - Hạ tầng Cloud (Cloud Infrastructure)
+## Part 1: Lab 1 - Cloud Infrastructure
 
-Bài thực hành tập trung vào việc thiết kế và triển khai hạ tầng mạng và máy chủ trên AWS sử dụng Terraform.
+This section focuses on designing and deploying network and server infrastructure on AWS using Terraform.
 
-**Vị trí mã nguồn:** `infrastructure/terraform/`
+**Source Code Location:** `infrastructure/terraform/`
 
-### Phạm vi triển khai
-1.  **VPC:** Mạng riêng ảo với dải IP `10.0.0.0/16`.
-2.  **Subnets:** Phân chia Public Subnet (cho Bastion, NAT) và Private Subnet (cho K3s Cluster).
-3.  **Gateways:** Internet Gateway (IGW) cho kết nối ra ngoài và NAT Gateway cho mạng nội bộ.
+### Deployment Scope
+1.  **VPC:** Virtual Private Cloud with a `10.0.0.0/16` IP range.
+2.  **Subnets:** Separated Public Subnets (for Bastion, NAT) and Private Subnets (for K3s Cluster).
+3.  **Gateways:** Internet Gateway (IGW) for external connectivity and NAT Gateway for internal network routing.
 4.  **EC2 Instances:**
-    *   Bastion Host (Public): Điểm truy cập quản trị (Jump Server).
-    *   K3s Master & Worker (Private): Các node vận hành ứng dụng, không có Public IP trực tiếp.
-5.  **Security Groups:** Thiết lập tường lửa theo mô hình Zero Trust.
+    *   Bastion Host (Public): Jump server for administrative access.
+    *   K3s Master & Worker (Private): Application execution nodes, no direct Public IPs.
+5.  **Security Groups:** Firewall configuration adhering to the Zero Trust model.
 
-### Hướng dẫn triển khai
-1.  Di chuyển vào thư mục môi trường development:
+### Deployment Instructions
+1.  Navigate to the development environment directory:
     ```bash
     cd infrastructure/terraform/environments/dev
     ```
-2.  Khởi tạo Terraform (Tải providers và modules):
+2.  Initialize Terraform (Download providers and modules):
     ```bash
     terraform init
     ```
-3.  Lập kế hoạch thực thi:
+3.  Generate an execution plan:
     ```bash
     terraform plan -out=tfplan
     ```
-4.  Áp dụng cấu hình lên AWS:
+4.  Apply the configuration to AWS:
     ```bash
     terraform apply tfplan
     ```
 
-### Kiểm tra Kết quả (Verification)
-*   **AWS Console:** Kiểm tra VPC, Subnet và danh sách EC2 Instance đã được tạo.
-*   **Kết nối SSH:** Kiểm tra khả năng SSH từ máy local vào Bastion, sau đó SSH từ Bastion vào Master Node (IP Private).
-*   **Kết nối Internet:** Kiểm tra khả năng truy cập Internet của máy Private thông qua NAT Gateway (lệnh `curl`).
+### Verification
+*   **AWS Console:** Verify the creation of the VPC, Subnets, and EC2 Instances.
+*   **SSH Connection:** Test SSH access from local machine to Bastion, then from Bastion to a Master Node (Private IP).
+*   **Internet Connectivity:** Use `curl` to verify Internet access from a Private instance via NAT Gateway.
 
 ---
 
-## Phần 2: Thực hành Lab 2 - Tự động hóa & CI/CD (Automation)
+## Part 2: Lab 2 - Automation & CI/CD
 
-Bài thực hành mở rộng sang các công cụ tự động hóa quy trình phát triển và vận hành (DevOps Automation).
+This phase introduces automation tools for software development and operational workflows (DevOps Automation).
 
 ### 2.1. Terraform & GitHub Actions (Checkov)
-Tự động hóa việc triển khai hạ tầng và kiểm tra bảo mật.
-*   **Quy trình:** Push code -> Checkov Scan (Security) -> Terraform Plan -> Terraform Apply.
-*   **Vị trí:** `.github/workflows/terraform.yml`
+Automates infrastructure deployment and security validation.
+*   **Workflow:** Push code -> Checkov Scan (Security) -> Terraform Plan -> Terraform Apply.
+*   **Location:** `.github/workflows/terraform.yml`
 
 ### 2.2. CloudFormation & AWS CodePipeline
-Sử dụng công cụ native của AWS để triển khai hạ tầng.
-*   **Vị trí:** `infrastructure/cloudformation/`
-*   **Quy trình:** AWS CodePipeline kích hoạt khi có commit -> AWS CodeBuild kiểm tra template -> AWS CloudFormation triển khai Stack.
+Utilizes native AWS tooling for infrastructure deployment.
+*   **Location:** `infrastructure/cloudformation/`
+*   **Workflow:** AWS CodePipeline triggers on commit -> AWS CodeBuild tests template -> AWS CloudFormation deploys Stack.
 
 ### 2.3. Jenkins CI/CD
-Xây dựng pipeline truyền thống với Jenkins trên Kubernetes.
-*   **Vị trí:** `infrastructure/kubernetes/jenkins/`
-*   **Quy trình:** Checkout -> Build Docker -> SonarQube Analysis -> Push to Registry -> Deploy to K8s.
+Establishes a traditional pipeline using Jenkins distributed on Kubernetes.
+*   **Location:** `infrastructure/kubernetes/jenkins/`
+*   **Workflow:** Checkout -> Build Docker -> SonarQube Analysis -> Push to Registry -> Deploy to K8s.
 
 ### 2.4. Ansible Configuration (Setup K3s)
-Tự động hóa việc cài đặt Kubernetes Cluster trên các EC2 Instance đã tạo ở Lab 1.
-*   **Vị trí:** `infrastructure/ansible/`
+Automates internal Kubernetes Cluster installation on the provisioned Lab 1 EC2 Instances.
+*   **Location:** `infrastructure/ansible/`
 
-**Hướng dẫn chạy Ansible:**
-1.  Cập nhật file inventory `infrastructure/ansible/inventory/dev.ini` với Private IP của các node.
-2.  Chạy Playbook cài đặt:
+**Running Ansible:**
+1.  Target your node Private IPs in the inventory file `infrastructure/ansible/inventory/dev.ini`.
+2.  Execute the installation Playbook:
     ```bash
     cd infrastructure/ansible
     ansible-playbook -i inventory/dev.ini playbooks/setup-cluster.yml
     ```
-3.  Kiểm tra trạng thái Cluster trên Master Node:
+3.  Verify Cluster status on the Master Node:
     ```bash
     kubectl get nodes -o wide
     ```
 
 ---
 
-## Phần 3: Đồ án cuối kỳ - Microservices & GitOps (Final Project)
+## Part 3: Final Project - Microservices & GitOps
 
-Đồ án tổng hợp áp dụng kiến trúc Microservices và quy trình GitOps hoàn chỉnh.
+The capstone project applies a complete Microservices architecture alongside native GitOps workflows.
 
-### Quy trình tích hợp liên tục (CI - GitHub Actions)
-File cấu hình: `.github/workflows/ci.yml`
-1.  **Linting & Testing:** Kiểm tra cú pháp và chạy unit test cho Backend/Frontend.
-2.  **Security Scanning:** Quét lỗ hổng bảo mật với Trivy.
-3.  **Build & Push:** Đóng gói Docker Image và đẩy lên Harbor/DockerHub.
-4.  **Update Manifest:** Tự động cập nhật thẻ (tag) image mới vào repository chứa cấu hình Kubernetes (`infrastructure/kubernetes`).
+### Continuous Integration (CI - GitHub Actions)
+Configuration file: `.github/workflows/ci.yml`
+1.  **Linting & Testing:** Syntax checks and backend/frontend unit tests.
+2.  **Security Scanning:** Vulnerability scans leveraging Trivy.
+3.  **Build & Push:** Containerizing Docker Images and storing in Harbor/DockerHub.
+4.  **Update Manifest:** Automatic updates of the newest image tags in the Kubernetes config repository (`infrastructure/kubernetes`).
 
-### Quy trình triển khai liên tục (CD - ArgoCD)
-ArgoCD đóng vai trò đồng bộ hóa trạng thái giữa Git (Source of Truth) và Kubernetes Cluster.
+### Continuous Delivery (CD - ArgoCD)
+ArgoCD acts as a synchronizer managing states between Git (Source of Truth) and the local Kubernetes Cluster.
 
-**Cài đặt & Cấu hình:**
-1.  Cài đặt ArgoCD vào namespace `argocd`:
+**Installation & Configuration:**
+1.  Install ArgoCD in the `argocd` namespace:
     ```bash
     kubectl create namespace argocd
     kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
     ```
-2.  Truy cập Dashboard (Port-forward):
+2.  Access Dashboard via Port-forward:
     ```bash
     kubectl port-forward svc/argocd-server -n argocd 8080:443
     ```
-3.  Đăng nhập với tài khoản `admin` và mật khẩu khởi tạo.
+3.  Log in using the `admin` account and auto-generated password.
 
 ---
 
-## Môi trường phát triển cục bộ (Local Development)
+## Local Development Environment
 
-Dành cho việc phát triển và kiểm thử nhanh không cần hạ tầng AWS.
+Intended for rapid development and testing without the necessity of AWS infrastructure.
 
-1.  **Sao chép mã nguồn:**
+1.  **Clone Source Code:**
    ```bash
    git clone https://github.com/votrung654/EShelf.git
    cd EShelf
    ```
 
-2.  **Khởi chạy Backend & Database:**
+2.  **Start Backend & Database Services:**
    ```bash
    cd backend
    docker-compose up -d
    ```
    
-3.  **Khởi chạy Frontend:**
+3.  **Start Frontend:**
    ```bash
    cd ../frontend
    npm install
@@ -211,45 +211,45 @@ Dành cho việc phát triển và kiểm thử nhanh không cần hạ tầng A
 
 ---
 
-## Kiểm thử và demo hệ thống
+## System Testing & Demos
 
-### Danh sách Endpoints
+### List of Endpoints
 
-| Thành phần | URL Cục bộ | URL Production (Ví dụ) |
+| Component | Local URL | Production URL (Example) |
 |------------|------------|------------------------|
 | **Frontend** | http://localhost:5173 | http://eshelf.com |
 | **API Gateway** | http://localhost:3000 | https://api.eshelf.com |
 | **ArgoCD Dashboard** | http://localhost:8080 | https://argocd.eshelf.com |
 | **Grafana Dashboard** | - | https://grafana.eshelf.com |
 
-### Tài khoản Demo
+### Demo Accounts
 
-*   **Quản trị viên (Admin):** `admin@eshelf.com` / `Admin123!`
-*   **Người dùng (User):** `user@eshelf.com` / `User123!`
+*   **Administrator (Admin):** `admin@eshelf.com` / `Admin123!`
+*   **Standard User (User):** `user@eshelf.com` / `User123!`
 
-### Các lệnh kiểm tra (Troubleshooting)
+### Troubleshooting Commands
 
 ```bash
-# Kiểm tra toàn bộ Pods trong Cluster
+# Check all Pods inside the Cluster
 kubectl get pods -A
 
-# Xem nhật ký hoạt động của service cụ thể
+# Check runtime logs of a specific service
 kubectl logs -f -l app=book-service
 
-# Kiểm tra cấu hình Ingress
+# Check Ingress configuration status
 kubectl get ingress -A
 ```
 
 ---
 
-## Nhóm thực hiện
+## Technical Team (Group 15)
 
-| MSSV | Họ và Tên | Vai trò & Trách nhiệm |
+| Student ID | Full Name | Roles & Responsibilities |
 |------|-----------|-----------------------|
-| 22521571 | **Võ Đình Trung** | DevOps Engineering, CI/CD Pipeline, Viết báo cáo |
-| 23521809 | **Lê Văn Vũ** | Fullstack Development, Soạn thảo Slide |
-| 22521587 | **Trương Phúc Trường** | Cloud Infrastructure, Dựng Video Demo|
+| 22521571 | **Vo Dinh Trung** | DevOps Engineering, CI/CD Pipeline, Reporting |
+| 23521809 | **Le Van Vu** | Fullstack Development, Presentation Slides |
+| 22521587 | **Truong Phuc Truong** | Cloud Infrastructure, Video Demo Production|
 
 ---
 
-© 2026 Nhóm 15 - NT548.Q11. Trường Đại học Công nghệ Thông tin.
+© 2026 Group 15 - NT548.Q11. University of Information Technology.
