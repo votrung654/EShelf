@@ -1,9 +1,9 @@
-# eShelf - Nền tảng Sách điện tử Doanh nghiệp
+# EShelf - Nền tảng sách điện tử doanh nghiệp
 
 [![CI/CD Pipeline](https://github.com/votrung654/EShelf/actions/workflows/ci.yml/badge.svg)](https://github.com/votrung654/EShelf/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-## Tổng quan Dự án
+## Tổng quan dự án
 
 **eShelf** là nền tảng đọc sách điện tử được xây dựng dựa trên kiến trúc Microservices. Dự án này là sản phẩm tổng hợp phục vụ cho môn học **NT548 - Công nghệ DevOps và Ứng dụng**, thể hiện trọn vẹn vòng đời phát triển phần mềm hiện đại (SDLC) từ khâu cấp phát hạ tầng, tự động hóa cấu hình đến triển khai liên tục theo mô hình GitOps.
 
@@ -13,9 +13,9 @@
 
 ---
 
-## Kiến trúc Hệ thống
+## Kiến trúc hệ thống
 
-### Thiết kế Kiến trúc
+### Thiết kế kiến trúc
 Hệ thống áp dụng kiến trúc Microservices, được triển khai trên nền tảng AWS sử dụng Terraform để quản lý hạ tầng và K3s để điều phối container.
 
 ```mermaid
@@ -65,7 +65,7 @@ graph LR
     end
 ```
 
-### Danh sách Công nghệ (Tech Stack)
+### Danh sách công nghệ (Tech Stack)
 
 | Hạng mục | Công nghệ | Mục đích sử dụng |
 |----------|-----------|------------------|
@@ -96,7 +96,7 @@ Bài thực hành tập trung vào việc thiết kế và triển khai hạ t�
     *   K3s Master & Worker (Private): Các node vận hành ứng dụng, không có Public IP trực tiếp.
 5.  **Security Groups:** Thiết lập tường lửa theo mô hình Zero Trust.
 
-### Hướng dẫn Triển khai
+### Hướng dẫn triển khai
 1.  Di chuyển vào thư mục môi trường development:
     ```bash
     cd infrastructure/terraform/environments/dev
@@ -158,18 +158,18 @@ Tự động hóa việc cài đặt Kubernetes Cluster trên các EC2 Instance 
 
 ---
 
-## Phần 3: Đồ án Cuối kỳ - Microservices & GitOps (Final Project)
+## Phần 3: Đồ án cuối kỳ - Microservices & GitOps (Final Project)
 
 Đồ án tổng hợp áp dụng kiến trúc Microservices và quy trình GitOps hoàn chỉnh.
 
-### Quy trình Tích hợp Liên tục (CI - GitHub Actions)
+### Quy trình tích hợp liên tục (CI - GitHub Actions)
 File cấu hình: `.github/workflows/ci.yml`
 1.  **Linting & Testing:** Kiểm tra cú pháp và chạy unit test cho Backend/Frontend.
 2.  **Security Scanning:** Quét lỗ hổng bảo mật với Trivy.
 3.  **Build & Push:** Đóng gói Docker Image và đẩy lên Harbor/DockerHub.
 4.  **Update Manifest:** Tự động cập nhật thẻ (tag) image mới vào repository chứa cấu hình Kubernetes (`infrastructure/kubernetes`).
 
-### Quy trình Triển khai Liên tục (CD - ArgoCD)
+### Quy trình triển khai liên tục (CD - ArgoCD)
 ArgoCD đóng vai trò đồng bộ hóa trạng thái giữa Git (Source of Truth) và Kubernetes Cluster.
 
 **Cài đặt & Cấu hình:**
@@ -186,7 +186,7 @@ ArgoCD đóng vai trò đồng bộ hóa trạng thái giữa Git (Source of Tru
 
 ---
 
-## Môi trường Phát triển Cục bộ (Local Development)
+## Môi trường phát triển cục bộ (Local Development)
 
 Dành cho việc phát triển và kiểm thử nhanh không cần hạ tầng AWS.
 
@@ -211,7 +211,7 @@ Dành cho việc phát triển và kiểm thử nhanh không cần hạ tầng A
 
 ---
 
-## Kiểm thử và Demo Hệ thống
+## Kiểm thử và demo hệ thống
 
 ### Danh sách Endpoints
 
@@ -242,7 +242,7 @@ kubectl get ingress -A
 
 ---
 
-## Nhóm Thực hiện
+## Nhóm thực hiện
 
 | MSSV | Họ và Tên | Vai trò & Trách nhiệm |
 |------|-----------|-----------------------|
